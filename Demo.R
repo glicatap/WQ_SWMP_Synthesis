@@ -3,6 +3,7 @@ b<-2
 c<-1+2
 a + b
 
+
 library(tidyr)
 library(tidyverse)
 library(ggplot2)
@@ -11,6 +12,8 @@ library(dplyr)
 library(trend)
 library(zoo)
 library(lubridate)
+
+#change wd for your computer
 
 setwd("C:/Users/kreinl1/OneDrive/OneDrive - UW-Madison/GitHub/WQ_SWMP_Synthesis/Data")
 
