@@ -1,6 +1,7 @@
 a<-1
 b<-2
 c<-1+2
+a + b
 
 library(tidyr)
 library(tidyverse)
