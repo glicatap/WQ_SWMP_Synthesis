@@ -16,6 +16,9 @@ setwd("C:/Users/kreinl1/OneDrive/OneDrive - UW-Madison/GitHub/WQ_SWMP_Synthesis/
 
 WQ<-read_csv("lksbawq2012.csv")
 
+WQ <-  read_csv(here::here("Data", "lksbawq2012.csv"))
+
+
 WQ_long <- melt(setDT(WQ), id.vars = c("StationCode","DateTimeStamp"), 
                 measure.vars = c("Temp","SpCond", "Sal","DO_mgl","pH","Turb"))
 
