@@ -44,7 +44,8 @@ WQ_long_subset$Date<- as.Date(WQ_long_subset$Date,format="%m/%d/%Y")
 
 
 ggplot()+
-  geom_boxplot(data=WQ_long_subset, aes(x=Month,y=value))+
+  geom_boxplot(data=WQ_long_subset, aes(x=Month,y=value),
+               fill = "cadetblue3")+
   theme_bw()+facet_wrap(~variable, scales="free")
   theme(axis.text.x = element_text(color="black"), text = element_text(size = 16,color="black"))
 
