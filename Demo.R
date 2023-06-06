@@ -2,6 +2,8 @@ a<-1
 b<-2
 c<-1+2
 a + b
+d<-4
+a+d
 
 
 library(tidyr)
