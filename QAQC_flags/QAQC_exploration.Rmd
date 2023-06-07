@@ -19,6 +19,7 @@ library(tidyr)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(kableExtra)
 source(here::here("QAQC_flags", "functions.R"))
 ```
 
@@ -104,15 +105,57 @@ qaqc_long <- qaqc_only %>%
 
 ```
 
-## Monthly summary by flag  
+## Yearly/Monthly summary by flag  
 
-From long data frame above  
+From long data frame above. Creating both long and wide.    
+
+### Monthly (Year-Month)  
 
 ```{r}
 qaqc_monthly <- qaqc_long %>% 
   group_by(Year, Month, parameter, flag_detailed) %>% 
   tally()
+
+qaqc_monthly_wide <- qaqc_monthly %>% 
+  pivot_wider(names_from = parameter,
+              values_from = n)
 ```
+
+### Monthly - across all years  
+
+```{r}
+qaqc_monthly_allyrs <- qaqc_long %>% 
+  group_by(Month, parameter, flag_detailed) %>% 
+  tally()
+
+qaqc_monthly_allyrs_wide <- qaqc_monthly_allyrs %>% 
+  pivot_wider(names_from = parameter,
+              values_from = n)
+
+# slightly different table format  
+
+# monthly_test <- qaqc_monthly_allyrs %>% 
+#   pivot_wider(names_from = flag_detailed,
+#               values_from = n)
+# kable(monthly_test) %>% 
+#   column_spec(column = 1:ncol(monthly_test), width = 10)
+```
+
+
+
+### Year  
+
+```{r}
+qaqc_yearly <- qaqc_long %>% 
+  group_by(Year, parameter, flag_detailed) %>% 
+  tally()
+
+qaqc_yearly_wide <- qaqc_yearly %>% 
+  pivot_wider(names_from = parameter,
+              values_from = n)
+```
+
+
 
 
 # Summary tables  
@@ -120,7 +163,24 @@ qaqc_monthly <- qaqc_long %>%
 ## Overall, by parameter, with codes  
 
 ```{r}
-knitr::kable(qaqc_summ)  
+qaqc_summ %>% 
+  arrange(flag, code) %>% 
+  kable() %>% 
+  kable_material("striped") %>% 
+  column_spec(1:2, width = 15) %>% 
+  column_spec(3:ncol(qaqc_summ), width = 8)
 ```
 
 ## Monthly, with flags only  
+
+Across all years  
+
+```{r}
+qaqc_monthly_allyrs_wide %>% 
+  arrange(flag_detailed, Month) %>% 
+  kable() %>% 
+  kable_material("striped") %>% 
+  column_spec(1:2, width = 15) %>% 
+  column_spec(3:ncol(qaqc_summ), width = 8)
+```
+
