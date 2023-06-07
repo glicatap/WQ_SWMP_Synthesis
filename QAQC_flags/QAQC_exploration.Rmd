@@ -1,0 +1,126 @@
+---
+title: "QAQC Flags and Codes"
+output: 
+  html_document:
+    toc: true
+    code_folding: hide
+---
+
+Code is present but hidden in this html file. To see code chunks, click on the "code" button on the right for the section you want to see.  
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = FALSE, warning = FALSE}
+library(SWMPr)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+source(here::here("QAQC_flags", "functions.R"))
+```
+
+# Read in data  
+
+```{r}
+stn <- "gndblwq"
+# hoping to eventually set this up to loop through all stations
+
+dat <- import_local(path = here::here("Data"), 
+                    station_code = stn, 
+                    keep_qaqcstatus = TRUE,
+                    trace = TRUE,
+                    collMethd = 1)  # grabs only - no ISCO if nutrient data
+```
+
+
+# Make different data frames to work with  
+
+## QAQC summary by flag/code and parameter  
+
+from SWMPr package; no subsetting here - whole dataset  
+
+```{r}
+qaqc_summ <- qaqcchk(dat) |>
+  tidyr::separate(flag, into = c("flag", "code"),
+                  sep = " ",
+                  extra = "merge",
+                  fill = "right")
+```
+
+## QAQC summary; long  
+
+still working off `SWMPr::qaqcchk()`  
+
+```{r}
+qaqcSumm_long <- qaqc_summ %>% 
+  pivot_longer(-(1:2),
+               names_to = "param",
+               values_to = "count") %>% 
+  mutate(flag = factor(flag)) %>% 
+  group_by(flag, param) %>% 
+  summarize(count = sum(count, na.rm = TRUE))
+```
+
+
+
+## QAQC columns *only*; wide  
+
+Working off original data frame now  
+
+```{r}
+qaqc_only <- keep_onlyQAQC(dat)
+```
+
+
+## QAQC columns, all; long  
+
+Pivoting the dataframe above; pulling out flag only (ignoring letter codes); assigning meanings based on numeric flags (probably should put these definitions in a function or different table or something).    
+
+```{r}
+qaqc_long <- qaqc_only %>% 
+  mutate(Year = lubridate::year(datetimestamp),
+         Month = lubridate::month(datetimestamp),
+         Day = lubridate::mday(datetimestamp)) %>% 
+  pivot_longer(cols = starts_with("f_"),
+               names_to = "parameter",
+               values_to = "flagCode") %>% 
+  mutate(flag = extract_flag(flagCode),
+         flag_detailed = case_match(flag,
+                                    "<-5>" ~ "Above Detection Limit",
+                                    "<-4>" ~ "Below Detection Limit",
+                                    "<-3>" ~ "Rejected",
+                                    "<-2>" ~ "Missing",
+                                    "<-1>" ~ "Optional Param; not collected",
+                                    "<0>" ~ "Passed QAQC",
+                                    "<2>" ~ "Reserved for future use",
+                                    "<1>" ~ "Suspect",
+                                    "<3>" ~ "Calculated from other Params",
+                                    "<4>" ~ "Pre-auto QAQC",
+                                    "<5>" ~ "Corrected Data",
+                                    .default = "PROBLEM!"))
+
+```
+
+## Monthly summary by flag  
+
+From long data frame above  
+
+```{r}
+qaqc_monthly <- qaqc_long %>% 
+  group_by(Year, Month, parameter, flag_detailed) %>% 
+  tally()
+```
+
+
+# Summary tables  
+
+## Overall, by parameter, with codes  
+
+```{r}
+knitr::kable(qaqc_summ)  
+```
+
+## Monthly, with flags only  
