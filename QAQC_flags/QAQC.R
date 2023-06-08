@@ -66,3 +66,10 @@ unique(Summarize_flags$StationCode)
 Check_data<-Summarize_flags %>% 
   group_by(StationCode, Month,Year,variable)%>% 
   filter(sum_freq<0.65)
+
+ggplot(Check_data, aes(x=StationCode, y=Month,fill=sum_freq)) +
+  geom_tile(color = "white",lwd = 1.5,linetype = 1)
+
+ggplot(Check_data, aes(x=StationCode, y=Year,fill=sum_freq)) +
+  geom_tile(color = "white",lwd = 1.5,linetype = 1)
+
