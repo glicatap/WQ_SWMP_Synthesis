@@ -16,10 +16,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, message = FALSE, warning = FALSE}
 library(SWMPr)
 library(tidyr)
+library(tidyverse)
 library(dplyr)
 library(stringr)
 library(ggplot2)
 library(kableExtra)
+library(here)
+library(data.table)
+library(trend)
+library(zoo)
+library(lubridate)
 source(here::here("QAQC_flags", "functions.R"))
 ```
 
@@ -27,13 +33,39 @@ source(here::here("QAQC_flags", "functions.R"))
 
 ```{r}
 stn <- "gndblwq"
+#stn <- "lksbawq2012"
+
+
 # hoping to eventually set this up to loop through all stations
 
 dat <- import_local(path = here::here("Data"), 
                     station_code = stn, 
-                    keep_qaqcstatus = TRUE,
                     trace = TRUE,
                     collMethd = 1)  # grabs only - no ISCO if nutrient data
+
+```
+
+
+```{r warning=FALSE, echo=F}
+#This code will loop to combine all csv's
+
+data_path <- here("Data/Nutrients")
+
+setwd(data_path)
+
+NUT_data <-
+  list.files(pattern = "*.csv") %>% 
+  map_df(~read_csv(.))
+
+
+data_path <- here("Data/WQ")
+
+setwd(data_path)
+
+WQ_data <-
+  list.files(pattern = "*.csv") %>% 
+  map_df(~read_csv(.))
+
 ```
 
 
