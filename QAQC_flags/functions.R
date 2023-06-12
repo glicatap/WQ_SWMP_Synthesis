@@ -18,7 +18,14 @@ keep_onlyQAQC <- function(data){
 
 
 extract_flag <- function(col){
-  # col is a vector of QAQC flags
+  # col is a vector of QAQC flags, e.g. a column in a data frame
   flags <- stringr::str_extract(col, "<-?\\d>")
   return(flags)
+}
+
+
+replace_missing_flags <- function(col){
+  # col is a vector of QAQC flags, e.g. a column in a data frame
+  col[which(col == "" | is.na(col))] <- "<-2>"
+  return(col)
 }

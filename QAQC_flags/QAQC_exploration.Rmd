@@ -45,8 +45,23 @@ dat <- import_local(path = here::here("Data"),
 
 ```
 
+Turn any f_ columns that are only "" or that are NA into <-2>s (e.g. gndblwq cdepth in parts of 2014 and 2015 when there was no depth data, so no calculated values for cdepth, and an empty f_ column). Need to do this to all f_ columns.  
 
-```{r warning=FALSE, echo=F}
+```{r}
+# find the cols starting with f_
+f_cols <- which(str_starts(names(dat), "f_"))
+
+# loop through f_ cols and replace missing flags with <-2>
+# using dplyr mutate and across removes the SWMPr object properties
+# from the data frame, so have to loop
+for(i in seq_along(f_cols)){
+  col_ind <- f_cols[i]
+  dat[, col_ind] <- replace_missing_flags(dat[, col_ind])
+}
+```
+
+
+```{r warning=FALSE, echo=F, eval = FALSE}
 #This code will loop to combine all csv's
 
 data_path <- here("Data/Nutrients")
@@ -111,6 +126,7 @@ qaqc_only <- keep_onlyQAQC(dat)
 ## QAQC columns, all; long  
 
 Pivoting the dataframe above; pulling out flag only (ignoring letter codes); assigning meanings based on numeric flags (probably should put these definitions in a function or different table or something).    
+ 
 
 ```{r}
 qaqc_long <- qaqc_only %>% 
@@ -126,13 +142,14 @@ qaqc_long <- qaqc_only %>%
                                     "<-4>" ~ "Below Detection Limit",
                                     "<-3>" ~ "Rejected",
                                     "<-2>" ~ "Missing",
-                                    "<-1>" ~ "Optional Param; not collected",
+                                    "<-1>" ~ "Optional",
                                     "<0>" ~ "Passed QAQC",
                                     "<2>" ~ "Reserved for future use",
                                     "<1>" ~ "Suspect",
-                                    "<3>" ~ "Calculated from other Params",
-                                    "<4>" ~ "Pre-auto QAQC",
-                                    "<5>" ~ "Corrected Data",
+                                    "<3>" ~ "Calculated",
+                                    "<4>" ~ "Historical",
+                                    "<5>" ~ "Corrected",
+                                    "" ~ "Missing",
                                     .default = "PROBLEM!"))
 
 ```
@@ -162,7 +179,8 @@ qaqc_monthly_allyrs <- qaqc_long %>%
 
 qaqc_monthly_allyrs_wide <- qaqc_monthly_allyrs %>% 
   pivot_wider(names_from = parameter,
-              values_from = n)
+              values_from = n,
+              values_fill = 0)
 
 # slightly different table format  
 
@@ -184,7 +202,8 @@ qaqc_yearly <- qaqc_long %>%
 
 qaqc_yearly_wide <- qaqc_yearly %>% 
   pivot_wider(names_from = parameter,
-              values_from = n)
+              values_from = n,
+              values_fill = 0)
 ```
 
 
@@ -200,7 +219,8 @@ qaqc_summ %>%
   kable() %>% 
   kable_material("striped") %>% 
   column_spec(1:2, width = 15) %>% 
-  column_spec(3:ncol(qaqc_summ), width = 8)
+  column_spec(3:ncol(qaqc_summ), width = 8) %>% 
+  scroll_box(height = "400px", width = "600px")
 ```
 
 ## Monthly, with flags only  
@@ -213,6 +233,7 @@ qaqc_monthly_allyrs_wide %>%
   kable() %>% 
   kable_material("striped") %>% 
   column_spec(1:2, width = 15) %>% 
-  column_spec(3:ncol(qaqc_summ), width = 8)
+  column_spec(3:ncol(qaqc_summ), width = 8) %>% 
+  scroll_box(height = "400px", width = "600px")
 ```
 
