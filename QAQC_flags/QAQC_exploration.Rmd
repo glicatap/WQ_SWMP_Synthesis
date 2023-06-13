@@ -25,7 +25,7 @@ key_params <- c("f_spcond", "f_sal", "f_do_pct",
                 "f_nh4f", "f_no2f", "f_no3f", 
                 "f_no23f", "f_po4f", "f_chla_n")
 
-stn <- "gndblnut"
+stn <- "gndblwq"
 #stn <- "lksbawq2012"
 
 
@@ -291,7 +291,7 @@ qaqc_simplified <- qaqc_long %>%
 
 Really we'll want to do this by station, for a single parameter.  
 
-```{r}
+```{r, fig.width = 7, fig.height = 8}
 cols <- c("Good" = "gray90",
           "Bad" = "red3"
           )
@@ -301,6 +301,6 @@ ggplot(qaqc_simplified) +
   facet_wrap(~parameter, ncol = 1, scales = "free") +
   scale_fill_manual(values = cols) +
   labs(title = "Thresholds for monthly data",
-       subtitle = paste0("Bad means >= ", thresh, " of values within a month-year were rejected or missing"))
+       subtitle = paste0("Bad means that < ", thresh*100, "% of values within a month-year \nwere useable (not rejected or missing)"))
 ```
 
