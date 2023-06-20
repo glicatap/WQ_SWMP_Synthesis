@@ -1,0 +1,181 @@
+---
+title: ""
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 2
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE,
+                      fig.height = 5,
+                      fig.width = 7)
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(ggiraph)
+source(here::here("QAQC_flags", "functions.R"))
+```
+
+```{r}
+# define which flags to keep: currently just 0, 4, -4, 5
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>") 
+```
+
+# About this html file  
+
+-  Headings are WQ/NUT, and the parameters we're using are each a single tab under which type of data they are.  
+-  Code is present, but folded. If you want to unfold a portion of code, click on the `code` button on the right.  
+-  This file was made by using 2 rmarkdown files - one as a 'parent', and one called a 'child' that is called as many times as I need it to be - i.e., for each parameter. So the code chunks will mostly look the same because it's just the same ones being called over and over again.    
+
+
+
+# Days with data  
+
+-  I'm only working with 1 station as an example, but in the end the goal is to have multiple stations showing for the same parameter in the same tab.  
+-  Hover over bars on the plot to see the Year/Month and # days of {useable/bad} data points.  
+    -  a "useable" day was defined as a day where at least one data point was flagged okay, below detection, historical, or corrected.  
+    -  a "bad" day was a day where there were 0 data points in the above flags.  
+    -  I find the "bad" days easier to spot problems in, which is why I put it first.... but open to input.  
+
+# WQ {.tabset} 
+
+```{r}
+# load wq data  
+```
+
+```{r}
+# while I'm developing
+library(SWMPr)
+dat <- import_local(here::here("data"), "gndblwq")
+st <- "gndblwq"
+```
+
+## Temp  
+
+```{r}
+parm <- "temp"
+# wonder if I can loop through parms and render, rather than doing the code chunk thing?
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+
+## SpCond  
+
+```{r}
+parm <- "spcond"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+
+## Sal  
+
+```{r}
+parm <- "sal"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+## DO pct  
+
+```{r}
+parm <- "do_pct"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+
+## DO mgl  
+
+
+```{r}
+parm <- "do_mgl"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+
+
+
+# NUT {.tabset}  
+
+I screwed this up because I treated it the same way as WQ data. Only grab samples are included; not diel. So we never expect lots of data points in a given day....  
+
+```{r}
+rm(dat)
+dat <- import_local(here::here("data"), "gndblnut",
+                    collMethd = 1)
+st <- "gndblnut"
+```
+
+
+## Chl *a*  
+
+
+```{r}
+parm <- "chla_n"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+## PO4  
+
+```{r}
+parm <- "po4f"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+## NH4  
+
+```{r}
+parm <- "nh4f"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+## NO23  
+
+```{r}
+parm <- "no23f"
+```
+
+```{r, child = "counting_data_child.Rmd"}
+
+```
+
+## NO3  
+
+excluding for now because GND doesn't determine this separately  
+
+## NO2  
+
+excluding for now because GND doesn't determine this separately  
+
+
