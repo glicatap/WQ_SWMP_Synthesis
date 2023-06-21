@@ -15,7 +15,7 @@ stats <- unique(stringr::str_sub(data_files, end = -9))
 
 
 # setup parallel backend
-cl<-makeCluster(6)
+cl<-makeCluster(6)  
 registerDoParallel(cl)
 strt<-Sys.time()
 
@@ -55,5 +55,6 @@ Sys.time() - strt
 # 4 GND WQ stations took 1.14 mins sequentially
 # and 22 seconds using 6 cores
 # all 70 gulf stations took 2.3 mins using 6 cores
+# and 1.8 mins using 10 cores
 
 stopCluster(cl)
