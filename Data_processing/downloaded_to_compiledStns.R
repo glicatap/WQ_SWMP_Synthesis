@@ -3,8 +3,10 @@ library(foreach)
 library(SWMPr)
 
 path <- here::here("Data_processing", "downloaded")
-stats <- c("gndblwq", "gndbhwq", "gndbcwq", "gndpcwq")
-# really will just go through all stations
+
+# get all the stations with data files (files ending in yyyy.csv)
+data_files <- grep("\\d{4}.csv", dir(path), value = TRUE)
+stats <- unique(stringr::str_sub(data_files, end = -9))
 
 
 # processing code from Marcus
@@ -52,5 +54,6 @@ foreach(stat = stats, .packages = 'SWMPr') %dopar% {
 Sys.time() - strt
 # 4 GND WQ stations took 1.14 mins sequentially
 # and 22 seconds using 6 cores
+# all 70 gulf stations took 2.3 mins using 6 cores
 
 stopCluster(cl)
