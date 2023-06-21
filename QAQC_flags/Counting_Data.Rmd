@@ -27,7 +27,10 @@ source(here::here("QAQC_flags", "functions.R"))
 
 ```{r}
 # define which flags to keep: currently just 0, 4, -4, 5
-flags_keep <- c("<0>", "<4>", "<-4>", "<5>") 
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>")
+
+# path to data; change this when files get moved to a better location
+path <- here::here("Data_processing", "compiled_by_stn")
 ```
 
 # About this html file  
@@ -49,21 +52,58 @@ flags_keep <- c("<0>", "<4>", "<-4>", "<5>")
 # WQ {.tabset} 
 
 ```{r}
-# load wq data  
+# go through each of the WQ+NUT stations
+# that meet certain criteria:
+# currently active, with start date in or before 2011
+# both wq and nut at same station
+# for now pulling data from Data_processing subfolder but 
+# eventually it will live in the main 'data' folder
+
+mstns <- readr::read_csv("sampling_stations.csv") %>%
+  janitor::clean_names() %>%   #read.csv threw an error for some reason
+  tidyr::separate(active_dates, into = c("start_date", "first_ end_date"),
+                  sep = "-",
+                  fill = "right",
+                  extra = "drop") %>%  # only want the first date if there are multiples
+  filter(lubridate::decimal_date(lubridate::my(start_date)) <= 2011.0,
+         status == "Active")
+
+# match up wq/nut intersection for stations that meet time length criteria
+stns_wq <- str_sub(grep("wq$", mstns$station_code, value = TRUE),
+                   end = -3)
+stns_nut <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
+                   end = -4)
+
+
+stns_wq_nut <- intersect(stns_wq, stns_nut)
+  
+rm(mstns, stns_nut, stns_wq)
 ```
 
+
+Loop through each station to produce graphs (and stats if needed)  
+
 ```{r}
-# while I'm developing
-library(SWMPr)
-dat <- import_local(here::here("data"), "gndblwq")
-st <- "gndblwq"
+# check .RData files, only loop over stations that we have data for
+fls <- dir(path, pattern = ".RData$")
+
+toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
+
+
+for(st in toUse){
+  cat(st)
+  # this sort of works, but the named data frame is also being loaded into the environment, which I don't want
+  assign("wq", get(load(paste0(path, "/", st, "wq.RData"))))
+  assign("nut", get(load(paste0(path, "/", st, "nut.RData"))))
+}
 ```
+
+
 
 ## Temp  
 
 ```{r}
 parm <- "temp"
-# wonder if I can loop through parms and render, rather than doing the code chunk thing?
 ```
 
 ```{r, child = "counting_data_child.Rmd"}
