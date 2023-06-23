@@ -25,31 +25,49 @@ library(ggiraph)
 source(here::here("QAQC_flags", "functions.R"))
 ```
 
-```{r}
-# define which flags to keep: currently just 0, 4, -4, 5
-flags_keep <- c("<0>", "<4>", "<-4>", "<5>")
-
-# path to data; change this when files get moved to a better location
-path <- here::here("Data_processing", "compiled_by_stn")
-```
-
 # About this html file  
 
--  Headings are WQ/NUT, and the parameters we're using are each a single tab under which type of data they are.  
 -  Code is present, but folded. If you want to unfold a portion of code, click on the `code` button on the right.  
 -  This file was made by using 2 rmarkdown files - one as a 'parent', and one called a 'child' that is called as many times as I need it to be - i.e., for each parameter. So the code chunks will mostly look the same because it's just the same ones being called over and over again.    
 
 
-
 # Days with data  
 
--  I'm only working with 1 station as an example, but in the end the goal is to have multiple stations showing for the same parameter in the same tab.  
 -  Hover over bars on the plot to see the Year/Month and # days of {useable/bad} data points.  
     -  a "useable" day was defined as a day where at least one data point was flagged okay, below detection, historical, or corrected.  
     -  a "bad" day was a day where there were 0 data points in the above flags.  
     -  I find the "bad" days easier to spot problems in, which is why I put it first.... but open to input.  
 
-# WQ {.tabset} 
+
+
+### Parameter choices  
+
+```{r}
+# path to data; change this when files get moved to a better location
+path <- here::here("Data_processing", "compiled_by_stn")
+```
+
+```{r}
+# define which flags to keep: currently just 0, 4, -4, 5
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>")
+
+# define which wq parameters to investigate
+wq_parms <- c("temp", "spcond", "sal",
+             "do_pct", "do_mgl")
+wq_keep <- c(wq_parms, paste0("f_", wq_parms))
+names(wq_parms) <- paste0("val_", wq_parms)  # for easier pivoting later
+
+
+# define which nut parameters to investigate
+nut_parms <- c("chla_n", "po4f", 
+              "nh4f", "no23f", 
+              "no2f", "no3f")
+nut_keep <- c(nut_parms, paste0("f_", nut_parms))
+names(nut_parms) <- paste0("val_", nut_parms)  # for easier pivoting later
+
+```
+
+### Available Stations  
 
 ```{r}
 # go through each of the WQ+NUT stations
@@ -59,7 +77,7 @@ path <- here::here("Data_processing", "compiled_by_stn")
 # for now pulling data from Data_processing subfolder but 
 # eventually it will live in the main 'data' folder
 
-mstns <- readr::read_csv("sampling_stations.csv") %>%
+mstns <- readr::read_csv(here::here("sampling_stations.csv")) %>%
   janitor::clean_names() %>%   #read.csv threw an error for some reason
   tidyr::separate(active_dates, into = c("start_date", "first_ end_date"),
                   sep = "-",
@@ -76,10 +94,12 @@ stns_nut <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
 
 
 stns_wq_nut <- intersect(stns_wq, stns_nut)
-  
+
+# cleanup  
 rm(mstns, stns_nut, stns_wq)
 ```
 
+# Graphs by station  
 
 Loop through each station to produce graphs (and stats if needed)  
 
@@ -89,133 +109,12 @@ fls <- dir(path, pattern = ".RData$")
 
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
 
+toUse <- toUse[1:5]
+
 
 for(st in toUse){
-  cat(st)
-  # this sort of works, but the named data frame is also being loaded into the environment, which I don't want
-  assign("wq", get(load(paste0(path, "/", st, "wq.RData"))))
-  assign("nut", get(load(paste0(path, "/", st, "nut.RData"))))
+
+  source(here::here("QAQC_flags", "counting_forloop_innards.R"))
+  
 }
 ```
-
-
-
-## Temp  
-
-```{r}
-parm <- "temp"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-
-## SpCond  
-
-```{r}
-parm <- "spcond"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-
-## Sal  
-
-```{r}
-parm <- "sal"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-## DO pct  
-
-```{r}
-parm <- "do_pct"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-
-## DO mgl  
-
-
-```{r}
-parm <- "do_mgl"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-
-
-
-# NUT {.tabset}  
-
-I screwed this up because I treated it the same way as WQ data. Only grab samples are included; not diel. So we never expect lots of data points in a given day....  
-
-```{r}
-rm(dat)
-dat <- import_local(here::here("data"), "gndblnut",
-                    collMethd = 1)
-st <- "gndblnut"
-```
-
-
-## Chl *a*  
-
-
-```{r}
-parm <- "chla_n"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-## PO4  
-
-```{r}
-parm <- "po4f"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-## NH4  
-
-```{r}
-parm <- "nh4f"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-## NO23  
-
-```{r}
-parm <- "no23f"
-```
-
-```{r, child = "counting_data_child.Rmd"}
-
-```
-
-## NO3  
-
-excluding for now because GND doesn't determine this separately  
-
-## NO2  
-
-excluding for now because GND doesn't determine this separately  
-
-
