@@ -31,16 +31,25 @@ foreach(stat = stats, .packages = 'SWMPr') %dopar% {
   tmp <- import_local(path, stat,
                       collMethd = 1,
                       keep_qaqcstatus = TRUE)
-  
+
+  # save attributes to reattach after subsetting  
+  attrs <- attributes(tmp)
+
   # remove empty columns
   # find them, modifying some code from janitor::remove_empty(): 
   mask_keep <- colSums(!is.na(tmp)) > 0
   # also find f_ cols for those parameters, then keep only ones that are in the data frame
   # (some f_ cols are empty so 'to_boot' ends up with f_f_param - get rid of those)
   to_boot <- c(names(tmp)[!mask_keep], paste0("f_", names(tmp)[!mask_keep]))
-  to_boot <- to_boot[which(to_boot %in% names(tmp))]
-  # and only keep the non-to_bot cols
-  tmp <- tmp[!(names(tmp) %in% to_boot)]
+  boot <- to_boot[which(to_boot %in% names(tmp))]
+
+  # and only keep the non-to_boot cols
+  tmp <- tmp[!(names(tmp) %in% boot)]
+  
+  # reattach SWMPr attributes. Some names and params are gone now so remove them.
+  attrs$names <- names(tmp)
+  attrs$parameters <- attrs$parameters[which(attrs$parameters %in% names(tmp))]
+  attributes(tmp) <- attrs
 
   # assign tmp to object, save, clear memory
   assign(stat, tmp)
