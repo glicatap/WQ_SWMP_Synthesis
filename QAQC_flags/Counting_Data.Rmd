@@ -21,6 +21,7 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
+library(patchwork)
 library(ggiraph)
 source(here::here("QAQC_flags", "functions.R"))
 ```
@@ -144,8 +145,8 @@ fls <- dir(path, pattern = ".RData$")
 
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
 
-# subset because gndbhwq is throwing errors??
-# toUse <- toUse[1:5]
+
+toUse <- toUse[1:5]
 ```
 
 ```{r, include = FALSE}

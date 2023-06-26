@@ -73,7 +73,7 @@ monts <- dails %>%
 
 # plot
 # number of bad days by month
-p <- ggplot(monts, aes(x = YearMonth, y = badDays,
+p1 <- ggplot(monts, aes(x = YearMonth, y = badDays,
                        fill = as.factor(Year),
                        tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
   geom_col_interactive() +
@@ -83,14 +83,80 @@ p <- ggplot(monts, aes(x = YearMonth, y = badDays,
        subtitle = "Days in month with no useable data points") +
   theme(legend.position = "none")
 
-x1 <- ggiraph::girafe(ggobj = p)
-x1 %>% 
-  htmltools::tagList() %>% 
-  print()
+# ggiraph::girafe(ggobj = p) %>% 
+#   htmltools::tagList() %>% 
+#   print()
+
+
+p2 <- ggplot(monts, aes(x = YearMonth, y = badDays,
+                       fill = param,
+                       color = param,
+                       group = param,
+                       tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
+  geom_point_interactive() +
+  geom_line_interactive(na.rm = TRUE) +
+  theme_bw() +
+  labs(title = paste(stnwq),
+       subtitle = "Days in month with no useable data points") 
+
+# ggiraph::girafe(ggobj = p) %>% 
+#   htmltools::tagList() %>% 
+#   print()
+
+
+p3 <- ggplot(monts, aes(x = YearMonth, y = badDays,
+                       fill = param,
+                       color = param,
+                       group = param,
+                       tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
+  geom_area_interactive(alpha = 0.3,
+                        position = "identity") +
+  theme_bw() +
+  labs(title = paste(stnwq),
+       subtitle = "Days in month with no useable data points") 
+
+# ggiraph::girafe(ggobj = p) %>% 
+#   htmltools::tagList() %>% 
+#   print()
 
 
 # number of good days by month
-p <- ggplot(monts, aes(x = YearMonth, y = useableDays,
+p4 <- ggplot(monts, aes(x = YearMonth, y = useableDays,
+                       fill = param,
+                       color = param,
+                       group = param,
+                       tooltip = paste0(YearMonthText, ":\n n = ", useableDays))) +
+  geom_point_interactive() +
+  geom_line_interactive(na.rm = TRUE) +
+  theme_bw() +
+  labs(title = paste(stnwq),
+       subtitle = "Days in month with >= 1 useable data point")
+
+
+# ggiraph::girafe(ggobj = p) %>% 
+#   htmltools::tagList() %>% 
+#   print()
+
+
+
+p5 <- ggplot(monts, aes(x = YearMonth, y = useableDays,
+                       fill = param,
+                       color = param,
+                       group = param,
+                       tooltip = paste0(YearMonthText, ":\n n = ", useableDays))) +
+  geom_area_interactive(alpha = 0.3,
+                        position = "identity") +
+  theme_bw() +
+  labs(title = paste(stnwq),
+       subtitle = "Days in month with >= 1 useable data point")
+
+
+# ggiraph::girafe(ggobj = p) %>% 
+#   htmltools::tagList() %>% 
+#   print()
+
+
+p6 <- ggplot(monts, aes(x = YearMonth, y = useableDays,
                        fill = as.factor(Year),
                        tooltip = paste0(YearMonthText, ":\n n = ", useableDays))) +
   geom_col_interactive() +
@@ -101,8 +167,29 @@ p <- ggplot(monts, aes(x = YearMonth, y = useableDays,
        fill = "Year") +
   theme(legend.position = "none")
 
-ggiraph::girafe(ggobj = p) %>% 
-  htmltools::tagList() %>% 
+# ggiraph::girafe(ggobj = p) %>%
+#   htmltools::tagList() %>%
+#   print()
+
+q <- p1 + p6 +
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "faceted")
+ggiraph::girafe(ggobj = q) %>%
+  htmltools::tagList() %>%
   print()
 
-# print(htmltools::tagList(x1, x2))
+q1 <- p2 + p4 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "geom_point and line")
+ggiraph::girafe(ggobj = q1,
+                width_svg = 8, height_svg = 4) %>%
+  htmltools::tagList() %>%
+  print()
+
+q2 <- p3 + p5 +
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "geom_area")
+ggiraph::girafe(ggobj = q2,
+                width_svg = 8, height_svg = 4) %>%
+  htmltools::tagList() %>%
+  print()
