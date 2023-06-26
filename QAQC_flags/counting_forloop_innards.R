@@ -83,7 +83,10 @@ p <- ggplot(monts, aes(x = YearMonth, y = badDays,
        subtitle = "Days in month with no useable data points") +
   theme(legend.position = "none")
 
-ggiraph::girafe(ggobj = p)
+x1 <- ggiraph::girafe(ggobj = p)
+x1 %>% 
+  htmltools::tagList() %>% 
+  print()
 
 
 # number of good days by month
@@ -98,4 +101,8 @@ p <- ggplot(monts, aes(x = YearMonth, y = useableDays,
        fill = "Year") +
   theme(legend.position = "none")
 
-ggiraph::girafe(ggobj = p)
+ggiraph::girafe(ggobj = p) %>% 
+  htmltools::tagList() %>% 
+  print()
+
+# print(htmltools::tagList(x1, x2))

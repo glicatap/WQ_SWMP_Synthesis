@@ -28,19 +28,41 @@ source(here::here("QAQC_flags", "functions.R"))
 # About this html file  
 
 -  Code is present, but folded. If you want to unfold a portion of code, click on the `code` button on the right.  
--  This file was made by using 2 rmarkdown files - one as a 'parent', and one called a 'child' that is called as many times as I need it to be - i.e., for each parameter. So the code chunks will mostly look the same because it's just the same ones being called over and over again.    
+-  This file was made by using 2 files - This main one is RMarkdown, and for each station, a `.R` script is called to do all the same things (at the moment, just making graphs).      
 
 
-# Days with data  
+# About the graphs  
 
 -  Hover over bars on the plot to see the Year/Month and # days of {useable/bad} data points.  
     -  a "useable" day was defined as a day where at least one data point was flagged okay, below detection, historical, or corrected.  
     -  a "bad" day was a day where there were 0 data points in the above flags.  
     -  I find the "bad" days easier to spot problems in, which is why I put it first.... but open to input.  
+-  Bars are colored by year, just to provide some differentiation. Coloring by month got a little too chaotic.  
 
 
 
 ### Parameter choices  
+
+In this section we can define which flags and parameters to keep. Currently set to keep:  
+
+-  Flags:  
+    -  0 - accepted  
+    -  4 - historical  
+    -  -4 - below detection  
+    -  5 - corrected  
+-  WQ Parameters:  
+    -  Temp  
+    -  SpCond  
+    -  Sal  
+    -  DO %  
+    -  DO mg/L  
+-  NUT Parameters:  
+    -  Chl a (as `chla_n` - does this show up with other names from other reserves?)  
+    -  PO4_f (f = filtered)  
+    -  NH4_f  
+    -  NO23_f  
+    -  NO2_f  (some reserves do not analyze separately)  
+    -  NO3_f  (some reserves do not analyze separately)  
 
 ```{r}
 # path to data; change this when files get moved to a better location
@@ -68,6 +90,12 @@ names(nut_parms) <- paste0("val_", nut_parms)  # for easier pivoting later
 ```
 
 ### Available Stations  
+
+Here I'm keeping stations that:  
+
+-  have both WQ and NUT parameters associated with the same station name  
+-  are currently active  
+-  have a start date in or before 2011  
 
 ```{r}
 # go through each of the WQ+NUT stations
@@ -99,22 +127,42 @@ stns_wq_nut <- intersect(stns_wq, stns_nut)
 rm(mstns, stns_nut, stns_wq)
 ```
 
+**`r length(stns_wq_nut)` stations** throughout the reserve system meet these criteria:  *`r paste(stns_wq_nut, collapse = ", ")`*.  
+
+Only **5 stations**, from the Gulf of Mexico, are visualized here for iteration purposes.  
+
+
+
+
 # Graphs by station  
 
-Loop through each station to produce graphs (and stats if needed)  
+Loop through each station to produce graphs (can include stats if needed)  
 
-```{r}
+```{r, results = 'asis'}
 # check .RData files, only loop over stations that we have data for
 fls <- dir(path, pattern = ".RData$")
 
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
 
+# subset because gndbhwq is throwing errors??
 toUse <- toUse[1:5]
+```
+
+```{r, include = FALSE}
+# have to generate a girafe object before looping to make the loop work
+# this chunk will not appear in output, at all
+
+p <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
+  geom_point_interactive()
+ggiraph::girafe(ggobj = p)
+```
 
 
+```{r, results = 'asis', fig.width = 7, fig.height = 5}
 for(st in toUse){
 
   source(here::here("QAQC_flags", "counting_forloop_innards.R"))
-  
+
 }
 ```
+
