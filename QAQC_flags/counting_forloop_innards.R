@@ -70,15 +70,38 @@ monts <- dails %>%
   mutate(YearMonth = as.Date(paste(Year, Month, "01", sep = "-")),
          YearMonthText = str_sub(as.character(YearMonth), end = -4))
 
+monts$stn <- st
+# gearing up to facet by station and param
+ptest <- ggplot(monts, aes(x = YearMonth, y = badDays,
+                  fill = as.factor(Year),
+                  tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
+  geom_col_interactive() +
+  facet_grid(stn~param) +
+  theme_bw() +
+  scale_x_date(
+    NULL,
+    breaks = scales::breaks_width("3 years"), 
+    labels = scales::label_date("%m/%y")
+  ) + 
+  labs(# title = paste(stnwq),
+    subtitle = "Days in month with no useable data points") +
+  theme(legend.position = "none")
+
+
 
 # plot
-# number of bad days by month
+# number of bad days by month ----
 p1 <- ggplot(monts, aes(x = YearMonth, y = badDays,
                        fill = as.factor(Year),
                        tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
   geom_col_interactive() +
-  facet_wrap(~param, ncol = 2) +
+  facet_wrap(~param, ncol = 3) +
   theme_bw() +
+  scale_x_date(
+    NULL,
+    breaks = scales::breaks_width("3 years"), 
+    labels = scales::label_date("%m/%y")
+  ) + 
   labs(title = paste(stnwq),
        subtitle = "Days in month with no useable data points") +
   theme(legend.position = "none")
@@ -120,7 +143,7 @@ p3 <- ggplot(monts, aes(x = YearMonth, y = badDays,
 #   print()
 
 
-# number of good days by month
+# number of good days by month ----
 p4 <- ggplot(monts, aes(x = YearMonth, y = useableDays,
                        fill = param,
                        color = param,
@@ -170,6 +193,13 @@ p6 <- ggplot(monts, aes(x = YearMonth, y = useableDays,
 # ggiraph::girafe(ggobj = p) %>%
 #   htmltools::tagList() %>%
 #   print()
+
+
+ggiraph::girafe(ggobj = ptest,
+                width_svg = 6, height_svg = 3) %>%
+  htmltools::tagList() %>%
+  print()
+
 
 q <- p1 + p6 +
   plot_layout(guides = 'collect') +
