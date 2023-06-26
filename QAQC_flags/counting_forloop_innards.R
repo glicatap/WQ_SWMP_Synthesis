@@ -11,7 +11,7 @@ wq <- get(load(paste0(path, "/", stnwq, ".RData"))) %>%
          f_domgl = f_do_mgl) 
 
 nut <- get(load(paste0(path, "/", stnnut, ".RData"))) %>% 
-  select(datetimestamp, all_of(nut_keep)) %>% 
+  select(datetimestamp, any_of(nut_keep)) %>% 
   rename(any_of(nut_parms)) %>% 
   rename(val_chlaN = val_chla_n,
          f_chlaN = f_chla_n) 

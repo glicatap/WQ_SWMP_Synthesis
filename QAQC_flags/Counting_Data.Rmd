@@ -145,7 +145,7 @@ fls <- dir(path, pattern = ".RData$")
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
 
 # subset because gndbhwq is throwing errors??
-toUse <- toUse[1:5]
+# toUse <- toUse[1:5]
 ```
 
 ```{r, include = FALSE}
@@ -161,7 +161,7 @@ ggiraph::girafe(ggobj = p)
 ```{r, results = 'asis', fig.width = 7, fig.height = 5}
 for(st in toUse){
 
-  source(here::here("QAQC_flags", "counting_forloop_innards.R"))
+  try(source(here::here("QAQC_flags", "counting_forloop_innards.R")))
 
 }
 ```
