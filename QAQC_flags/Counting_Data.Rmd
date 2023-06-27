@@ -1,5 +1,5 @@
 ---
-title: "Simple plots of qa/qc flagging"
+title: "`r paste('Simple plots of qa/qc flagging:', params$dataType)`"
 output: 
   html_document:
     code_folding: hide
@@ -7,6 +7,8 @@ output:
     toc_float: true
     toc_depth: 2
 date: "`r Sys.Date()`"
+params:
+  dataType: "nut"
 ---
 
 ```{r setup, include=FALSE}
@@ -43,7 +45,7 @@ source(here::here("QAQC_flags", "functions.R"))
 
 
 
-### Parameter choices  
+# Parameter choices  
 
 In this section we can define which flags and parameters to keep. Currently set to keep:  
 
@@ -67,12 +69,12 @@ In this section we can define which flags and parameters to keep. Currently set 
     -  NO2_f  (some reserves do not analyze separately)  
     -  NO3_f  (some reserves do not analyze separately)  
 
-```{r}
+```{r, cache = TRUE}
 # path to data; change this when files get moved to a better location
 path <- here::here("Data_processing", "compiled_by_stn")
 ```
 
-```{r}
+```{r, cache = TRUE}
 # define which flags to keep: currently just 0, 4, -4, 5, -5
 flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>")
 
@@ -92,7 +94,7 @@ names(nut_parms) <- paste0("val_", nut_parms)  # for easier pivoting later
 
 ```
 
-### Available Stations  
+# Available Stations  
 
 Here I'm keeping stations that:  
 
@@ -100,7 +102,7 @@ Here I'm keeping stations that:
 -  are currently active  
 -  have a start date in or before 2013 (at least 10 years)  
 
-```{r}
+```{r, cache = TRUE}
 # for now pulling data from Data_processing subfolder but 
 # eventually it will live in the main 'data' folder
 
@@ -127,23 +129,19 @@ rm(mstns, stns_nut, stns_wq)
 
 **`r length(stns_wq_nut)` stations** throughout the reserve system meet these criteria:  *`r paste(stns_wq_nut, collapse = ", ")`*.  
 
-Only stations from the Gulf of Mexico are visualized here for iteration purposes.  
-
-
-
 # Graphs   
 
-Loop through each station to produce graphs (can include stats if needed)  
-
-```{r, results = 'asis'}
+```{r}
 # check .RData files, only loop over stations that we have data for
 fls <- dir(path, pattern = ".RData$")
 
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
-
-
 ```
 
+```{r}
+# subset during development
+toUse <- toUse[1:30]
+```
 
 ```{r, include = FALSE}
 # have to generate a girafe object before looping to make the loop work
@@ -155,7 +153,14 @@ ggiraph::girafe(ggobj = p)
 ```
 
 
-```{r, eval = TRUE, echo = FALSE, results = 'asis'}
+```{r}
+# base figure width and height on the type of data
+figwidth <- ifelse(params$dataType == "nut", 7, 7)
+figheight <- ifelse(params$dataType == "nut", 5, 6)
+```
+
+
+```{r, eval = TRUE, echo = TRUE, results = 'asis', fig.width = figwidth, fig.height = figheight}
 # turn this on to work with groups of ~ 10 stations  
 
 x <- toUse
@@ -164,7 +169,7 @@ split_stns <- split(x, cut(seq_along(x), breaks = n, labels = FALSE))
 
 for(i in seq_along(split_stns)){
   stn_vec <- split_stns[[i]]
-  cat(paste(i, ": \n", paste(stn_vec, collapse = " "), "\n\n"))
+  cat(paste("\n\nGroup", i, "of", length(split_stns), ": \n", paste(stn_vec, collapse = ", "), "\n\n"))
   try(source(here::here("QAQC_flags", "counting_forloop_innards_byGroup.R")))
 }
 ```
