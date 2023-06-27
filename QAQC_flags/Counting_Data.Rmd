@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Simple plots of qa/qc flagging"
 output: 
   html_document:
     code_folding: hide
@@ -30,6 +30,8 @@ source(here::here("QAQC_flags", "functions.R"))
 
 -  Code is present, but folded. If you want to unfold a portion of code, click on the `code` button on the right.  
 -  This file was made by using 2 files - This main one is RMarkdown, and for each station, a `.R` script is called to do all the same things (at the moment, just making graphs).      
+-  Updated 6/27/23; rather than going station-by-station, will go through groups of 10 stations at a time so graphs can be facted by param x station.  
+-  Add'l update 6/27/23: new AQS download of all SWMP WQ and NUT stations, from 2002 - 2022.  
 
 
 # About the graphs  
@@ -37,7 +39,6 @@ source(here::here("QAQC_flags", "functions.R"))
 -  Hover over bars on the plot to see the Year/Month and # days of {useable/bad} data points.  
     -  a "useable" day was defined as a day where at least one data point was flagged okay, below detection, historical, or corrected.  
     -  a "bad" day was a day where there were 0 data points in the above flags.  
-    -  I find the "bad" days easier to spot problems in, which is why I put it first.... but open to input.  
 -  Bars are colored by year, just to provide some differentiation. Coloring by month got a little too chaotic.  
 
 
@@ -50,6 +51,7 @@ In this section we can define which flags and parameters to keep. Currently set 
     -  0 - accepted  
     -  4 - historical  
     -  -4 - below detection  
+    -  -5 - above detection
     -  5 - corrected  
 -  WQ Parameters:  
     -  Temp  
@@ -71,8 +73,8 @@ path <- here::here("Data_processing", "compiled_by_stn")
 ```
 
 ```{r}
-# define which flags to keep: currently just 0, 4, -4, 5
-flags_keep <- c("<0>", "<4>", "<-4>", "<5>")
+# define which flags to keep: currently just 0, 4, -4, 5, -5
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>")
 
 # define which wq parameters to investigate
 wq_parms <- c("temp", "spcond", "sal",
@@ -106,8 +108,8 @@ Here I'm keeping stations that:
 # for now pulling data from Data_processing subfolder but 
 # eventually it will live in the main 'data' folder
 
-mstns <- readr::read_csv(here::here("sampling_stations.csv")) %>%
-  janitor::clean_names() %>%   #read.csv threw an error for some reason
+mstns <- readr::read_csv(here::here("sampling_stations.csv")) %>%  #read.csv threw an error for some reason
+  janitor::clean_names() %>%   
   tidyr::separate(active_dates, into = c("start_date", "first_ end_date"),
                   sep = "-",
                   fill = "right",
@@ -115,13 +117,12 @@ mstns <- readr::read_csv(here::here("sampling_stations.csv")) %>%
   filter(lubridate::decimal_date(lubridate::my(start_date)) <= 2011.0,
          status == "Active")
 
+
 # match up wq/nut intersection for stations that meet time length criteria
 stns_wq <- str_sub(grep("wq$", mstns$station_code, value = TRUE),
                    end = -3)
 stns_nut <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
                    end = -4)
-
-
 stns_wq_nut <- intersect(stns_wq, stns_nut)
 
 # cleanup  
@@ -130,12 +131,11 @@ rm(mstns, stns_nut, stns_wq)
 
 **`r length(stns_wq_nut)` stations** throughout the reserve system meet these criteria:  *`r paste(stns_wq_nut, collapse = ", ")`*.  
 
-Only **5 stations**, from the Gulf of Mexico, are visualized here for iteration purposes.  
+Only stations from the Gulf of Mexico are visualized here for iteration purposes.  
 
 
 
-
-# Graphs by station  
+# Graphs   
 
 Loop through each station to produce graphs (can include stats if needed)  
 
@@ -146,8 +146,8 @@ fls <- dir(path, pattern = ".RData$")
 toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_nut, "nut.RData") %in% fls]
 
 
-toUse <- toUse[1:5]
 ```
+
 
 ```{r, include = FALSE}
 # have to generate a girafe object before looping to make the loop work
@@ -159,7 +159,25 @@ ggiraph::girafe(ggobj = p)
 ```
 
 
-```{r, results = 'asis', fig.width = 7, fig.height = 5}
+```{r, eval = TRUE, echo = FALSE, results = 'asis'}
+# turn this on to work with groups of ~ 10 stations  
+
+x <- toUse
+n <- length(toUse) %/% 10  # number of groups for them to mostly contain 10 stations
+split_stns <- split(x, cut(seq_along(x), breaks = n, labels = FALSE))
+
+for(i in seq_along(split_stns)){
+  stn_vec <- split_stns[[i]]
+  cat(paste(i, ": \n", paste(stn_vec, collapse = " "), "\n\n"))
+  try(source(here::here("QAQC_flags", "counting_forloop_innards_byGroup.R")))
+}
+```
+
+
+
+```{r, eval = FALSE, echo = FALSE, results = 'asis', fig.width = 7, fig.height = 5}
+# turn this chunk on to go station-by-station
+
 for(st in toUse){
 
   try(source(here::here("QAQC_flags", "counting_forloop_innards.R")))
