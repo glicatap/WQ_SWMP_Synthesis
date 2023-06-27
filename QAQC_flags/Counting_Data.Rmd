@@ -98,13 +98,9 @@ Here I'm keeping stations that:
 
 -  have both WQ and NUT parameters associated with the same station name  
 -  are currently active  
--  have a start date in or before 2011  
+-  have a start date in or before 2013 (at least 10 years)  
 
 ```{r}
-# go through each of the WQ+NUT stations
-# that meet certain criteria:
-# currently active, with start date in or before 2011
-# both wq and nut at same station
 # for now pulling data from Data_processing subfolder but 
 # eventually it will live in the main 'data' folder
 
@@ -114,7 +110,7 @@ mstns <- readr::read_csv(here::here("sampling_stations.csv")) %>%  #read.csv thr
                   sep = "-",
                   fill = "right",
                   extra = "drop") %>%  # only want the first date if there are multiples
-  filter(lubridate::decimal_date(lubridate::my(start_date)) <= 2011.0,
+  filter(lubridate::decimal_date(lubridate::my(start_date)) <= 2013.0,
          status == "Active")
 
 
