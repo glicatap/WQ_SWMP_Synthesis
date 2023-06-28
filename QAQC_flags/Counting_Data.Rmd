@@ -15,16 +15,13 @@ params:
 knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE,
                       warning = FALSE,
-                      error = TRUE,
-                      fig.height = 5,
-                      fig.width = 7)
+                      error = TRUE)
 
 library(dplyr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
-library(patchwork)
-library(ggiraph)
+# library(patchwork)
 library(plotly)
 source(here::here("QAQC_flags", "functions.R"))
 ```
@@ -141,31 +138,19 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-toUse <- toUse[1:30]
+# toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}
 # have to generate a girafe object before looping to make the loop work
 # this chunk will not appear in output, at all
-
-p <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
-  geom_point_interactive()
-ggiraph::girafe(ggobj = p)
-
 p2 <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
   geom_point()
 ggplotly(p2)
 ```
 
 
-```{r}
-# base figure width and height on the type of data
-figwidth <- ifelse(params$dataType == "nut", 7, 7)
-figheight <- ifelse(params$dataType == "nut", 7, 6)
-```
-
-
-```{r, eval = TRUE, echo = TRUE, results = 'asis', fig.width = figwidth, fig.height = figheight}
+```{r, eval = TRUE, echo = TRUE, results = 'asis'}
 # turn this on to work with groups of ~ 10 stations  
 
 x <- toUse

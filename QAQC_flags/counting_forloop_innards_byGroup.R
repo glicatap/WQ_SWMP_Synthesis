@@ -72,7 +72,8 @@ if(params$dataType == "wq"){
   
   
   
-  ggplotly(pwq, tooltip = "text") %>%  
+  ggplotly(pwq, tooltip = "text",
+           width = 625, height = 625) %>%  
     htmltools::tagList() %>%
     print()
   
@@ -159,7 +160,7 @@ if(params$dataType == "nut"){
     ) + 
     scale_y_continuous(breaks = c(0, 1)) +
     labs(subtitle = "Months with no useable NUT data points",
-         y = "vertical line if no sample\npassed qa/qc that month",
+         y = "vertical line: no sample passed qa/qc in month",
          x = "") +
     theme(legend.position = "none",
           axis.text.y = element_blank(),
@@ -167,11 +168,13 @@ if(params$dataType == "nut"){
           axis.title.y = element_text(size = rel(0.9)))
   
   
-  ggplotly(pnut, tooltip = "text") %>% 
+  ggplotly(pnut, tooltip = "text",
+           width = 650, height = 625) %>% 
     htmltools::tagList() %>%
     print()
   
-  ggplotly(pnut2, tooltip = "text") %>%  
+  ggplotly(pnut2, tooltip = "text",
+           width = 650, height = 625) %>%  
     htmltools::tagList() %>%
     print()
   

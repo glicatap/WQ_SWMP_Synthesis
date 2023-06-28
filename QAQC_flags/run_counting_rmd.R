@@ -3,7 +3,7 @@ library(doParallel)
 
 dataTypes <- c("nut", "wq")
 
-cl<-makeCluster(9)  
+cl<-makeCluster(6)  
 registerDoParallel(cl)
 strt<-Sys.time()
 
