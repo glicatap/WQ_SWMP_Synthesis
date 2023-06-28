@@ -30,12 +30,12 @@ if(params$dataType == "wq"){
                                   grepl(flagCodes_keepvec, f) ~ "keep",
                                   .default = "discard"))
   
-  cat("QAQC flags/codes defined as 'useable' were:\n", 
-      paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "keep")])), collapse = "  |  "),
-      "\n\n")
-  cat("QAQC flags/codes defined as 'bad' were:\n", 
-      paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "discard")])), collapse = "  |  "),
-      "\n\n")
+  # cat("QAQC flags/codes defined as 'useable' were:\n", 
+  #     paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "keep")])), collapse = "  |  "),
+  #     "\n\n")
+  # cat("QAQC flags/codes defined as 'bad' were:\n", 
+  #     paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "discard")])), collapse = "  |  "),
+  #     "\n\n")
   
   # summarize flags
   dails <- wq_long %>% 
@@ -125,13 +125,20 @@ if(params$dataType == "nut"){
            keepStatus = case_when(flag %in% flags_keep ~ "keep",
                                   grepl(flagCodes_keepvec, f) ~ "keep",
                                   .default = "discard"))
-  
-  cat("QAQC flags/codes defined as 'useable' were:\n", 
-      paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "keep")])), collapse = "  |  "),
-      "\n\n")
-  cat("QAQC flags/codes defined as 'bad'  were:\n", 
-      paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "discard")])), collapse = "  |  "),
-      "\n\n")
+
+  # below not working:
+    # htmltools::tags$details(
+    #   htmltools::tags$summary("Click for information on flags/codes for this group"),
+    #   "Just kidding! Trying to work something in. Glad your clicking finger got some exercise."
+    # )
+
+
+  # cat("QAQC flags/codes defined as useable were:", "\n", 
+  #         paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "keep")])), collapse = "  |  "),
+  #         "\n\n\n\n", "QAQC flags/codes defined as bad were:", "\n", 
+  #         paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "discard")])), collapse = "  |  "),
+  #         "\n\n")  
+
   
   # summarize flags
   monts_nut <- nut_long %>% 

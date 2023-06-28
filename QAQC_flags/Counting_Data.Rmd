@@ -144,7 +144,7 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-# toUse <- toUse[1:30]
+toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}
