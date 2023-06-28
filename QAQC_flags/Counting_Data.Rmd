@@ -36,10 +36,11 @@ source(here::here("QAQC_flags", "functions.R"))
 
 # About the graphs  
 
--  Hover over bars on the plot to see the Year/Month and # days of {useable/bad} data points.  
-    -  a "useable" day was defined as a day where at least one data point was flagged okay, below detection, historical, or corrected.  
+-  Hover over bars on the plot to see the Year/Month, # days of {useable/bad} data points, and for NUT data, flags and codes associated with 'bad' data.  
+    -  a "useable" day was defined as a day where at least one data point was flagged okay, below/above detection, historical, or corrected.  
     -  a "bad" day was a day where there were 0 data points in the above flags.  
 -  Bars are colored by year, just to provide some differentiation. Coloring by month got a little too chaotic.  
+-  Plots are interactive in other ways too - try zooming in on a certain time frame along the x-axis, for example, if you want more detail.  
 
 
 
@@ -53,6 +54,8 @@ In this section we can define which flags and parameters to keep. Currently set 
     -  -4 - below detection  
     -  -5 - above detection
     -  5 - corrected  
+    -  <1> [GIT] - data recovered from telemetry  
+    -  2 and 3; per readme in data download: "2 and 3 Flags were used in 2007 and 2008 to designate data that were outside 2 and 3 standard deviations from the historical seasonal mean. This automated check has since been discontinued and the 2 and 3 flags applied to the data during this time are being removed from the dataset as the data are authenticated."  
 -  WQ Parameters:  
     -  Temp  
     -  SpCond  
@@ -73,8 +76,11 @@ path <- here::here("Data_processing", "compiled_by_stn")
 ```
 
 ```{r, cache = TRUE}
-# define which flags to keep: currently just 0, 4, -4, 5, -5
-flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>")
+# define which flags to keep
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>", "<2>", "<3>")
+flagCodes_keep <- c("<1> \\[GIT\\]")  # Use \\ for parentheses and square brackets.   
+
+flagCodes_keepvec <- paste(flagCodes_keep, collapse = "|")
 
 # define which wq parameters to investigate
 wq_parms <- c("temp", "spcond", "sal",
@@ -159,7 +165,11 @@ split_stns <- split(x, cut(seq_along(x), breaks = n, labels = FALSE))
 
 for(i in seq_along(split_stns)){
   stn_vec <- split_stns[[i]]
+  stnwq <- paste0(stn_vec, "wq")
+  stnnut <- paste0(stn_vec, "nut")
+  
   cat(paste("\n\nGroup", i, "of", length(split_stns), ": \n", paste(stn_vec, collapse = ", "), "\n\n"))
+  
   try(source(here::here("QAQC_flags", "counting_forloop_innards_byGroup.R")))
 }
 ```

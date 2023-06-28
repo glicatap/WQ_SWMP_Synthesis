@@ -1,9 +1,4 @@
-# should have stn_vec as the acting thing to iterate on
-stnwq <- paste0(stn_vec, "wq")
-stnnut <- paste0(stn_vec, "nut")
-
-
-# Actions depend on params$dataType ----
+# Actions depend on params$dataType
 
 # wq data ----
 if(params$dataType == "wq"){
@@ -32,7 +27,15 @@ if(params$dataType == "wq"){
            Day = lubridate::mday(datetimestamp),
            flag = extract_flag(f),
            keepStatus = case_when(flag %in% flags_keep ~ "keep",
+                                  grepl(flagCodes_keepvec, f) ~ "keep",
                                   .default = "discard"))
+  
+  cat("QAQC flags/codes defined as 'useable' were:\n", 
+      paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "keep")])), collapse = "  |  "),
+      "\n\n")
+  cat("QAQC flags/codes defined as 'bad' were:\n", 
+      paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "discard")])), collapse = "  |  "),
+      "\n\n")
   
   # summarize flags
   dails <- wq_long %>% 
@@ -109,7 +112,15 @@ if(params$dataType == "nut"){
            Day = lubridate::mday(datetimestamp),
            flag = extract_flag(f),
            keepStatus = case_when(flag %in% flags_keep ~ "keep",
+                                  grepl(flagCodes_keepvec, f) ~ "keep",
                                   .default = "discard"))
+  
+  cat("QAQC flags/codes defined as 'useable' were:\n", 
+      paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "keep")])), collapse = "  |  "),
+      "\n\n")
+  cat("QAQC flags/codes defined as 'bad'  were:\n", 
+      paste(sort(unique(nut_long$f[which(nut_long$keepStatus == "discard")])), collapse = "  |  "),
+      "\n\n")
   
   # summarize flags
   monts_nut <- nut_long %>% 
