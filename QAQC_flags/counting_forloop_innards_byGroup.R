@@ -59,11 +59,12 @@ if(params$dataType == "wq"){
       breaks = scales::breaks_width("5 years"), 
       labels = scales::label_date("'%y")
     ) + 
+    scale_y_continuous(breaks = scales::breaks_width(15)) +
     labs(# title = paste(stnwq),
       subtitle = "Days in month with no useable data points",
       y = "# days with no readings passing qa/qc") +
     theme(legend.position = "none",
-          # axis.text.x = element_text(size = rel(0.8)),
+          axis.text.x = element_text(size = rel(0.9)),
           axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9)))
   
@@ -136,8 +137,8 @@ if(params$dataType == "nut"){
       subtitle = "Useable NUT data points per month",
       y = "number samples passing qa/qc") +
     theme(legend.position = "none",
-          # axis.text.x = element_text(size = rel(0.8)),
-          # axis.text.y = element_text(size = rel(0.8)),
+          axis.text.x = element_text(size = rel(0.9)),
+          axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9))) 
           
   
@@ -157,8 +158,8 @@ if(params$dataType == "nut"){
       subtitle = "Months with no useable NUT data points",
       y = "vertical line if no sample\npassed qa/qc that month") +
     theme(legend.position = "none",
-          # axis.text.x = element_text(size = rel(0.8)),
-          # axis.text.y = element_text(size = rel(0.8)),
+          axis.text.y = element_blank(),
+          axis.text.x = element_text(size = rel(0.9)),
           axis.title.y = element_text(size = rel(0.9)))
   
   
