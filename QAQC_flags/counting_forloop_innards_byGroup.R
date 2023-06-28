@@ -50,8 +50,8 @@ if(params$dataType == "wq"){
   # plot
   pwq <- ggplot(monts, aes(x = YearMonth, y = badDays,
                            fill = as.factor(Year),
-                           tooltip = paste0(YearMonthText, ":\n n = ", badDays))) +
-    geom_col_interactive() +
+                           text = paste0(YearMonthText, ":\n n = ", badDays))) +
+    geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
     scale_x_date(
@@ -62,15 +62,17 @@ if(params$dataType == "wq"){
     scale_y_continuous(breaks = scales::breaks_width(15)) +
     labs(# title = paste(stnwq),
       subtitle = "Days in month with no useable data points",
-      y = "# days with no readings passing qa/qc") +
+      y = "# days with no readings passing qa/qc",
+      x = "") +
     theme(legend.position = "none",
           axis.text.x = element_text(size = rel(0.9)),
           axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9)))
   
   
-  ggiraph::girafe(ggobj = pwq) %>%  
-                  # width_svg = 8, height_svg = 6) %>%
+  
+  
+  ggplotly(pwq, tooltip = "text") %>%  
     htmltools::tagList() %>%
     print()
   
@@ -111,7 +113,8 @@ if(params$dataType == "nut"){
   # summarize flags
   monts_nut <- nut_long %>% 
     group_by(stn, param, Year, Month) %>% 
-    summarize(useable = sum(keepStatus == "keep")) %>% 
+    summarize(useable = sum(keepStatus == "keep"),
+              flags = paste(unique(f), collapse = "; ")) %>% 
     mutate(YearMonth = as.Date(paste(Year, Month, "01", sep = "-")),
            YearMonthText = str_sub(as.character(YearMonth), end = -4),
            useableMonth = case_when(useable > 0 ~ 1,
@@ -123,8 +126,8 @@ if(params$dataType == "nut"){
   # plot
   pnut <- ggplot(monts_nut, aes(x = YearMonth, y = useable,
                                 fill = as.factor(Year),
-                                tooltip = paste0(YearMonthText, ":\n n = ", useable))) +
-    geom_col_interactive() +
+                                text = paste0(YearMonthText, ":\n n = ", useable))) +
+    geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
     scale_x_date(
@@ -133,19 +136,20 @@ if(params$dataType == "nut"){
       labels = scales::label_date("'%y")
     ) + 
     scale_y_continuous(breaks = scales::breaks_width(2)) +
-    labs(# title = paste(stnwq),
+    labs(
       subtitle = "Useable NUT data points per month",
-      y = "number samples passing qa/qc") +
+      y = "number samples passing qa/qc",
+      x = "") +
     theme(legend.position = "none",
           axis.text.x = element_text(size = rel(0.9)),
           axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9))) 
-          
+  
   
   pnut2 <- ggplot(monts_nut, aes(x = YearMonth, y = problemMonth,
                                  fill = as.factor(Year),
-                                 tooltip = paste0(YearMonthText))) +
-    geom_col_interactive() +
+                                 text = paste0(YearMonthText, "\nunique flags:\n", flags))) +
+    geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
     scale_x_date(
@@ -154,22 +158,20 @@ if(params$dataType == "nut"){
       labels = scales::label_date("'%y")
     ) + 
     scale_y_continuous(breaks = c(0, 1)) +
-    labs(# title = paste(stnwq),
-      subtitle = "Months with no useable NUT data points",
-      y = "vertical line if no sample\npassed qa/qc that month") +
+    labs(subtitle = "Months with no useable NUT data points",
+         y = "vertical line if no sample\npassed qa/qc that month",
+         x = "") +
     theme(legend.position = "none",
           axis.text.y = element_blank(),
           axis.text.x = element_text(size = rel(0.9)),
           axis.title.y = element_text(size = rel(0.9)))
   
   
-  ggiraph::girafe(ggobj = pnut) %>% 
-    # , width_svg = 8, height_svg = 6) %>%
+  ggplotly(pnut, tooltip = "text") %>% 
     htmltools::tagList() %>%
     print()
   
-  ggiraph::girafe(ggobj = pnut2) %>%  
-                  # width_svg = 8, height_svg = 6) %>%
+  ggplotly(pnut2, tooltip = "text") %>%  
     htmltools::tagList() %>%
     print()
   

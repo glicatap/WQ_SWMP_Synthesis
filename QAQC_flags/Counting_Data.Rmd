@@ -25,6 +25,7 @@ library(stringr)
 library(ggplot2)
 library(patchwork)
 library(ggiraph)
+library(plotly)
 source(here::here("QAQC_flags", "functions.R"))
 ```
 
@@ -140,7 +141,7 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-# toUse <- toUse[1:30]
+toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}
@@ -150,6 +151,10 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 p <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
   geom_point_interactive()
 ggiraph::girafe(ggobj = p)
+
+p2 <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
+  geom_point()
+ggplotly(p2)
 ```
 
 
