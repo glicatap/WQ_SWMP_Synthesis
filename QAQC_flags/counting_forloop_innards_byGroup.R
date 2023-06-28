@@ -49,11 +49,22 @@ if(params$dataType == "wq"){
     mutate(YearMonth = as.Date(paste(Year, Month, "01", sep = "-")),
            YearMonthText = str_sub(as.character(YearMonth), end = -4))
   
+  mont_flags <- wq_long %>% 
+    group_by(stn, param, Year, Month, keepStatus) %>% 
+    summarize(flags = paste(sort(unique(f)), collapse = "; ")) %>% 
+    pivot_wider(names_from = keepStatus,
+                values_from = flags)
+  
+  monts$badFlags <- mont_flags$discard
+  monts$goodFlags <- mont_flags$keep
+  
   
   # plot
   pwq <- ggplot(monts, aes(x = YearMonth, y = badDays,
                            fill = as.factor(Year),
-                           text = paste0(YearMonthText, ":\n n = ", badDays))) +
+                           text = paste0(YearMonthText, 
+                                         ":\n n = ", badDays,
+                                         "\n flags/codes present: ", badFlags))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
@@ -160,7 +171,8 @@ if(params$dataType == "nut"){
   
   pnut2 <- ggplot(monts_nut, aes(x = YearMonth, y = problemMonth,
                                  fill = as.factor(Year),
-                                 text = paste0(YearMonthText, "\nunique flags:\n", flags))) +
+                                 text = paste0(YearMonthText, 
+                                               "\nunique flags:\n", flags))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
