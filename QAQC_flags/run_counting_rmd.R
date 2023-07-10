@@ -2,6 +2,7 @@ library(foreach)
 library(doParallel)
 
 dataTypes <- c("nut", "wq")
+reportType <- "simple"  # alternate: full
 
 cl<-makeCluster(6)  
 registerDoParallel(cl)

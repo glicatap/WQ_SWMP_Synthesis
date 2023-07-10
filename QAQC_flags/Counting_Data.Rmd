@@ -9,6 +9,7 @@ output:
 date: "`r Sys.Date()`"
 params:
   dataType: "nut"
+  reportType: "simple"
 ---
 
 ```{r setup, include=FALSE}
@@ -144,7 +145,7 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-toUse <- toUse[1:30]
+# toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}
@@ -169,8 +170,15 @@ for(i in seq_along(split_stns)){
   stnnut <- paste0(stn_vec, "nut")
   
   cat(paste("\n\nGroup", i, "of", length(split_stns), ": \n", paste(stn_vec, collapse = ", "), "\n\n"))
+ 
+  if(params$reportType == "full"){
+    try(source(here::here("QAQC_flags", "counting_forloop_innards_byGroup.R")))
+  } 
   
-  try(source(here::here("QAQC_flags", "counting_forloop_innards_byGroup.R")))
+    if(params$reportType == "simple"){
+    try(source(here::here("QAQC_flags", "simple_forloop_innards_byGroup.R")))
+  } 
+
 }
 ```
 
