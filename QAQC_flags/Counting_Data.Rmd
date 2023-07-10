@@ -8,7 +8,7 @@ output:
     toc_depth: 2
 date: "`r Sys.Date()`"
 params:
-  dataType: "nut"
+  dataType: "wq"
   reportType: "simple"
 ---
 
@@ -37,17 +37,20 @@ source(here::here("QAQC_flags", "functions.R"))
 
 # About the graphs  
 
--  Hover over bars on the plot to see the Year/Month, # days of {useable/bad} data points, and for NUT data, flags and codes associated with 'bad' data.  
+-  Hover over bars on the plot to see additional information.  
     -  a "useable" day was defined as a day where at least one data point was flagged okay, below/above detection, historical, or corrected.  
     -  a "bad" day was a day where there were 0 data points in the above flags.  
--  Bars are colored by year, just to provide some differentiation. Coloring by month got a little too chaotic.  
 -  Plots are interactive in other ways too - try zooming in on a certain time frame along the x-axis, for example, if you want more detail.  
 
 
 
 # Parameter choices  
 
-In this section we can define which flags and parameters to keep. Currently set to keep:  
+In this section we can define which flags and parameters to keep.  
+
+<details>  
+
+Currently set to keep:  
 
 -  Flags:  
     -  0 - accepted  
@@ -70,6 +73,8 @@ In this section we can define which flags and parameters to keep. Currently set 
     -  NO23_f  
     -  NO2_f  (some reserves do not analyze separately)  
     -  NO3_f  (some reserves do not analyze separately)  
+    
+</details>
 
 ```{r, cache = TRUE}
 # path to data; change this when files get moved to a better location
@@ -145,7 +150,7 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-# toUse <- toUse[1:30]
+toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}

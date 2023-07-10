@@ -30,13 +30,6 @@ if(params$dataType == "wq"){
                                   grepl(flagCodes_keepvec, f) ~ "keep",
                                   .default = "discard"))
   
-  # cat("QAQC flags/codes defined as 'useable' were:\n", 
-  #     paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "keep")])), collapse = "  |  "),
-  #     "\n\n")
-  # cat("QAQC flags/codes defined as 'bad' were:\n", 
-  #     paste(sort(unique(wq_long$f[which(wq_long$keepStatus == "discard")])), collapse = "  |  "),
-  #     "\n\n")
-  
   # summarize flags
   dails <- wq_long %>% 
     group_by(stn, param, Year, Month, Day) %>% 
@@ -59,31 +52,42 @@ if(params$dataType == "wq"){
   monts$goodFlags <- mont_flags$keep
   monts$MonthAbbrev <- factor(month.abb[monts$Month], levels = month.abb)
   
-  
-  # plot
-  pwq <- monts %>%
-    select(-badFlags, -goodFlags) %>% 
+  monts_simpler <- monts %>%
+    group_by(stn, param, MonthAbbrev) %>% 
+    summarize(useableDays = sum(useableDays),
+              badDays = sum(badDays)) %>% 
     pivot_longer(c(useableDays, badDays),
                  names_to = "dayType",
                  values_to = "count") %>% 
     mutate(dayType = case_match(dayType,
                                 "useableDays" ~ "useable",
-                                "badDays" ~ "discarded")) %>% 
-    ggplot(aes(x = MonthAbbrev, y = count,
+                                "badDays" ~ "discarded")) 
+  # plot
+  # for labels; thank you to https://stackoverflow.com/a/52920047
+  every_nth = function(n) {
+    return(function(x) {x[c(TRUE, rep(FALSE, n - 1))]})
+  }
+  
+  pwq <-  
+    ggplot(monts_simpler,
+           aes(x = MonthAbbrev, y = count,
                fill = dayType,
-               text = paste0(YearMonthText, 
+               text = paste0(MonthAbbrev, 
                              ":\n", dayType, " n = ", count
                ))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(title = "Useable vs. discarded data",
-         y = "# days, across all years combined",
+    labs(y = "# days, across all years combined",
          x = "Month",
-         fill = "Data type") +
+         fill = "Data type: ") +
     scale_fill_manual(values = c("red3", "gray")) +
-    # scale_x_discrete(guide = guide_axis(angle = 70)) +
-    theme(legend.position = "right",
+    scale_x_discrete(breaks = every_nth(n = 2)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(1)),
+          legend.key.size = unit(0.8, "lines"),
           axis.text.x = element_text(size = rel(0.9),
                                      angle = 45,
                                      hjust = 1,
@@ -92,7 +96,9 @@ if(params$dataType == "wq"){
           axis.title.y = element_text(size = rel(0.9)))
   
   ggplotly(pwq, tooltip = "text",
-           width = 625, height = 625) %>%  
+           width = 625, height = 675) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.13)) %>% 
     htmltools::tagList() %>%
     print()
   
@@ -110,6 +116,7 @@ if(params$dataType == "wq"){
     labs(title = "Discarded data, by Month; colored by Year",
       y = "# days with no readings passing qa/qc",
       x = "Month") +
+    scale_x_discrete(breaks = every_nth(n = 2)) +
     theme(legend.position = "none",
           axis.text.x = element_text(size = rel(0.9),
                                      angle = 45,
@@ -122,7 +129,7 @@ if(params$dataType == "wq"){
   
   
   ggplotly(pwq2, tooltip = "text",
-           width = 625, height = 625) %>%  
+           width = 625, height = 675) %>%  
     htmltools::tagList() %>%
     print()
   
