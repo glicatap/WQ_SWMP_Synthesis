@@ -1,5 +1,12 @@
 # Actions depend on params$dataType
 
+
+# for plot labels; thank you to https://stackoverflow.com/a/52920047
+every_nth = function(n) {
+  return(function(x) {x[c(TRUE, rep(FALSE, n - 1))]})
+}
+
+
 # wq data ----
 if(params$dataType == "wq"){
   
@@ -63,11 +70,6 @@ if(params$dataType == "wq"){
                                 "useableDays" ~ "useable",
                                 "badDays" ~ "discarded")) 
   # plot
-  # for labels; thank you to https://stackoverflow.com/a/52920047
-  every_nth = function(n) {
-    return(function(x) {x[c(TRUE, rep(FALSE, n - 1))]})
-  }
-  
   pwq <-  
     ggplot(monts_simpler,
            aes(x = MonthAbbrev, y = count,
@@ -79,7 +81,7 @@ if(params$dataType == "wq"){
     facet_grid(stn~param) +
     theme_bw() +
     labs(y = "# days, across all years combined",
-         x = "Month",
+         x = "",
          fill = "Data type: ") +
     scale_fill_manual(values = c("red3", "gray")) +
     scale_x_discrete(breaks = every_nth(n = 2)) +
@@ -115,7 +117,7 @@ if(params$dataType == "wq"){
     theme_bw() +
     labs(title = "Discarded data, by Month; colored by Year",
       y = "# days with no readings passing qa/qc",
-      x = "Month") +
+      x = "") +
     scale_x_discrete(breaks = every_nth(n = 2)) +
     theme(legend.position = "none",
           axis.text.x = element_text(size = rel(0.9),
@@ -178,61 +180,76 @@ if(params$dataType == "nut"){
            useableMonth = case_when(useable > 0 ~ 1,
                                     .default = 0),
            problemMonth = case_when(useable > 0 ~ 0,
-                                    .default = 1))
+                                    .default = 1),
+           MonthAbbrev = factor(month.abb[Month], levels = month.abb))
+  
+  nut_simpler <- monts_nut %>%
+    group_by(stn, param, MonthAbbrev) %>% 
+    summarize(useableMonths = sum(useableMonth),
+              badMonths = sum(problemMonth)) %>% 
+    pivot_longer(c(useableMonths, badMonths),
+                 names_to = "monthType",
+                 values_to = "count") %>% 
+    mutate(monthType = case_match(monthType,
+                                "useableMonths" ~ "useable",
+                                "badMonths" ~ "discarded")) 
   
   
   # plot
-  pnut <- ggplot(monts_nut, aes(x = YearMonth, y = useable,
-                                fill = as.factor(Year),
-                                text = paste0(YearMonthText, ":\n n = ", useable))) +
+  pnut <- ggplot(nut_simpler, aes(x = MonthAbbrev, y = count,
+                                fill = monthType,
+                                text = paste0(MonthAbbrev, ":\n", monthType, 
+                                              "n = ", count))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    scale_x_date(
-      NULL,
-      breaks = scales::breaks_width("5 years"), 
-      labels = scales::label_date("'%y")
-    ) + 
-    scale_y_continuous(breaks = scales::breaks_width(2)) +
-    labs(
-      subtitle = "Useable NUT data points per month",
-      y = "number samples passing qa/qc",
-      x = "") +
-    theme(legend.position = "none",
-          axis.text.x = element_text(size = rel(0.9)),
+    labs(y = "number months with samples passing qa/qc",
+      x = "",
+      fill = "Data Type: ") +
+    scale_fill_manual(values = c("red3", "gray")) +
+    scale_x_discrete(breaks = every_nth(n = 2)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(1)),
+          legend.key.size = unit(0.8, "lines"),
+          axis.text.x = element_text(size = rel(0.9),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
           axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9))) 
   
   
-  pnut2 <- ggplot(monts_nut, aes(x = YearMonth, y = problemMonth,
+  pnut2 <- ggplot(monts_nut, aes(x = MonthAbbrev, y = problemMonth,
                                  fill = as.factor(Year),
                                  text = paste0(YearMonthText, 
                                                "\nunique flags:\n", flags))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    scale_x_date(
-      NULL,
-      breaks = scales::breaks_width("5 years"), 
-      labels = scales::label_date("'%y")
-    ) + 
-    scale_y_continuous(breaks = c(0, 1)) +
-    labs(subtitle = "Months with no useable NUT data points",
-         y = "vertical line: no sample passed qa/qc in month",
+    labs(title = "Months with no useable NUT data points",
+         y = "# of years where this month was a problem",
          x = "") +
+    scale_x_discrete(breaks = every_nth(n = 2)) +
     theme(legend.position = "none",
           axis.text.y = element_blank(),
-          axis.text.x = element_text(size = rel(0.9)),
+          axis.text.x = element_text(size = rel(0.9),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
           axis.title.y = element_text(size = rel(0.9)))
   
   
   ggplotly(pnut, tooltip = "text",
-           width = 650, height = 625) %>% 
+           width = 625, height = 675) %>% 
+    layout(legend = list(orientation = "h",
+                         y = 1.13)) %>% 
     htmltools::tagList() %>%
     print()
   
   ggplotly(pnut2, tooltip = "text",
-           width = 650, height = 625) %>%  
+           width = 625, height = 675) %>%  
     htmltools::tagList() %>%
     print()
   

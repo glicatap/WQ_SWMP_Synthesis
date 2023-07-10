@@ -8,7 +8,7 @@ output:
     toc_depth: 2
 date: "`r Sys.Date()`"
 params:
-  dataType: "wq"
+  dataType: "nut"
   reportType: "simple"
 ---
 
@@ -69,10 +69,11 @@ Currently set to keep:
 -  NUT Parameters:  
     -  Chl a (as `chla_n` - does this show up with other names from other reserves?)  
     -  PO4_f (f = filtered)  
-    -  NH4_f  
-    -  NO23_f  
-    -  NO2_f  (some reserves do not analyze separately)  
-    -  NO3_f  (some reserves do not analyze separately)  
+    -  NH4_f
+    -  NO23_f
+ 
+    
+NO2 and NO3 as separate parameters were removed 7/10/23 after discussion at the Data Analysis Team meeting on 6/30.  
     
 </details>
 
@@ -97,8 +98,7 @@ names(wq_parms) <- paste0("val_", wq_parms)  # for easier pivoting later
 
 # define which nut parameters to investigate
 nut_parms <- c("chla_n", "po4f", 
-              "nh4f", "no23f", 
-              "no2f", "no3f")
+              "nh4f", "no23f")
 nut_keep <- c(nut_parms, paste0("f_", nut_parms))
 names(nut_parms) <- paste0("val_", nut_parms)  # for easier pivoting later
 
