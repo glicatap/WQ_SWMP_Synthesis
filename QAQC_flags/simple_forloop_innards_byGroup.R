@@ -69,7 +69,22 @@ if(params$dataType == "wq"){
     mutate(dayType = case_match(dayType,
                                 "useableDays" ~ "useable",
                                 "badDays" ~ "discarded")) 
-  # plot
+  
+  
+  yrs_simpler <- monts %>%
+    group_by(stn, param, Year) %>% 
+    summarize(useableDays = sum(useableDays),
+              badDays = sum(badDays)) %>% 
+    pivot_longer(c(useableDays, badDays),
+                 names_to = "dayType",
+                 values_to = "count") %>% 
+    mutate(dayType = case_match(dayType,
+                                "useableDays" ~ "useable",
+                                "badDays" ~ "discarded"))
+  
+  
+  # plot wq red/gray ----
+  # by month
   pwq <-  
     ggplot(monts_simpler,
            aes(x = MonthAbbrev, y = count,
@@ -80,7 +95,8 @@ if(params$dataType == "wq"){
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(y = "# days, across all years combined",
+    labs(title = "Overall by Month",
+         y = "# days, across all years combined",
          x = "",
          fill = "Data type: ") +
     scale_fill_manual(values = c("red3", "gray")) +
@@ -100,26 +116,63 @@ if(params$dataType == "wq"){
   ggplotly(pwq, tooltip = "text",
            width = 625, height = 675) %>%  
     layout(legend = list(orientation = "h",
-                         y = 1.13)) %>% 
+                         y = 1.11, x = 0.45)) %>% 
     htmltools::tagList() %>%
     print()
   
   
-  
-  # plot
-  pwq2 <- ggplot(monts, aes(x = MonthAbbrev, y = badDays,
-                           fill = as.factor(Year),
-                           text = paste0(YearMonthText, 
-                                         ":\n n = ", badDays,
-                                         "\n flags/codes present: ", badFlags))) +
+  # wq by month, discarded ----
+  pwq3 <- ggplot(monts, aes(x = MonthAbbrev, y = badDays,
+                            fill = Year,
+                            text = paste0(YearMonthText, 
+                                          ":\n n = ", badDays,
+                                          "\n flags/codes present: ", badFlags))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(title = "Discarded data, by Month; colored by Year",
-      y = "# days with no readings passing qa/qc",
-      x = "") +
+    labs(y = "# days with no readings passing qa/qc",
+         x = "") +
     scale_x_discrete(breaks = every_nth(n = 2)) +
-    theme(legend.position = "none",
+    scale_fill_distiller(palette = "YlGnBu") +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(0.8)),
+          legend.key.size = unit(1.5, "lines"),
+          axis.text.x = element_text(size = rel(0.9),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
+          axis.text.y = element_text(size = rel(0.8)),
+          axis.title.y = element_text(size = rel(0.9)))
+  
+  ggplotly(pwq3, tooltip = "text",
+           width = 625, height = 675) %>%  
+    layout(legend = list(x=1.2)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
+  # wq year red/gray ----
+  pwqyrs <-  
+    ggplot(yrs_simpler,
+           aes(x = as.factor(Year), y = count,
+               fill = dayType,
+               text = paste0(Year, 
+                             ":\n", dayType, " n = ", count
+               ))) +
+    geom_col() +
+    facet_grid(stn~param) +
+    theme_bw() +
+    labs(y = "# days per year",
+         x = "",
+         fill = "Data type: ") +
+    scale_fill_manual(values = c("red3", "gray")) +
+    scale_x_discrete(breaks = every_nth(n = 4)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(1)),
+          legend.key.size = unit(0.8, "lines"),
           axis.text.x = element_text(size = rel(0.9),
                                      angle = 45,
                                      hjust = 1,
@@ -128,12 +181,47 @@ if(params$dataType == "wq"){
           axis.title.y = element_text(size = rel(0.9)))
   
   
-  
-  
-  ggplotly(pwq2, tooltip = "text",
-           width = 625, height = 675) %>%  
+  ggplotly(pwqyrs, tooltip = "text",
+           width = 650, height = 650) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.13)) %>% 
     htmltools::tagList() %>%
     print()
+  
+  
+  # plot wq by year, fill by month ----
+  pwq4 <- ggplot(monts, aes(x = as.factor(Year), y = badDays,
+                            fill = MonthAbbrev,
+                            text = paste0(YearMonthText, 
+                                          ":\n n = ", badDays,
+                                          "\n flags/codes present: ", badFlags))) +
+    geom_col() +
+    facet_grid(stn~param) +
+    theme_bw() +
+    labs(title = "Discarded data - tall bars are problem years",
+         y = "# days with no readings passing qa/qc",
+         x = "",
+         fill = "Month") +
+    scale_x_discrete(breaks = every_nth(n = 4)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(0.8)),
+          legend.key.size = unit(0.8, "lines"),
+          axis.text.x = element_text(size = rel(0.9),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
+          axis.text.y = element_text(size = rel(0.8)),
+          axis.title.y = element_text(size = rel(0.9)))
+  
+  
+  ggplotly(pwq4, tooltip = "text",
+           width = 650, height = 650) %>% 
+    layout(legend = list(x = 1.05)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
   
   # clean up
   rm(wq, wq_long, dails, monts,
@@ -195,7 +283,18 @@ if(params$dataType == "nut"){
                                 "badMonths" ~ "discarded")) 
   
   
-  # plot
+  nut_yrs <- monts_nut %>%
+    group_by(stn, param, Year) %>% 
+    summarize(useableMonths = sum(useableMonth),
+              badMonths = sum(problemMonth)) %>% 
+    pivot_longer(c(useableMonths, badMonths),
+                 names_to = "monthType",
+                 values_to = "count") %>% 
+    mutate(monthType = case_match(monthType,
+                                  "useableMonths" ~ "useable",
+                                  "badMonths" ~ "discarded"))
+  
+  # plot nut red/gray ----
   pnut <- ggplot(nut_simpler, aes(x = MonthAbbrev, y = count,
                                 fill = monthType,
                                 text = paste0(MonthAbbrev, ":\n", monthType, 
@@ -203,8 +302,9 @@ if(params$dataType == "nut"){
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(y = "number months with samples passing qa/qc",
+    labs(title = "Overall by Month",
       x = "",
+      y = "# yrs with this data status",
       fill = "Data Type: ") +
     scale_fill_manual(values = c("red3", "gray")) +
     scale_x_discrete(breaks = every_nth(n = 2)) +
@@ -220,38 +320,114 @@ if(params$dataType == "nut"){
           axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9))) 
   
+  ggplotly(pnut, tooltip = "text",
+           width = 690, height = 650) %>% 
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0.45)) %>% 
+    htmltools::tagList() %>%
+    print()
   
+  # plot nut, discarded  ----
   pnut2 <- ggplot(monts_nut, aes(x = MonthAbbrev, y = problemMonth,
-                                 fill = as.factor(Year),
+                                 fill = Year,
                                  text = paste0(YearMonthText, 
                                                "\nunique flags:\n", flags))) +
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(title = "Months with no useable NUT data points",
+    labs(title = "Discarded data - tall bars are problem months",
          y = "# of years where this month was a problem",
          x = "") +
     scale_x_discrete(breaks = every_nth(n = 2)) +
-    theme(legend.position = "none",
-          axis.text.y = element_blank(),
+    scale_fill_distiller(palette = "YlGnBu") +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(0.8)),
+          legend.key.size = unit(1.5, "lines"),
           axis.text.x = element_text(size = rel(0.9),
                                      angle = 45,
                                      hjust = 1,
                                      vjust = 1),
+          axis.text.y = element_text(size = rel(0.8)),
           axis.title.y = element_text(size = rel(0.9)))
   
   
-  ggplotly(pnut, tooltip = "text",
-           width = 625, height = 675) %>% 
-    layout(legend = list(orientation = "h",
-                         y = 1.13)) %>% 
+  ggplotly(pnut2, tooltip = "text",
+           width = 675, height = 650) %>%  
     htmltools::tagList() %>%
     print()
   
-  ggplotly(pnut2, tooltip = "text",
-           width = 625, height = 675) %>%  
+  
+  # nut year, red/gray ----
+  pnutyrs <- ggplot(nut_yrs, aes(x = as.factor(Year), y = count,
+                                  fill = monthType,
+                                  text = paste0(Year, ":\n", monthType, 
+                                                "n = ", count))) +
+    geom_col() +
+    facet_grid(stn~param) +
+    theme_bw() +
+    labs(title = "Overall by Year",
+         x = "",
+         y = "# months in year with each status",
+         fill = "Data Type: ") +
+    scale_fill_manual(values = c("red3", "gray")) +
+    scale_x_discrete(breaks = every_nth(n = 5)) +
+    scale_y_continuous(breaks = scales::breaks_width(4)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(1)),
+          legend.key.size = unit(0.8, "lines"),
+          axis.text.x = element_text(size = rel(0.8),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
+          axis.text.y = element_text(size = rel(0.8)),
+          axis.title.y = element_text(size = rel(0.9))) 
+  
+  ggplotly(pnutyrs, tooltip = "text",
+           width = 675, height = 650) %>% 
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0.45)) %>% 
     htmltools::tagList() %>%
     print()
+  
+  
+  # nut year, by month ----
+  pnut2b <- ggplot(monts_nut, aes(x = as.factor(Year), y = problemMonth,
+                                 fill = MonthAbbrev,
+                                 text = paste0(YearMonthText, 
+                                               "\nunique flags:\n", flags))) +
+    geom_col() +
+    facet_grid(stn~param) +
+    theme_bw() +
+    labs(title = "Discarded data - tall bars are problem years",
+         y = "# of months with no passing data",
+         x = "",
+         fill = "Month") +
+    scale_x_discrete(breaks = every_nth(n = 5)) +
+    scale_y_continuous(breaks = scales::breaks_width(4)) +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.title = element_text(size = rel(1)), 
+          legend.text  = element_text(size = rel(0.8)),
+          legend.key.size = unit(1.5, "lines"),
+          axis.text.x = element_text(size = rel(0.8),
+                                     angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
+          axis.text.y = element_text(size = rel(0.8)),
+          axis.title.y = element_text(size = rel(0.9)))
+  
+  
+  ggplotly(pnut2b, tooltip = "text",
+           width = 700, height = 650) %>% 
+    layout(legend = list(x = 1.05)) %>%
+    htmltools::tagList() %>%
+    print()
+  
+  
   
   # clean up
   rm(nut, nut_long, monts_nut,

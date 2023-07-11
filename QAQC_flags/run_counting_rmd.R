@@ -23,3 +23,4 @@ xfun::Rscript_call(
 Sys.time() - strt
 
 stopCluster(cl)
+beepr::beep(sound = 8)
