@@ -163,7 +163,8 @@ if(params$dataType == "wq"){
     geom_col() +
     facet_grid(stn~param) +
     theme_bw() +
-    labs(y = "# days per year",
+    labs(title = "Overall by Year",
+         y = "# days per year",
          x = "",
          fill = "Data type: ") +
     scale_fill_manual(values = c("red3", "gray")) +
@@ -184,7 +185,7 @@ if(params$dataType == "wq"){
   ggplotly(pwqyrs, tooltip = "text",
            width = 650, height = 650) %>%  
     layout(legend = list(orientation = "h",
-                         y = 1.13)) %>% 
+                         y = 1.11, x = 0.45)) %>% 
     htmltools::tagList() %>%
     print()
   
