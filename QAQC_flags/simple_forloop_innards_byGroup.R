@@ -339,7 +339,6 @@ if(params$dataType == "nut"){
          y = "# of years where this month was a problem",
          x = "") +
     scale_x_discrete(breaks = every_nth(n = 2)) +
-    scale_fill_distiller(palette = "YlGnBu") +
     theme(legend.position = "top",
           legend.justification = "left",
           legend.title = element_text(size = rel(1)), 

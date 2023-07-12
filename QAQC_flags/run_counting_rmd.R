@@ -10,12 +10,13 @@ strt<-Sys.time()
 
 # process all stations
 foreach(dt = dataTypes) %dopar% {
-  outname <- paste0("Flagged_data_", dt, ".html")
+  outname <- paste0("Simpler_flagged_data_", dt, ".html")
 
 xfun::Rscript_call(
   rmarkdown::render,
   list(input = here::here("QAQC_flags", "Counting_Data.Rmd"), 
-       params = list("dataType" = dt),
+       params = list("dataType" = dt,
+                     "reportType" = reportType),
        output_file = here::here("QAQC_flags", outname))
 )
 }

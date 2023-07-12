@@ -2,7 +2,6 @@
 title: "`r paste('Simple plots of qa/qc flagging:', params$dataType)`"
 output: 
   html_document:
-    code_folding: hide
     toc: true
     toc_float: true
     toc_depth: 2
@@ -13,7 +12,7 @@ params:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
+knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
                       error = TRUE)
@@ -29,10 +28,10 @@ source(here::here("QAQC_flags", "functions.R"))
 
 # About this html file  
 
--  Code is present, but folded. If you want to unfold a portion of code, click on the `code` button on the right.  
 -  This file was made by using 2 files - This main one is RMarkdown, and for each station, a `.R` script is called to do all the same things (at the moment, just making graphs).      
 -  Updated 6/27/23; rather than going station-by-station, will go through groups of 10 stations at a time so graphs can be facted by param x station.  
 -  Add'l update 6/27/23: new AQS download of all SWMP WQ and NUT stations, from 2002 - 2022.  
+-  Update 7/12/23: removed code to make final files smaller.  
 
 
 # About the graphs  
@@ -77,12 +76,12 @@ NO2 and NO3 as separate parameters were removed 7/10/23 after discussion at the 
     
 </details>
 
-```{r, cache = TRUE}
+```{r}
 # path to data; change this when files get moved to a better location
 path <- here::here("Data_processing", "compiled_by_stn")
 ```
 
-```{r, cache = TRUE}
+```{r}
 # define which flags to keep
 flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>", "<2>", "<3>")
 flagCodes_keep <- c("<1> \\[GIT\\]")  # Use \\ for parentheses and square brackets.   
@@ -150,7 +149,7 @@ toUse <- stns_wq_nut[paste0(stns_wq_nut, "wq.RData") %in% fls & paste0(stns_wq_n
 
 ```{r}
 # subset during development
-toUse <- toUse[1:30]
+# toUse <- toUse[1:30]
 ```
 
 ```{r, include = FALSE}
@@ -162,7 +161,7 @@ ggplotly(p2)
 ```
 
 
-```{r, eval = TRUE, echo = TRUE, results = 'asis'}
+```{r, eval = TRUE, echo = FALSE, results = 'asis'}
 # turn this on to work with groups of ~ 10 stations  
 
 x <- toUse
