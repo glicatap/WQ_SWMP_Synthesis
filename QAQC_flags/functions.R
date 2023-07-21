@@ -50,6 +50,45 @@ is_outsideMDL <- function(data, side = "below"){
 
 # Plots ----
 
+plot_mdl_time <- function(data, param, data_full = NULL){
+  # data = data frame of MDL values
+  # data_full = data of non-censored values; does not have to be provided
+  # param should be the same in both data frames
+  
+  if(!is.null(data_full)){
+    p <- ggplot() +
+      geom_point(data = filter({{data_full}}, param == {{param}}),
+                 aes(x = datetimestamp,
+                     y = val),
+                 col = "gray80",
+                 alpha = 0.6,
+                 na.rm = TRUE) +
+      geom_point(data = filter({{data}}, param == {{param}}),
+                 aes(x = datetimestamp,
+                     y = val),
+                 na.rm = TRUE) +
+      labs(subtitle = "MDL points overlaid on non-censored data")
+  } else {
+    p <- ggplot() +
+      geom_point(data = filter({{data}}, param == {{param}}),
+                 aes(x = datetimestamp,
+                     y = val),
+                 na.rm = TRUE)
+  }
+  p +
+    facet_wrap(~reserve, ncol = 5) +
+    labs(title = as.character(param),
+         y = "mg/L",
+         x = "Date") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45,
+                                     hjust = 1,
+                                     vjust = 1,
+                                     size = rel(0.9)))
+}
+
+
+
 plot_mdl_dens <- function(data, param, xlim = c(0, 0.5), ...){
   # this works well on 'nut_long'
   # data is an unquoted data frame; param is a character string

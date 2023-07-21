@@ -127,11 +127,31 @@ nut_censored_nonchl <- nut_long %>%
 
 ## Plots  
 
-```{r}
+## MDLs through time  
 
+MDLs through time. Can we show proportion < MDL on a 2nd axis?  
+
+### raw  
+
+```{r}
+plot_mdl_time(nut_censored_nonchl, "no23f")
+plot_mdl_time(nut_censored_nonchl, "nh4f")
+plot_mdl_time(nut_censored_nonchl, "po4f")
 ```
 
-## Overall mass of < MDL vs. not  
+### with non-censored data  
+
+```{r}
+plot_mdl_time(nut_censored_nonchl, "no23f", data_full = nut_long)
+plot_mdl_time(nut_censored_nonchl, "nh4f", data_full = nut_long)
+plot_mdl_time(nut_censored_nonchl, "po4f", data_full = nut_long)
+
+plot_mdl_time(nut_censored_nonchl, "nh4f", data_full = nut_long) +
+  coord_cartesian(ylim = c(0, 1))
+```
+
+
+## Overall mass of censored vs. not  
 
 The following plots show the mass of values in a given range, and how many of them were flagged "below detection". Some reserves almost never have below detections for certain parameters (LOTS of pink to the right of the blue), and for other reserves, the values tend to mostly be at the low end, and flagged (when there's not much pink to the right of the blue).  
 
@@ -162,34 +182,22 @@ plot_mdl_weave(nut_censored_nonchl, "po4f")
 ```
 
 
-
-## MDLs through time  
-
-MDLs through time. Can we show proportion < MDL on a 2nd axis?  
-
+## Other, in progress  
 
 ```{r}
-ggplot(filter(nut_censored_nonchl, param == "po4f"),
-                 aes(x = datetimestamp,
+
+plot_mdl_dotinterval <- function(data, param, ylim = c(0, 1), ...){
+  ggplot(data = filter({{data}}, param == {{param}})) +
+    stat_dotsinterval(aes(x = belowMDL,
                      y = val)) +
-  geom_point() +
-  facet_wrap(~reserve, ncol = 5) +
-  theme_bw()
-  
+    coord_cartesian(ylim = ylim) +
+    facet_wrap(~reserve, ncol = 5) # +
+    # labs(title = as.character(param),
+    #      y = "value (mg/L)",
+    #      x = "below detection?") 
+}
 
-ggplot(filter(nut_long, param == "nh4f"), 
-              aes(x = belowMDL,
-                  y = val)) +
-  coord_cartesian(ylim = c(0, 0.1)) +
-  geom_boxplot() +
-  facet_wrap(~reserve, ncol = 5)
-
-ggplot(filter(nut_long, param == "no23f"), 
-       aes(x = belowMDL,
-           y = val)) +
-  stat_halfeye() +
-  coord_cartesian(ylim = c(0, 0.1)) +
-  facet_wrap(~reserve)
+plot_mdl_dotinterval(nut_long, "no23f", ylim = c(0, 0.1))
 
 ggplot(filter(nut_long, param == "no23f"), 
        aes(x = belowMDL,
