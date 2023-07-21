@@ -8,6 +8,8 @@ path <- here::here("Data_processing", "downloaded")
 data_files <- grep("\\d{4}.csv", dir(path), value = TRUE)
 stats <- unique(stringr::str_sub(data_files, end = -9))
 
+# latest update 7/18/23; new HUD NUT data from 2013
+# stats <- c("hudscnut", "hudsknut", "hudtnnut", "hudtsnut")
 
 # processing code from Marcus
 # https://github.com/fawda123/swmp_rats/blob/master/R/dat_proc.R

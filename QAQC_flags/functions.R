@@ -1,3 +1,4 @@
+# QAQC ----
 
 keep_onlyQAQC <- function(data){
   # data is SWMPr data frame
@@ -28,4 +29,68 @@ replace_missing_flags <- function(col){
   # col is a vector of QAQC flags, e.g. a column in a data frame
   col[which(col == "" | is.na(col))] <- "<-2>"
   return(col)
+}
+
+
+is_outsideMDL <- function(data, side = "below"){
+  # data is a value or vector of QA/QC flags/codes from an F_ column
+  # side is a string, can be either "below" or "above
+  # returns true/false for whether a point (or each point in a vector) is below/above detection
+  
+  if(side == "below"){
+    return((str_starts(data, "<4>") & str_detect(data, "B")) | str_starts(data, "<-4> \\[SBL\\]"))
+  }
+  
+  if(side == "above"){
+    return((str_starts(data, "<4>") & str_detect(data, "A")) | str_starts(data, "<-5>"))
+  }
+  
+}
+
+
+# Plots ----
+
+plot_mdl_dens <- function(data, param, xlim = c(0, 0.5), ...){
+  # this works well on 'nut_long'
+  # data is an unquoted data frame; param is a character string
+  ggplot(filter({{data}}, param == {{param}})) +
+    geom_density(aes(x = val,
+                     y = after_stat(scaled),
+                     fill = belowMDL),
+                 alpha = 0.5,
+                 na.rm = TRUE) +
+    coord_cartesian(xlim = xlim) +
+    facet_wrap(~reserve, ncol = 5) +
+    labs(title = as.character(param),
+         y = "scaled density",
+         x = "value") +
+    theme_bw()
+}
+
+plot_mdl_boxes <- function(data, param, ylim = c(0, 1), ...){
+  ggplot(data = filter({{data}}, param == {{param}})) +
+    geom_boxplot(aes(x = belowMDL,
+                     y = val,
+                     fill = belowMDL),
+                 alpha = 0.7,
+                 na.rm = TRUE) +
+    coord_cartesian(ylim = ylim) +
+    facet_wrap(~reserve, ncol = 5) +
+    labs(title = as.character(param),
+         y = "value (mg/L)",
+         x = "below detection?") +
+    theme_bw() +
+    theme(legend.position = "none")
+}
+
+
+plot_mdl_weave <- function(data, param, ...){
+  # uses geom_weave from ggdist
+  # won't let me give a title
+  ggplot(filter({{data}}, param == {{param}})) +
+    geom_weave(aes(y = val),
+               col = "navyblue") +
+    facet_wrap(~reserve, ncol = 5) +
+    labs(y = paste(param, "  MDL (mg/L)")) +
+    theme_bw()
 }
