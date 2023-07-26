@@ -42,7 +42,7 @@ specnut <- apacpnutqc %>%
     names_sep = "_")
 
 # pivot, replace discarded data with NAs, and pivot back to wider
-apacpnutqc <- apacpnutqc %>% 
+nut <- apacpnutqc %>% 
   pivot_longer_spec(spec = specnut) %>% 
   mutate(Year = lubridate::year(datetimestamp),
          Month = lubridate::month(datetimestamp),
@@ -77,7 +77,7 @@ specwq <- apacpwqqc %>%
     names_sep = "_")
 
 # pivot, replace discarded data with NAs, and pivot back to wider
-apacpwqqc <- apacpwqqc %>% 
+wq <- apacpwqqc %>% 
   pivot_longer_spec(spec = specwq) %>% 
   mutate(Year = lubridate::year(datetimestamp),
          Month = lubridate::month(datetimestamp),
@@ -95,4 +95,4 @@ apacpwqqc <- apacpwqqc %>%
 
 
 # write the data frames back out ----
-save(apacpwqqc, apacpnutqc, file = "model_packages/apaqc.RData")
+save(wq, nut, file = "model_packages/apaqc.RData")
