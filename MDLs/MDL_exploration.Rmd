@@ -1,6 +1,9 @@
 ---
 title: "MDL exploration"
-output: html_document
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
 date: "`r Sys.Date()`"
 params: 
   dataType: "nut"
@@ -10,7 +13,9 @@ params:
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
                       message = FALSE,
-                      error = TRUE)
+                      error = TRUE,
+                      fig.height = 8,
+                      fig.width = 7)
 ```
 
 Need to know some things......  
@@ -33,6 +38,9 @@ library(plotly)
 source(here::here("QAQC_flags", "functions.R"))
 
 path <- here::here("Data_processing", "compiled_by_stn")
+mdl_ggplotly <- function(p, width = 650, height = 675, ...){
+  ggplotly(p, width = width, height = height, ...)
+}
 ```
 
 Flags indicating a sample was below detection:  
@@ -82,14 +90,14 @@ stnnut <- paste0(toUse, "nut")
 ```
 
 ```{r, include = FALSE}
-# have to generate a girafe object before looping to make the loop work
+# have to generate an htmlwidgets object before looping to make the loop work
 # this chunk will not appear in output, at all
 p2 <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
   geom_point()
-ggplotly(p2)
+mdl_ggplotly(p2)
 ```
 
-## Read and combin nut data  
+## Read and combine nut data  
 
 ```{r}
 nut <- purrr::map(stnnut, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
@@ -115,7 +123,8 @@ nut_long <- nut %>%
          flag = extract_flag(f),
          val = case_when(flag == "<-3>" ~ NA_real_,
                          .default = val),
-         belowMDL = is_outsideMDL(f, "below"))
+         belowMDL = is_outsideMDL(f, "below"),
+         val = round(val, 4))
 
 nut_long_nonchl <- nut_long %>% 
   filter(param != "chlaN")
@@ -129,25 +138,34 @@ nut_censored_nonchl <- nut_long %>%
 
 ## MDLs through time  
 
-MDLs through time. Can we show proportion < MDL on a 2nd axis?  
+MDLs through time.  
 
 ### raw  
 
+These plots are interactive.  
+
 ```{r}
-plot_mdl_time(nut_censored_nonchl, "no23f")
-plot_mdl_time(nut_censored_nonchl, "nh4f")
-plot_mdl_time(nut_censored_nonchl, "po4f")
+plot_mdl_time(nut_censored_nonchl, "no23f") %>% mdl_ggplotly()
+plot_mdl_time(nut_censored_nonchl, "nh4f") %>% mdl_ggplotly()
+plot_mdl_time(nut_censored_nonchl, "po4f") %>% mdl_ggplotly()
 ```
 
 ### with non-censored data  
 
-```{r}
-plot_mdl_time(nut_censored_nonchl, "no23f", data_full = nut_long)
-plot_mdl_time(nut_censored_nonchl, "nh4f", data_full = nut_long)
-plot_mdl_time(nut_censored_nonchl, "po4f", data_full = nut_long)
+These plots are also interactive. I've maxed the y-axis out at 1 to sort of zoom in; values can and do go much higher at some reserves.    
 
-plot_mdl_time(nut_censored_nonchl, "nh4f", data_full = nut_long) +
+```{r}
+p <- plot_mdl_time(nut_censored_nonchl, "no23f", data_full = nut_long) +
+  coord_cartesian(ylim = c(0, 1)) 
+mdl_ggplotly(p)
+
+p2 <- plot_mdl_time(nut_censored_nonchl, "nh4f", data_full = nut_long) +
+  coord_cartesian(ylim = c(0, 1)) 
+mdl_ggplotly(p2)
+
+p3 <- plot_mdl_time(nut_censored_nonchl, "po4f", data_full = nut_long) +
   coord_cartesian(ylim = c(0, 1))
+mdl_ggplotly(p3)
 ```
 
 
@@ -162,7 +180,20 @@ plot_mdl_dens(nut_long, "po4f", xlim = c(0, 0.5))
 ```
 
 
-Another way to look at this overall is with boxplots. I've changed the scales on the parameters so the y-axis isn't so overwhelming compared to the MDLs.    
+## Dot-interval plots  
+
+These are an alternative to box plots; they show the distribution of points alongside the interval. I've changed the scales on the parameters so the y-axis isn't so overwhelming compared to the MDLs.  
+
+```{r}
+plot_mdl_dotinterval(nut_long, "no23f", ylim = c(0, 0.1))
+plot_mdl_dotinterval(nut_long, "nh4f", ylim = c(0, 0.1))
+plot_mdl_dotinterval(nut_long, "po4f", ylim = c(0, 0.1))
+```
+
+
+## Box plots  
+
+Typical boxplots, for comparison to the above.       
 
 ```{r}
 plot_mdl_boxes(nut_long, "no23f", ylim = c(0, 0.1))
@@ -173,7 +204,7 @@ plot_mdl_boxes(nut_long, "po4f", ylim = c(0, 0.1))
 
 ## Distribution of MDL values  
 
-The plots below won't let me give them a title, so the parameter is identified in the y-axis labe.  
+The plots below won't let me give them a title, so the parameter is identified in the y-axis label.  
 
 ```{r}
 plot_mdl_weave(nut_censored_nonchl, "no23f")
@@ -182,71 +213,13 @@ plot_mdl_weave(nut_censored_nonchl, "po4f")
 ```
 
 
-## Other, in progress  
+Zoomed in a bit on the y-axis; this cuts off higher MDLs from some reserves but shows the overall distributions a little better.  
 
 ```{r}
-
-plot_mdl_dotinterval <- function(data, param, ylim = c(0, 1), ...){
-  ggplot(data = filter({{data}}, param == {{param}})) +
-    stat_dotsinterval(aes(x = belowMDL,
-                     y = val)) +
-    coord_cartesian(ylim = ylim) +
-    facet_wrap(~reserve, ncol = 5) # +
-    # labs(title = as.character(param),
-    #      y = "value (mg/L)",
-    #      x = "below detection?") 
-}
-
-plot_mdl_dotinterval(nut_long, "no23f", ylim = c(0, 0.1))
-
-ggplot(filter(nut_long, param == "no23f"), 
-       aes(x = belowMDL,
-           y = val)) +
-  stat_dotsinterval() +
-  coord_cartesian(ylim = c(0, 0.1)) +
-  facet_wrap(~reserve)
-
-ggplot(filter(nut_long, param == "no23f"), 
-       aes(x = belowMDL,
-           y = val)) +
-  stat_boxplot() +
-  coord_cartesian(ylim = c(0, 0.1)) +
-  facet_wrap(~reserve)
-
-ggplot(filter(nut_long, param == "no23f")) +
-  geom_density(aes(x = val,
-                   y = ..scaled..,
-                   fill = belowMDL),
-               alpha = 0.3) +
-  coord_cartesian(xlim = c(0, 0.25)) +
-  facet_wrap(~reserve)
-
-
-
-p <- ggplot(data = nut_censored_nonchl,
-            aes(text = paste0(param,
-                             ", ",
-                             Year,
-                             "-",
-                             Month,
-                             ": ",
-                             val))) +
-  geom_point(data = nut_long_nonchl, aes(x = datetimestamp,
-                                         y = val),
-             col = "gray80",
-             alpha = 0.5)  +
-  geom_point(data = nut_censored_nonchl, aes(x = datetimestamp,
-                                             y = val),
-             size = 2) +
-  geom_line(data = nut_censored_nonchl, aes(x = datetimestamp,
-                                            y = val)) +
-  facet_grid(reserve ~ param, scales = "free") +
-  labs(title = "Points flagged below MDL, overlaid on all readings",
-       y = "value (mg/L)",
-       x = "Date") +
-  theme_bw()
-
-ggplotly(p, tooltip = "text",
-         width = 625, height = 675) 
+plot_mdl_weave(nut_censored_nonchl, "no23f") +
+  coord_cartesian(ylim = c(0, 0.03))
+plot_mdl_weave(nut_censored_nonchl, "nh4f") +
+  coord_cartesian(ylim = c(0, 0.05))
+plot_mdl_weave(nut_censored_nonchl, "po4f") +
+  coord_cartesian(ylim = c(0, 0.03))
 ```
-

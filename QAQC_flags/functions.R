@@ -103,7 +103,11 @@ plot_mdl_dens <- function(data, param, xlim = c(0, 0.5), ...){
     labs(title = as.character(param),
          y = "scaled density",
          x = "value") +
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45,
+                                     hjust = 1,
+                                     vjust = 1,
+                                     size = rel(0.9)))
 }
 
 plot_mdl_boxes <- function(data, param, ylim = c(0, 1), ...){
@@ -131,5 +135,24 @@ plot_mdl_weave <- function(data, param, ...){
                col = "navyblue") +
     facet_wrap(~reserve, ncol = 5) +
     labs(y = paste(param, "  MDL (mg/L)")) +
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45,
+                                     hjust = 1,
+                                     vjust = 1,
+                                     size = rel(0.9)))
+}
+
+
+plot_mdl_dotinterval <- function(data, param, ylim = c(0, 1), ...){
+  ggplot(data = filter({{data}}, param == {{param}})) +
+    stat_dotsinterval(aes(x = belowMDL,
+                          y = val,
+                          col = belowMDL)) +
+    coord_cartesian(ylim = ylim) +
+    facet_wrap(~reserve, ncol = 5) +
+    labs(title = as.character(param),
+         y = "value (mg/L)",
+         x = "below detection?") +
+    theme_bw() +
+    theme(legend.position = "none")
 }
