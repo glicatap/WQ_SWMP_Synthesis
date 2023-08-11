@@ -44,6 +44,12 @@ wq_monthly <- wq %>%
   summarize(across(c(temp, spcond, sal, dopct, domgl),
                    summ_stats)) %>% 
   mutate(YearMonth = lubridate::ymd(paste(Year, Month, 1, sep = "-")))
+
+wq_daily <- wq %>% 
+  group_by(Year, Month, Day) %>% 
+  summarize(across(c(temp, spcond, sal, dopct, domgl),
+                   summ_stats)) %>% 
+  mutate(Date = lubridate::ymd(paste(Year, Month, Day, sep = "-")))
 ```
 
 ```{r}
@@ -259,8 +265,12 @@ acf(gam2b$gam$residuals)[1]  # this is really phi
 gam2_coeffs <- data.frame(mod = "gam: s(Month) + AR1",
                           slope = gam2$lme$coefficients$fixed["XYearMonth"],
                           slope_se = sqrt(gam2$lme$varFix["XYearMonth", "XYearMonth"]),
-                          phi = NA_real_,
+                          phi = acf(gam2$gam$residuals)[1]$acf,
                           row.names = NULL)
+```
+
+```{r}
+
 ```
 
 
