@@ -1,0 +1,62 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-07-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(SWMPr)
+library(tidyverse)
+path <- here::here("Data_processing", "downloaded")
+```
+
+```{r}
+nut <- import_local(path, "gndblnut", collMethd = "2")
+nut <- qaqc(nut, qaqc_keep = c("0", "-4", "4", "1", "5"))
+wq <- import_local(path, "gndblwq")
+wq <- qaqc(wq, qaqc_keep = c("0", "-4", "4", "1", "5"))
+
+dat <- SWMPr::comb(nut, wq, method = "intersect")
+dat2 <- dat %>% 
+  dplyr::filter(!is.na(chla_n)) %>% 
+  mutate(Year = lubridate::year(datetimestamp),
+         Month = lubridate::month(datetimestamp))
+```
+
+```{r}
+ggplot(dat2, aes(x = depth, y = chla_n, group = Year, col = Year)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, alpha = 0.5) +
+  facet_wrap(~Month) +
+  coord_cartesian(ylim = c(0, 40))
+```
+
+```{r}
+ggplot(dat2, aes(x = sal, y = nh4f, group = Year, col = Year)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, alpha = 0.5) +
+  facet_wrap(~Month, scales = "free")
+```
+
+###  Ternary diagrams  
+
+```{r}
+library(ggtern)
+```
+
+```{r}
+ggtern(dat2, aes(nh4f, po4f, chla_n)) +
+  geom_mask() +
+  geom_point(aes(col = Year)) +
+  theme_bw() +
+  theme_showarrows()
+```
+
+```{r}
+
+```
+

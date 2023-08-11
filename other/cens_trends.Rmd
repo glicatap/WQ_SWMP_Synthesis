@@ -1,0 +1,352 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-07-31; updated 2023-08-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Updated 8/11/23 to add mgcv::gam with cnorm family (censored data)  
+
+https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/cnorm.html   
+
+```{r}
+library(SWMPr)
+library(tidyverse)
+library(mgcv)
+path <- here::here("Data_processing", "downloaded")
+source(here::here("QAQC_flags", "functions.R"))
+```
+
+```{r}
+nut <- import_local(path, "gndblnut", collMethd = 1)
+nut_2 <- nut
+nut_2$nh4_cens <- is_outsideMDL(nut_2$f_nh4f)
+nut_2$nh4_cens <- ifelse(nut_2$nh4_cens == FALSE, 0, 1)
+nut_2$po4_cens <- is_outsideMDL(nut_2$f_po4f)
+nut_2$po4_cens <- ifelse(nut_2$po4_cens == FALSE, 0, 1)
+nut_2$no23_cens <- is_outsideMDL(nut_2$f_no23f)
+nut_2$no23_cens <- ifelse(nut_2$no23_cens == FALSE, 0, 1)
+nut_2$Year <- lubridate::year(nut_2$datetimestamp)
+nut_2$Month <- lubridate::month(nut_2$datetimestamp)
+nut_2$decYear <- lubridate::decimal_date(nut_2$datetimestamp)
+
+# new column needed for gam
+nut_2 <- nut_2 %>% 
+  mutate(nh4_cens2 = case_when(nh4_cens == 0 ~ nh4f,
+                               nh4_cens == 1 ~ -Inf),
+         no23_cens2 = case_when(no23_cens == 0 ~ no23f,
+                               no23_cens == 1 ~ -Inf),
+         po4_cens2 = case_when(po4_cens == 0 ~ po4f,
+                               po4_cens == 1 ~ -Inf),
+         nh4log = log(nh4f),
+         no23log = log(no23f),
+         po4log = log(po4f),
+         nh4log_cens2 = case_when(nh4_cens == 0 ~ nh4log,
+                               nh4_cens == 1 ~ -Inf),
+         no23log_cens2 = case_when(no23_cens == 0 ~ no23log,
+                               no23_cens == 1 ~ -Inf),
+         po4log_cens2 = case_when(po4_cens == 0 ~ po4log,
+                               po4_cens == 1 ~ -Inf))
+
+
+nut <- qaqc(nut, qaqc_keep = c("0", "-4", "4", "1", "5"))
+wq <- import_local(path, "gndblwq")
+wq <- qaqc(wq, qaqc_keep = c("0", "-4", "4", "1", "5"))
+
+dat <- SWMPr::comb(nut, wq, method = "intersect")
+dat2 <- dat %>% 
+  dplyr::filter(!is.na(chla_n)) %>% 
+  mutate(Year = lubridate::year(datetimestamp),
+         Month = lubridate::month(datetimestamp),
+         decYear = lubridate::decimal_date(datetimestamp))
+```
+
+```{r}
+library(EnvStats)
+```
+
+```{r}
+plot(nh4f ~ datetimestamp, data = nut_2)
+```
+
+not getting rid of any values; only inserted a column for censored
+```{r seaKen}
+ken1 <- kendallSeasonalTrendTest(nh4f ~ Month + Year,
+                         data = nut_2)
+ken1$statistic
+ken1$p.value
+ken1$estimate
+ken1$interval$limits
+ken1$seasonal.S
+ken1$seasonal.estimates
+```
+
+```{r}
+library(NADA2)
+```
+
+```{r cenSeaKen}
+ken2 <- with(nut_2, censeaken(decYear, nh4f, nh4_cens, group = Month))
+```
+
+```{r}
+with(nut_2, censeaken(decYear, no23f, no23_cens, group = Month))
+```
+
+```{r cenSeaKen-Ken-ATS}
+with(nut_2, censeaken(decYear, po4f, po4_cens, group = Month, seaplots = TRUE))
+kendallSeasonalTrendTest(po4f ~ Month + Year,
+                         data = nut_2)
+
+kendallTrendTest(po4f ~ decYear,
+                 data = nut_2)
+with(nut_2, ATS(po4f, po4_cens, decYear))
+
+with(nut_2, ATS(nh4f, nh4_cens, decYear))
+with(nut_2, ATS(no23f, no23_cens, decYear))
+```
+
+```{r cencorreg}
+mod1 <- lm(log(nh4f) ~ decYear, data = nut_2)
+summary(mod1)
+
+with(nut_2, cencorreg(nh4f, nh4_cens, decYear))
+
+seass <- data.frame(time = nut_2$decYear,
+                    sinT = sin(2*pi*nut_2$decYear),
+                    cosT = cos(2*pi*nut_2$decYear))
+with(nut_2, cencorreg(nh4f, nh4_cens, seass))
+```
+
+cencorreg uses survival::survreg. but flipping to be left-censored.
+
+Compare cencorreg to gam  
+
+```{r}
+nut_2$nh4mat <- cbind(nut_2$nh4log, nut_2$nh4log_cens2)
+nut_2$no23mat <- cbind(nut_2$no23log, nut_2$no23log_cens2)
+nut_2$po4mat <- cbind(nut_2$po4log, nut_2$po4log_cens2)
+
+
+M1 <- with(nut_2, cencorreg(nh4log, nh4_cens, decYear, LOG = FALSE))
+M2 <- gam(nh4mat ~ decYear,
+          family = cnorm(),
+          data = nut_2)
+
+M1b <- with(nut_2, cencorreg(no23log, no23_cens, decYear, LOG = FALSE))
+M2b <- gam(no23mat ~ decYear,
+          family = cnorm(),
+          data = nut_2)
+
+M1c <- with(nut_2, cencorreg(po4log, po4_cens, decYear, LOG = FALSE))
+M2c <- gam(po4mat ~ decYear,
+          family = cnorm(),
+          data = nut_2)
+
+```
+
+
+YASSSSSSS, SAME COEFFICIENTS!!!!!! This is great because NADA2 doesn't really give you a lot to play around with, so unlocking the use of gam is pretty awesome.  
+
+NADA2 does produce much nicer plots though - censored QQ plots and censored regression lines.  
+
+
+Try doing a smooth for month....
+```{r}
+M3 <- gam(nh4mat ~ decYear + s(Month, bs = "cc"),
+          select = TRUE,
+          family = cnorm(),
+          data = nut_2)
+
+summary(M3)
+```
+
+really don't need the seasonal term. doesn't hurt anything though; so we are now able to run trends on censored data that *might* have a seasonal term.
+
+have not yet considered autocorrelation.  
+
+```{r}
+acf(resid(M3))
+```
+
+....and we still need to. Maybe this is where all the "lego blocks" from my time series course come in.
+
+```{r}
+library(survival) ## for data
+col1 <- colon[colon$etype==1,] ## concentrate on single event
+col1$differ <- as.factor(col1$differ)
+col1$sex <- as.factor(col1$sex)
+
+## set up the AFT response... 
+logt <- cbind(log(col1$time),log(col1$time))
+logt[col1$status==0,2] <- Inf ## right censoring
+col1$logt <- -logt ## -ve conventional for AFT versus Cox PH comparison
+
+## fit the model...
+b <- gam(logt~s(age,by=sex)+sex+s(nodes)+perfor+rx+obstruct+adhere,
+         family=cnorm(),data=col1)
+plot(b,pages=1)	 
+## ... compare this to ?cox.ph
+```
+
+
+```{r ATS-mainly}
+nut_3 <- nut_2 %>% 
+  dplyr::filter(Year >= 2011)
+
+with(nut_3, ATS(no23f, no23_cens, decYear))
+with(nut_3, ATS(nh4f, nh4_cens, decYear))
+with(nut_3, ATS(po4f, po4_cens, decYear))
+
+with(nut_3, ATS(no23f, no23_cens, log(nh4f), nh4_cens))
+with(nut_3, ATS(no23f, no23_cens, log(po4f), po4_cens))
+```
+
+
+```{r cenKen}
+ken404 <- with(nut_3, ATS(nh4f, nh4_cens, decYear, LOG = FALSE))
+ken405 <- kendallTrendTest(nh4f ~ decYear,
+                 data = nut_3)
+cenken()
+```
+
+```{r}
+library(mgcv)
+
+```
+
+```{r gam-lmseas}
+gam1 <- gam(log(nh4f) ~ decYear + s(Month, bs = "cc"),
+    data = nut_3)
+
+gamchl <- gam(log(chla_n) ~ decYear + s(Month, bs = "cc"),
+              data = nut_3)
+summary(gamchl)
+# smooth for month is highly significant
+
+kenchl <- with(nut_3, Kendall::Kendall(decYear, log(chla_n)))
+
+lmchl <- lm(log(chla_n) ~ decYear, data = nut_3)
+lmchl_seas <- lm(log(chla_n) ~ decYear + sin(2*pi*decYear) + cos(2*pi*decYear), data = nut_3)
+
+AIC(lmchl, lmchl_seas) # AIC WAAAAAAAY better with sin and cos terms - need to account for seasonality somehow for sure
+
+coef(lmchl_seas)["decYear"]
+coef(gamchl)["decYear"]
+
+summary(lmchl_seas)$coefficients[1:2, ]
+summary(gamchl)$p.table
+```
+
+Slope estimates and p-values are wildly different in different methods, but similar between a linear model with sin/cos terms for seasonality and the gam with smooth for seasonality. Advantage of gam is, it fits whatever is most appropriate. Actually much lower p-value for gam. similar coefficient. Guessing it takes care of seasonality more efficiently.  
+
+Also still some autocorrelation in the GAM residuals.  
+
+But how do we do this for nonparametric tests??? Especially with censored data???  
+
+
+re autocorrelation - use gamm:  
+
+```{r gamm-ar}
+gammchl <- gamm(log(chla_n) ~ decYear + s(Month, bs = "cc"),
+              data = nut_3,
+              correlation = corAR1())
+
+```
+
+
+# NOTE ON corAR1  
+
+8/8/23 - imposing structure makes a really big difference when there's some missing data (e.g. penguins example in time-series course, with several missing years, but correlation structure being ~Year) - it is important to specify this correctly, not just leave blank like I've been doing  
+
+
+back to original file.....
+
+This output is a different type of object that can be a little harder to work with  
+
+```{r}
+gammchl
+
+gammlme <- gammchl$lme
+gammgam <- gammchl$gam
+
+gammchl$lme$coefficients$fixed
+intervals(gammchl$lme)$fixed
+```
+
+Really similar slope to original gam and seasonal lm.  
+
+How about a linear model with seasonal term and autocorrelation.  
+
+```{r lm-seas-ar}
+lmchl_seas_ar1 <- gls(log(chla_n) ~ decYear + sin(2*pi*decYear) + cos(2*pi*decYear), 
+                      data = nut_3,
+                      correlation = corAR1())
+summary(lmchl_seas_ar1)$tTable
+intervals(lmchl_seas_ar1)
+```
+
+Again, similar slope.  
+
+How are all the CIs?  
+
+```{r}
+intervals(gammchl$lme)$fixed
+intervals(lmchl_seas_ar1)
+```
+
+linear model with autocorrelation has a wider CI than gam.  
+
+...though both are more appropriate than the CIs on models without AR1 built in.  
+
+```{r}
+confint(lmchl) # a little narrower than ar1 lm, as they should be (trust the ar1 version more)
+
+gamse <- summary(gamchl)$se["decYear"]
+coef(gamchl)["decYear"] + c(-1.96, 1.96)*gamse  # wooow, yeah, way too narrow
+```
+
+
+What about straight-up arima, with seasonality:  
+
+```{r arima-seas}
+armchl <- arima(log(nut_3$chla_n), order = c(1, 0, 0),
+                seasonal = list(order = c(1, 0, 0), period = 12),
+                xreg = nut_3$decYear)
+armchl
+confint(armchl)
+```
+
+```{r}
+acf(residuals(armchl))
+```
+
+
+Honestly though nonparametric is also probably the most appropriate thing for chl, given the potential for high outliers (blooms).  
+
+
+AICs for everything so far:  
+
+```{r}
+AIC(lmchl_seas, lmchl_seas_ar1, gamchl, gammchl$lme, armchl) %>% 
+  arrange(AIC)
+```
+
+
+Hm, wonder if having duplicates screws up the AR1 component - do I need to aggregate everything into a monthly average first? Is this why the arima has a wider CI? Did I screw up by not considering that in the other models, or in the corAR1 argument? Hmmmmm
+
+
+```{r}
+dat4 <- na.approx(nut_3, params = "chla_n", maxgap = 10)
+dat5 <- aggreswmp(dat4, by = "months")
+dat6 <- setstep(dat4, timestep = "months")
+dat7 <- na.omit(dat6)
+
+
+decomp(dat7,
+       param = "chla_n")
+```
+
