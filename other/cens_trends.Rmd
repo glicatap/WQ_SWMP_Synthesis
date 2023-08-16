@@ -175,21 +175,25 @@ acf(resid(M3))
 ....and we still need to. Maybe this is where all the "lego blocks" from my time series course come in.
 
 ```{r}
-library(survival) ## for data
-col1 <- colon[colon$etype==1,] ## concentrate on single event
-col1$differ <- as.factor(col1$differ)
-col1$sex <- as.factor(col1$sex)
+# setting up the gam (used to write chunk above)
+# from cnorm help file
 
-## set up the AFT response... 
-logt <- cbind(log(col1$time),log(col1$time))
-logt[col1$status==0,2] <- Inf ## right censoring
-col1$logt <- -logt ## -ve conventional for AFT versus Cox PH comparison
 
-## fit the model...
-b <- gam(logt~s(age,by=sex)+sex+s(nodes)+perfor+rx+obstruct+adhere,
-         family=cnorm(),data=col1)
-plot(b,pages=1)	 
-## ... compare this to ?cox.ph
+# library(survival) ## for data
+# col1 <- colon[colon$etype==1,] ## concentrate on single event
+# col1$differ <- as.factor(col1$differ)
+# col1$sex <- as.factor(col1$sex)
+# 
+# ## set up the AFT response... 
+# logt <- cbind(log(col1$time),log(col1$time))
+# logt[col1$status==0,2] <- Inf ## right censoring
+# col1$logt <- -logt ## -ve conventional for AFT versus Cox PH comparison
+# 
+# ## fit the model...
+# b <- gam(logt~s(age,by=sex)+sex+s(nodes)+perfor+rx+obstruct+adhere,
+#          family=cnorm(),data=col1)
+# plot(b,pages=1)	 
+# ## ... compare this to ?cox.ph
 ```
 
 
@@ -217,6 +221,7 @@ cenken()
 library(mgcv)
 
 ```
+
 
 ```{r gam-lmseas}
 gam1 <- gam(log(nh4f) ~ decYear + s(Month, bs = "cc"),

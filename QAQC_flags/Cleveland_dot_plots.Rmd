@@ -1,0 +1,154 @@
+---
+title: "Cleveland Dot Plots"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE,
+                      error = TRUE,
+                      fig.height = 9,
+                      fig.width = 9)
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+load(here::here("Data_processing",
+                "compiled_by_type",
+                "NUT.RData"))
+source(here::here("QAQC_flags", "functions.R"))
+```
+
+
+## QAQC  
+
+Keep only specific flags; make column for 'censored' or not  
+
+```{r}
+# define which flags to keep
+flags_keep <- c("<0>", "<4>", "<-4>", "<5>", "<-5>", "<2>", "<3>")
+flagCodes_keep <- c("<1> \\[GIT\\]")  # Use \\ for parentheses and square brackets.   
+
+flagCodes_keepvec <- paste(flagCodes_keep, collapse = "|")
+
+
+keep_status <- function(f_x){
+  # x is a vector of data
+  # f_x is the corresponding qaqc column
+  tmp <- extract_flag(f_x)
+  tmp <- ifelse(tmp %in% flags_keep, "keep", "discard")
+  tmp
+}
+
+qaqc_replace <- function(x, f_x){
+  # x is a vector of data
+  # f_x is the corresponding keep-or-discard column
+  ifelse(f_x == "discard", NA_real_, x)
+}
+
+```
+
+```{r}
+highchl <- NUT %>% 
+  select(station, datetimestamp, chla_n, f_chla_n) %>% 
+  filter(chla_n >= 100) %>% 
+  arrange(desc(chla_n))
+
+cbmmc <- NUT %>% 
+  select(station, datetimestamp, chla_n, f_chla_n) %>% 
+  filter(station == "cbmmcnut",
+         !is.na(chla_n))
+p <- ggplot(cbmmc, aes(x = datetimestamp, y = chla_n)) +
+  geom_point() +
+  scale_y_log10() +
+  theme_bw()
+plotly::ggplotly(p)
+```
+
+
+
+```{r}
+nut2 <- NUT %>% 
+  mutate(po4fcen = is_outsideMDL(po4f),
+         nh4fcen = is_outsideMDL(nh4f),
+         no23fcen = is_outsideMDL(no23f),
+         chlacen = is_outsideMDL(chla_n),
+         across(c(f_po4f, f_nh4f, f_no23f, f_chla_n),
+                keep_status),
+         po4f2 = qaqc_replace(po4f, f_po4f),
+         nh4f2 = qaqc_replace(nh4f, f_nh4f),
+         no23f2 = qaqc_replace(no23f, f_no23f),
+         chla2 = qaqc_replace(chla_n, f_chla_n),
+         reserve = substr(station, 1, 3)) %>% 
+  select(reserve, station, datetimestamp,
+         chla = chla2,
+         chlacen,
+         po4 = po4f2,
+         po4fcen,
+         nh4 = nh4f2,
+         nh4fcen,
+         no23 = no23f2,
+         no23fcen)
+```
+
+## Cleveland dot plot  
+
+```{r}
+ggplot(nut2, aes(x = chla, y = 1:nrow(nut2), group = reserve)) +
+  geom_point(na.rm = TRUE) +
+  scale_x_log10() +
+  facet_wrap(~reserve, scales = "free") +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  labs(title = "Chl a",
+       x = "value, shown on log-10 scale",
+       y = "order in data")
+```
+
+```{r}
+ggplot(nut2, aes(x = nh4, y = 1:nrow(nut2), group = reserve)) +
+  geom_point(na.rm = TRUE) +
+  scale_x_log10() +
+  facet_wrap(~reserve, scales = "free") +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  labs(title = "NH4",
+       x = "value, shown on log-10 scale",
+       y = "order in data")
+```
+
+```{r}
+ggplot(nut2, aes(x = no23, y = 1:nrow(nut2), group = reserve)) +
+  geom_point(na.rm = TRUE) +
+  scale_x_log10() +
+  facet_wrap(~reserve, scales = "free") +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  labs(title = "NO23",
+       x = "value, shown on log-10 scale",
+       y = "order in data")
+```
+
+```{r}
+ggplot(nut2, aes(x = po4, y = 1:nrow(nut2), group = reserve)) +
+  geom_point(na.rm = TRUE) +
+  scale_x_log10() +
+  facet_wrap(~reserve, scales = "free") +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  labs(title = "PO4",
+       x = "value, shown on log-10 scale",
+       y = "order in data")
+```
