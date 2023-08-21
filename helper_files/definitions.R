@@ -10,11 +10,25 @@
 #' for seasonal investigation, only keep active stations?
 
 
+# active stations, match wq and nut
+mstns <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) %>%  #read.csv threw an error for some reason
+  janitor::clean_names() %>%   
+  filter(status == "Active")
+stns_wq <- str_sub(grep("wq$", mstns$station_code, value = TRUE),
+                   end = -3)
+stns_nut <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
+                    end = -4)
+stns_wq_nut <- intersect(stns_wq, stns_nut)
+stns_in_regions <- mstns[grepl(paste(stns_wq_nut, collapse = "|"), mstns$station_code), c("station_code", "region")]
+# cleanup  
+rm(mstns, stns_nut, stns_wq)
+
 
 # Parameters ----
 params_wq <- c("temp", "spcond", "sal", "do_mgl", "do_pct", "turb")
 params_nut <- c("nh4f", "no23f", "po4f", "chla_n")
-
+f_wq <- paste0("f_", params_wq)
+f_nut <- paste0("f_", params_nut)
 
 # QA/QC flags and codes ----
 

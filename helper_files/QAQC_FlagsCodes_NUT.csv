@@ -172,7 +172,7 @@ discard,CHB overrules SBL,<-4> [SBL](CHB),<-4>,[SBL](CHB),24,1,0,0,0,0,1,0
 keep,SCB = calculated with a value below the mdl,<-4> [SCB],<-4>,[SCB],191,0,0,0,0,0,1,0
 discard,CHB overrules SBL,<-4> [SCB] (CHB),<-4>,[SCB] (CHB),1,1,0,0,0,0,1,0
 keep,5 = corrected,<5> (CSM),<5>,(CSM),676,0,0,0,0,0,0,0
-keep,,<5> [GQS] (CSM),<5>,[GQS] (CSM),2,0,0,0,0,0,0,0
+discard,,<5> [GQS] (CSM),<5>,[GQS] (CSM),2,0,0,0,0,0,0,0
 keep,,<5> [GSM] (CDR),<5>,[GSM] (CDR),6,0,0,0,0,0,0,0
 keep,,<5> [SRD] (CSM),<5>,[SRD] (CSM),4,0,0,0,0,0,0,0
 ,"missing, presumably",NA,NA,NA,1595,0,0,0,0,0,0,0

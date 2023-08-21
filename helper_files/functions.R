@@ -18,6 +18,26 @@ keep_onlyQAQC <- function(data){
 }
 
 
+qaqc_wq <- function(data, f_data){
+  # note these need to be provided as, e.g., wq$do_mgl, wq$f_do_mgl
+  # qaqcKeep_wq_complete and qaqcKeep_wq_startsWith are defined in 'definitions.R'
+  tmp_df <- data.frame(data, f_data) %>% 
+    mutate(data = case_when(str_detect(f_data, paste(qaqcKeep_wq_complete, collapse = "|")) ~ data,
+                            str_starts(f_data, paste(qaqcKeep_wq_startsWith, collapse = "|")) ~ data,
+                            .default = NA_real_))
+  tmp_df$data
+}
+
+qaqc_nut <- function(data, f_data){
+  # note these need to be provided as, e.g., nut$chla_n, nut$f_chla_n
+  # qaqcKeep_nut_complete is defined in 'definitions.R'
+    tmp_df <- data.frame(data, f_data) %>% 
+    mutate(data = case_when(str_detect(f_data, paste(qaqcKeep_nut_complete, collapse = "|")) ~ data,
+                            .default = NA_real_))
+  tmp_df$data
+}
+
+
 extract_flag <- function(col){
   # col is a vector of QAQC flags, e.g. a column in a data frame
   flags <- stringr::str_extract(col, "<-?\\d>")

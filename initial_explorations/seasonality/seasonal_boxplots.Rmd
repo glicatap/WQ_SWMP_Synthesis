@@ -1,0 +1,63 @@
+---
+title: "Seasonal Box Plots"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+```
+
+# WQ  
+
+Go one region at a time?
+```{r}
+path <- here::here("Data_processing", "compiled_by_stn")
+```
+
+
+```{r}
+for(rg in stns_in_regions$region){
+  # get a vector of the stations
+  stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("wq$", stns_in_regions$station_code), "station_code"])
+  
+  # read the data into a list
+  wq <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
+    purrr::set_names(stns) %>% 
+    purrr::list_rbind(names_to = "stn") %>% 
+    select(stn, datetimestamp, any_of(params_wq), any_of(f_wq))
+  
+  # QAQC
+  wq2 <- wq %>% 
+    mutate()
+
+}
+```
+
+```{r}
+test <- wq[1:100, ]
+xs <- paste0("test$", params_wq)
+ys <- paste0("test$", f_wq)
+qaqc_wq(ensym(xs[1]), ensym(ys[1]))
+
+wq2 <- wq %>% 
+  mutate(do_mgl = qaqc_wq(do_mgl, f_do_mgl)) 
+
+wq2 %>% 
+  select(stn, do_mgl, f_do_mgl) %>% 
+  filter(f_do_mgl == "<0>") %>% 
+  View()
+
+test <- paste0(params_wq, " = qaqc(", params_wq, ", ", f_wq, ")")
+# how in the heck do I loop through all the defined parameters though
+# so we can change which ones we're looking at in the definitions file
+# and this file will still apply qaqc to the relevant ones
+
+```
+
