@@ -1,0 +1,178 @@
+KeepOrDiscard,comments,f,flag,code,n,beyond_hold_time,suspect,rejected,missing,algae_bloom,below_detection,above_detection
+keep,,<0> (CAB),<0>,(CAB),20,0,0,0,0,1,0,0
+keep,CDR = sample diluted and rerun,<0> (CDR),<0>,(CDR),363,0,0,0,0,0,0,0
+discard,"CHB = beyond hold time, should overrule 0",<0> (CHB),<0>,(CHB),453,1,0,0,0,0,0,0
+keep,,<0> (CIF),<0>,(CIF),108,0,0,0,0,0,0,0
+keep,,<0> (CIP),<0>,(CIP),3,0,0,0,0,0,0,0
+keep,,<0> (CLE),<0>,(CLE),183,0,0,0,0,0,0,0
+keep,,<0> (CRE),<0>,(CRE),179,0,0,0,0,0,0,0
+keep,,<0> (CSM),<0>,(CSM),1595,0,0,0,0,0,0,0
+keep,,<0> (CUS),<0>,(CUS),55,0,0,0,0,0,0,0
+keep,,<0> [CAB],<0>,[CAB],2,0,0,0,0,1,0,0
+keep,GDM = data missing or sample never collected; if GDM is mistake then data's okay based on 0; if GDM is correct it's an NA anyway,<0> [GDM],<0>,[GDM],10,0,0,0,0,0,0,0
+discard,GQS = suspect,<0> [GQS],<0>,[GQS],8,0,0,0,0,0,0,0
+keep,,<0> [GSM],<0>,[GSM],8,0,0,0,0,0,0,0
+keep,,<0> [GSM] (CDR),<0>,[GSM] (CDR),82,0,0,0,0,0,0,0
+keep,,<0> [GSM] (CIP),<0>,[GSM] (CIP),1,0,0,0,0,0,0,0
+keep,,<0> [GSM] (CLE),<0>,[GSM] (CLE),33,0,0,0,0,0,0,0
+keep,,<0> [SRD],<0>,[SRD],42,0,0,0,0,0,0,0
+keep,,<0> [SRD] (CSM),<0>,[SRD] (CSM),4,0,0,0,0,0,0,0
+keep,SUL = above detection limit,<0> [SUL],<0>,[SUL],6,0,0,0,0,0,0,0
+keep,,<0>,<0>,NA,121754,0,0,0,0,0,0,0
+keep,CAB = algae bloom,<1> (CAB),<1>,(CAB),9,0,1,0,0,1,0,0
+discard,1 is suspect,<1> (CDR),<1>,(CDR),27,0,1,0,0,0,0,0
+discard,,<1> (CHB),<1>,(CHB),16006,1,1,0,0,0,0,0
+discard,,<1> (CLE),<1>,(CLE),16,0,1,0,0,0,0,0
+discard,,<1> (CSM),<1>,(CSM),1462,0,1,0,0,0,0,0
+discard,,<1> (CUS),<1>,(CUS),52,0,1,0,0,0,0,0
+discard,,<1> (SRD),<1>,(SRD),23,0,1,0,0,0,0,0
+discard,,<1> [ SRD],<1>,[ SRD],1,0,1,0,0,0,0,0
+discard,,<1> [CHB],<1>,[CHB],44,1,1,0,0,0,0,0
+discard,,<1> [GDM] (CSM),<1>,[GDM] (CSM),1,0,1,0,0,0,0,0
+discard,,<1> [GQS],<1>,[GQS],52,0,1,0,0,0,0,0
+discard,,<1> [GQS] (CDR),<1>,[GQS] (CDR),2,0,1,0,0,0,0,0
+discard,,<1> [GQS] (CHB),<1>,[GQS] (CHB),31,1,1,0,0,0,0,0
+discard,,<1> [GQS] (CLE),<1>,[GQS] (CLE),10,0,1,0,0,0,0,0
+discard,,<1> [GQS] (CSM),<1>,[GQS] (CSM),285,0,1,0,0,0,0,0
+discard,,<1> [GSM],<1>,[GSM],30,0,1,0,0,0,0,0
+discard,,<1> [GSM] (CDR),<1>,[GSM] (CDR),30,0,1,0,0,0,0,0
+discard,,<1> [GSM] (CHB),<1>,[GSM] (CHB),1732,1,1,0,0,0,0,0
+discard,,<1> [GSM] (CLE),<1>,[GSM] (CLE),7,0,1,0,0,0,0,0
+keep,SBL = below detction limit,<1> [SBL],<1>,[SBL],23,0,1,0,0,0,1,0
+discard,,<1> [SBL] (CHB),<1>,[SBL] (CHB),19,1,1,0,0,0,1,0
+discard,,<1> [SBL] (CUS),<1>,[SBL] (CUS),1,0,1,0,0,0,1,0
+discard,,<1> [SCC],<1>,[SCC],595,0,1,0,0,0,0,0
+discard,,<1> [SCC] (CHB),<1>,[SCC] (CHB),87,1,1,0,0,0,0,0
+discard,,<1> [SCC] (CLE),<1>,[SCC] (CLE),2,0,1,0,0,0,0,0
+discard,,<1> [SCC] (CSM),<1>,[SCC] (CSM),21,0,1,0,0,0,0,0
+discard,,<1> [SCC] [CHB],<1>,[SCC] [CHB],6,1,1,0,0,0,0,0
+discard,,<1> [SRD],<1>,[SRD],2052,0,1,0,0,0,0,0
+keep,SRD = replicates differ substantially,<1> [SRD] (CAB),<1>,[SRD] (CAB),18,0,1,0,0,1,0,0
+discard,,<1> [SRD] (CBH),<1>,[SRD] (CBH),2,0,1,0,0,0,0,0
+discard,,<1> [SRD] (CDR),<1>,[SRD] (CDR),10,0,1,0,0,0,0,0
+discard,,<1> [SRD] (CHB),<1>,[SRD] (CHB),393,1,1,0,0,0,0,0
+discard,,<1> [SRD] (CIF),<1>,[SRD] (CIF),2,0,1,0,0,0,0,0
+discard,,<1> [SRD] (CLE),<1>,[SRD] (CLE),12,0,1,0,0,0,0,0
+discard,,<1> [SRD] (CSM),<1>,[SRD] (CSM),296,0,1,0,0,0,0,0
+discard,,<1> [SRD] [CSM],<1>,[SRD] [CSM],6,0,1,0,0,0,0,0
+discard,,<1> [SRD][SBL],<1>,[SRD][SBL],1,0,1,0,0,0,1,0
+discard,,<1> [SUL],<1>,[SUL],11,0,1,0,0,0,0,0
+discard,,<1> [SUL] (CHB),<1>,[SUL] (CHB),5,1,1,0,0,0,0,0
+discard,,<1> [SUL] (CSM),<1>,[SUL] (CSM),10,0,1,0,0,0,0,0
+discard,,<1>,<1>,NA,4,0,1,0,0,0,0,0
+discard,-1 is optional value not collected,<-1> [GDM],<-1>,[GDM],8,0,0,0,0,0,0,0
+discard,,<-1> [SRD],<-1>,[SRD],6,0,0,0,0,0,0,0
+discard,,<-1>,<-1>,NA,110,0,0,0,0,0,0,0
+discard,-2 indicates missing,<-2> (CHB),<-2>,(CHB),42,1,0,0,1,0,0,0
+discard,,<-2> (CIP),<-2>,(CIP),16,0,0,0,1,0,0,0
+discard,,<-2> (CSM),<-2>,(CSM),716,0,0,0,1,0,0,0
+discard,,<-2> [CHB],<-2>,[CHB],16,1,0,0,1,0,0,0
+discard,,<-2> [CSM],<-2>,[CSM],25,0,0,0,1,0,0,0
+discard,,<-2> [GCM],<-2>,[GCM],5,0,0,0,1,0,0,0
+discard,,<-2> [GCM] (CSM),<-2>,[GCM] (CSM),14,0,0,0,1,0,0,0
+discard,,<-2> [GDM],<-2>,[GDM],1834,0,0,0,1,0,0,0
+discard,,<-2> [GDM] (CHB),<-2>,[GDM] (CHB),10,1,0,0,1,0,0,0
+discard,,<-2> [GDM] (CSM),<-2>,[GDM] (CSM),1811,0,0,0,1,0,0,0
+discard,,<-2> [GDM][CSM],<-2>,[GDM][CSM],15,0,0,0,1,0,0,0
+discard,,<-2> [GQD],<-2>,[GQD],8,0,0,0,1,0,0,0
+discard,,<-2> [GQD] (CSM),<-2>,[GQD] (CSM),34,0,0,0,1,0,0,0
+discard,,<-2> [GQS],<-2>,[GQS],4,0,0,0,1,0,0,0
+discard,,<-2> [GSM],<-2>,[GSM],233,0,0,0,1,0,0,0
+discard,,<-2> [SRD],<-2>,[SRD],6,0,0,0,1,0,0,0
+discard,,<-2> [SUL],<-2>,[SUL],1,0,0,0,1,0,0,0
+discard,,<-2>,<-2>,NA,111,0,0,0,1,0,0,0
+discard,CHB = beyond hold time,<-3> (CHB),<-3>,(CHB),6,1,0,1,0,0,0,0
+discard,,<-3> (CSM),<-3>,(CSM),127,0,0,1,0,0,0,0
+discard,,<-3> [GCR],<-3>,[GCR],35,0,0,1,0,0,0,0
+discard,,<-3> [GQD],<-3>,[GQD],112,0,0,1,0,0,0,0
+discard,,<-3> [GQD] (CHB),<-3>,[GQD] (CHB),33,1,0,1,0,0,0,0
+discard,,<-3> [GQD] (CSM),<-3>,[GQD] (CSM),276,0,0,1,0,0,0,0
+discard,,<-3> [GQS],<-3>,[GQS],2,0,0,1,0,0,0,0
+discard,,<-3> [GQS] (CSM),<-3>,[GQS] (CSM),1,0,0,1,0,0,0,0
+discard,,<-3> [GSM],<-3>,[GSM],8,0,0,1,0,0,0,0
+discard,,<-3> [GSM] (CHB),<-3>,[GSM] (CHB),13,1,0,1,0,0,0,0
+discard,"SBL = below detection limit, but -3 indicates other reasons for rejecting",<-3> [SBL],<-3>,[SBL],32,0,0,1,0,0,1,0
+discard,,<-3> [SBL] (CHB),<-3>,[SBL] (CHB),12,1,0,1,0,0,1,0
+discard,,<-3> [SBL] (CSM),<-3>,[SBL] (CSM),43,0,0,1,0,0,1,0
+discard,,<-3> [SCC] (CSM),<-3>,[SCC] (CSM),6,0,0,1,0,0,0,0
+discard,,<-3> [SNV],<-3>,[SNV],1,0,0,1,0,0,0,0
+discard,,<-3> [SRD],<-3>,[SRD],77,0,0,1,0,0,0,0
+discard,,<-3> [SRD] (CHB),<-3>,[SRD] (CHB),10,1,0,1,0,0,0,0
+discard,,<-3> [SRD] (CSM),<-3>,[SRD] (CSM),12,0,0,1,0,0,0,0
+discard,,<-3> [SUL],<-3>,[SUL],6,0,0,1,0,0,0,0
+discard,,<-3> [SUL] (CSM),<-3>,[SUL] (CSM),6,0,0,1,0,0,0,0
+keep,A = above detection limits; mostly seems accidental,<4>  A,<4>, A,57,0,0,0,0,0,0,1
+discard,mistaken combination of A-B,<4>  A - B,<4>, A - B,3,0,0,0,0,0,1,1
+discard,M = missing,<4>  A - M,<4>, A - M,2,0,0,0,1,0,0,1
+keep,B = below detection,<4>  B,<4>, B,2490,0,0,0,0,0,1,0
+keep,C = calculated,<4>  B - C,<4>, B - C,23,0,0,0,0,0,1,0
+discard,,<4>  B - D,<4>, B - D,245,0,0,1,0,0,1,0
+discard,H = beyond hold time,<4>  B - H,<4>, B - H,99,1,0,0,0,0,1,0
+keep,K = check metadata,<4>  B - K,<4>, B - K,52,0,0,0,0,0,1,0
+keep,P = precipitation,<4>  B - K - P,<4>, B - K - P,4,0,0,0,0,0,1,0
+keep,,<4>  B - P,<4>, B - P,36,0,0,0,0,0,1,0
+discard,,<4>  B - P - S - H - K,<4>, B - P - S - H - K,3,1,1,0,0,0,1,0
+discard,,<4>  B - S,<4>, B - S,7,0,1,0,0,0,1,0
+discard,,<4>  B - S - K,<4>, B - S - K,4,0,1,0,0,0,1,0
+keep,,<4>  C,<4>, C,24,0,0,0,0,0,0,0
+discard,M = missing,<4>  C - M,<4>, C - M,13,0,0,0,1,0,0,0
+discard,,<4>  D,<4>, D,82,0,0,1,0,0,0,0
+discard,,<4>  D - A - K,<4>, D - A - K,1,0,0,1,0,0,0,1
+discard,,<4>  D - B - C - H,<4>, D - B - C - H,3,1,0,1,0,0,1,0
+discard,,<4>  D - B - C - H - P,<4>, D - B - C - H - P,5,1,0,1,0,0,1,0
+discard,,<4>  D - B - H,<4>, D - B - H,1,1,0,1,0,0,1,0
+discard,,<4>  D - B - H - P,<4>, D - B - H - P,3,1,0,1,0,0,1,0
+discard,,<4>  D - C - H,<4>, D - C - H,1,1,0,1,0,0,0,0
+discard,,<4>  D - C - H - P,<4>, D - C - H - P,17,1,0,1,0,0,0,0
+discard,,<4>  D - H,<4>, D - H,29,1,0,1,0,0,0,0
+discard,,<4>  D - H - P,<4>, D - H - P,43,1,0,1,0,0,0,0
+discard,,<4>  D - K,<4>, D - K,17,0,0,1,0,0,0,0
+discard,,<4>  D - N,<4>, D - N,1,0,0,1,0,0,0,0
+discard,,<4>  D - S,<4>, D - S,5,0,1,1,0,0,0,0
+discard,,<4>  H,<4>, H,1966,1,0,0,0,0,0,0
+discard,,<4>  H - A,<4>, H - A,5,1,0,0,0,0,0,1
+discard,,<4>  H - A - B,<4>, H - A - B,6,1,0,0,0,0,1,1
+discard,,<4>  H - B,<4>, H - B,62,1,0,0,0,0,1,0
+discard,,<4>  H - B - P,<4>, H - B - P,2,1,0,0,0,0,1,0
+discard,,<4>  H - K,<4>, H - K,8,1,0,0,0,0,0,0
+discard,,<4>  H - M,<4>, H - M,16,1,0,0,1,0,0,0
+discard,,<4>  H - P,<4>, H - P,338,1,0,0,0,0,0,0
+discard,,<4>  H - P - B,<4>, H - P - B,4,1,0,0,0,0,1,0
+discard,,<4>  H - S,<4>, H - S,1,1,1,0,0,0,0,0
+discard,,<4>  H.P,<4>, H.P,6,1,0,0,0,0,0,0
+keep,K = see metadata,<4>  K,<4>, K,395,0,0,0,0,0,0,0
+discard,,<4>  K - D,<4>, K - D,8,0,0,1,0,0,0,0
+discard,,<4>  K - H,<4>, K - H,40,1,0,0,0,0,0,0
+keep,,<4>  K - P,<4>, K - P,10,0,0,0,0,0,0,0
+discard,M = missing,<4>  M,<4>, M,735,0,0,0,1,0,0,0
+discard,M = missing,<4>  M - K,<4>, M - K,154,0,0,0,1,0,0,0
+discard,M = missing,<4>  M - P,<4>, M - P,25,0,0,0,1,0,0,0
+discard,N = negative value; though keep because adjusted to detection limit anyway; Melissa recomends excluding,<4>  N - B,<4>, N - B,1,0,0,0,0,0,1,0
+keep,,<4>  P,<4>, P,3195,0,0,0,0,0,0,0
+keep,,<4>  P - B,<4>, P - B,8,0,0,0,0,0,1,0
+keep,,<4>  P - K,<4>, P - K,1,0,0,0,0,0,0,0
+discard,,<4>  P - S,<4>, P - S,17,0,1,0,0,0,0,0
+discard,,<4>  P - S - H - K,<4>, P - S - H - K,29,1,1,0,0,0,0,0
+discard,,<4>  S,<4>, S,147,0,1,0,0,0,0,0
+discard,,<4>  S - H - K,<4>, S - H - K,1,1,1,0,0,0,0,0
+discard,,<4>  S - K,<4>, S - K,31,0,1,0,0,0,0,0
+discard,,<4>  S - P,<4>, S - P,32,0,1,0,0,0,0,0
+keep,,<4>,<4>,NA,30037,0,0,0,0,0,0,0
+keep,,<-4> [SBL],<-4>,[SBL],14712,0,0,0,0,0,1,0
+keep,,<-4> [SBL] (CAB),<-4>,[SBL] (CAB),4,0,0,0,0,1,1,0
+discard,CHB overrules SBL,<-4> [SBL] (CHB),<-4>,[SBL] (CHB),2329,1,0,0,0,0,1,0
+keep,CIF = flotsam present in vicinity,<-4> [SBL] (CIF),<-4>,[SBL] (CIF),4,0,0,0,0,0,1,0
+keep,CLE = sample collected earlier/later than scheduled,<-4> [SBL] (CLE),<-4>,[SBL] (CLE),3,0,0,0,0,0,1,0
+keep,CRE = significant weather event,<-4> [SBL] (CRE),<-4>,[SBL] (CRE),5,0,0,0,0,0,1,0
+keep,CSM = see metadata,<-4> [SBL] (CSM),<-4>,[SBL] (CSM),193,0,0,0,0,0,1,0
+keep,CUS = lab analysis from unpreserved sample,<-4> [SBL] (CUS),<-4>,[SBL] (CUS),22,0,0,0,0,0,1,0
+discard,CHB overrules SBL,<-4> [SBL] [CHB],<-4>,[SBL] [CHB],2,1,0,0,0,0,1,0
+keep,SRD = replicats differ substantially,<-4> [SBL] [SRD],<-4>,[SBL] [SRD],1,0,0,0,0,0,1,0
+discard,CHB overrules SBL,<-4> [SBL](CHB),<-4>,[SBL](CHB),24,1,0,0,0,0,1,0
+keep,SCB = calculated with a value below the mdl,<-4> [SCB],<-4>,[SCB],191,0,0,0,0,0,1,0
+discard,CHB overrules SBL,<-4> [SCB] (CHB),<-4>,[SCB] (CHB),1,1,0,0,0,0,1,0
+keep,5 = corrected,<5> (CSM),<5>,(CSM),676,0,0,0,0,0,0,0
+keep,,<5> [GQS] (CSM),<5>,[GQS] (CSM),2,0,0,0,0,0,0,0
+keep,,<5> [GSM] (CDR),<5>,[GSM] (CDR),6,0,0,0,0,0,0,0
+keep,,<5> [SRD] (CSM),<5>,[SRD] (CSM),4,0,0,0,0,0,0,0
+,"missing, presumably",NA,NA,NA,1595,0,0,0,0,0,0,0

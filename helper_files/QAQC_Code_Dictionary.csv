@@ -1,0 +1,100 @@
+data_type,code,meaning
+wq,GIC,no instrument deployed due to ice
+wq,GIM,instrument malfunction
+wq,GIT,instrument recording error; recovered telemetry data
+wq,GMC,no instrument deployed due to maintenance/calibration
+wq,GNF,deployment tube clogged / no flow
+wq,GOW,out of water event
+wq,GPF,power failure / low battery
+wq,GQR,data rejected due to QA/QC checks
+wq,GSM,see metadata
+wq,SBO,blocked optic
+wq,SCF,conductivity sensor failure
+wq,SDF,depth port frozen
+wq,SDG,suspect due to sensor diagnostics
+wq,SDO,DO suspect
+wq,SDP,DO membrane puncture
+wq,SIC,incorrect calibration / contaminated standard
+wq,SNV,negative value
+wq,SOW,sensor out of water
+wq,SPC,post calibration out of range
+wq,SSD,sensor drift
+wq,SSM,sensor malfunction
+wq,SSR,sensor removed / not deployed
+wq,STF,catastrophic temperature sensor failure
+wq,STS,turbidity spike
+wq,SWM,wiper malfunction / loss
+wq,CAB ,algal bloom
+wq,CAF,acceptable calibration / accuracy error of sensor
+wq,CAP,depth sensor in water; affected by atmospheric pressure
+wq,CBF,biofouling
+wq,CCU,cause unknown
+wq,CDA,DO hypoxia (<3 mg/L)
+wq,CDB,disturbed bottom
+wq,CDF,data appear to fit conditions
+wq,CFK,fish kill
+wq,CIP,surface ice present at sample station
+wq,CLT,low tide
+wq,CMC,in field maintenance / cleaning
+wq,CMD,mud in probe guard
+wq,CND,new deployment begins
+wq,CRE,significant rain event
+wq,CSM,see metadata
+wq,CTS,turbidity spike 
+wq,CVT,possible vandalism/tampering 
+wq,CWD,data collected at wrong depth
+wq,CWE,significant weather event
+met,GIM ,instrument malfunction
+met,GIT ,"instrument recording error, recovered telemetry data"
+met,GMC ,no instrument deployed due to maintenance/calibration
+met,GMT ,instrument maintenance
+met,GPD ,powered down
+met,GPF ,power failure/low battery
+met,GPR ,program reload
+met,GQR ,data rejected due to QAQC 
+met,GSM ,see metadata
+met,SDG,suspect due to sensor diagnostics
+met,SIC ,"incorrect calibration constant, multiplier or offset"
+met,SIW,incorrect wiring
+met,SMT,sensor maintenance
+met,SNV ,negative value
+met,SOC ,out of calibration
+met,SSN ,not a number/unknown value
+met,SSM ,sensor malfunction
+met,SSR ,sensor removed
+met,CAF ,acceptable calibration/accuracy error of sensor
+met,CDF ,data appear to fit conditions
+met,CML,Snow melt from previous snowfall event
+met,CRE ,significant rain event
+met,CSM ,see metadata
+met,CCU,cause unknown
+met,CVT ,possible vandalism/tampering
+met,CWE,significant weather event
+nut,GCM,calculated value could not be determined due to missing data
+nut,GCR,calculated value could not be determined due to rejected data
+nut,GDM,data missing or sample never collected
+nut,GQD,data rejected due to QA/QC checks
+nut,GQS,data suspect due to QA/QC checks
+nut,SBL,value below minimum limit of method detection
+nut,SCB,value calculated with a value that is below the MDL 
+nut,SCC,calculation with this component resulted in a negative value
+nut,SNV,calculated value is negative
+nut,SRD,replicate values differ substantially
+nut,SUL,value above upper limit of method detection
+nut,CAB,algal bloom
+nut,CDR,sample diluted and rerun
+nut,CHB,sample held beyond specified holding time 
+nut,CIF,flotsam present in sample vicinity
+nut,CIP,ice present in sample vicinity
+nut,CLE,sample collected earlier / later than scheduled
+nut,CRE,significant rain event
+nut,CSM,see metadata
+nut,CUS,lab analysis from unpreserved sample
+record,CAB,algal bloom
+record,CHB,sample held beyond specified holding time 
+record,CIF,flotsam present in sample vicinity
+record,CIP,ice present in sample vicinity
+record,CLE,sample collected earlier/later than scheduled
+record,CRE,significant rain event 
+record,CUS,lab analysis from unpreserved sample
+record,CSM,see metadata

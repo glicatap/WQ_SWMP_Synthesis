@@ -20,7 +20,7 @@ library(ggplot2)
 load(here::here("Data_processing",
                 "compiled_by_type",
                 "NUT.RData"))
-source(here::here("QAQC_flags", "functions.R"))
+source(here::here("helper_files", "functions.R"))
 ```
 
 
