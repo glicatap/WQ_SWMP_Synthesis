@@ -1,8 +1,8 @@
 #' tests file to make sure code is working correctly
-#' 
-#' 
 
 library(testthat)
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
 
 #' check 'qaqc' functions for individual vectors 
 par1 <- c(5, 6, 7, 8, 9, 10, 11)
