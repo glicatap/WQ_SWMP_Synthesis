@@ -32,7 +32,7 @@ qaqc_nut <- function(data, f_data){
   # note these need to be provided as, e.g., nut$chla_n, nut$f_chla_n
   # qaqcKeep_nut_complete is defined in 'definitions.R'
     tmp_df <- data.frame(data, f_data) %>% 
-    mutate(data = case_when(str_detect(f_data, paste(qaqcKeep_nut_complete, collapse = "|")) ~ data,
+    mutate(data = case_when(f_data %in% qaqcKeep_nut_complete ~ data,
                             .default = NA_real_))
   tmp_df$data
 }
