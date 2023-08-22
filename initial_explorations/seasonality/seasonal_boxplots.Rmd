@@ -1,11 +1,16 @@
 ---
 title: "Seasonal Box Plots"
-output: html_document
+output: pdf_document
 date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE,
+                      fig.height = 8,
+                      fig.width = 8)
 ```
 
 ```{r}
@@ -14,51 +19,98 @@ source(here::here("helper_files", "definitions.R"))
 source(here::here("helper_files", "functions.R"))
 ```
 
-# WQ  
 
-Go one region at a time?
 ```{r}
 path <- here::here("Data_processing", "compiled_by_stn")
+options(scipen = 999) # avoid scientific notation
 ```
 
+In this document, I'm looping through water quality parameters within each region, and then through nutrient parameters within each region.  
+
+Data have been qaqc'd. For WQ data, values were aggregated as the median for each month of each year - median because we had a large quantity of likely non-normal data. For NUT data, values were aggregated as the mean of each month of each year - mean used because we should only have 2 replicates per parameter per site.  
+
+If this worked correctly, there's only one graph per page so if it's printed, or using pdf editing software, the graphs can be rearranged into a better order.  
+
+# WQ  
 
 ```{r}
-for(rg in stns_in_regions$region){
-  # get a vector of the stations
+for(rg in sort(unique(stns_in_regions$region))){
+  # get the stations in a region
   stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("wq$", stns_in_regions$station_code), "station_code"])
   
-  # read the data into a list and combine to data frame
+  # read in the data
   wq <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
     purrr::set_names(stns) %>% 
     purrr::list_rbind(names_to = "stn") %>% 
     select(stn, datetimestamp, any_of(params_wq), any_of(f_wq))
   
-  # QAQC
+  # for region 4, it's 13 million rows
+  
+  # run qaqc on the data frame
   wq2 <- qaqc_df(wq, params_wq, type = "wq")
-
+  
+  
+  # get median of each param by year-month combo
+  # reduces it to 4902 rows
+  wq3 <- wq2 %>% 
+    mutate(Year = lubridate::year(datetimestamp),
+           Month = lubridate::month(datetimestamp)) %>% 
+    group_by(stn, Year, Month) %>% 
+    summarize(across(all_of(params_wq), function(x) median(x, na.rm = TRUE))) %>% 
+    mutate(reserve = substr(stn, 1, 3))
+  
+  for(j in seq_along(params_wq)){
+    dat_sub <- wq3[c("stn", "Year", "Month", params_wq[j])]
+    names(dat_sub)[4] <- "param"
+    p <- ggplot(dat_sub, aes(x = factor(Month), y = param, group = Month)) +
+      geom_boxplot(na.rm = TRUE) +
+      facet_wrap(~ stn, ncol = 4, scales = "free_y") +
+      labs(title = paste(params_wq[j], " - region ", rg),
+           x = "Month",
+           y = "value")
+    print(p)
+  }
+  
 }
 ```
 
-```{r}
-# test <- wq[sample(1:nrow(wq), size = 1000), ]
-
-# run qaqc on the data frame
-wq2 <- qaqc_df(wq, params_wq, type = "wq")
-
-
-# get median of each param by year-month combo, then by months across years
-wq3 <- wq2 %>% 
-  mutate(Year = lubridate::year(datetimestamp),
-         Month = lubridate::month(datetimestamp)) %>% 
-  group_by(stn, Year, Month) %>% 
-  summarize(across(all_of(params_wq), function(x) median(x, na.rm = TRUE))) %>% 
-  mutate(reserve = substr(stn, 1, 3))
-```
+# NUT  
 
 ```{r}
-  ggplot(wq3, aes(x = factor(Month), y = sal, group = Month)) +
-    geom_boxplot() +
-    facet_wrap(~ stn, ncol = 4)
+for(rg in sort(unique(stns_in_regions$region))){
+  # get the stations in a region
+  stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("nut$", stns_in_regions$station_code), "station_code"])
 
+  # read in the data
+  nut <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
+    purrr::set_names(stns) %>% 
+    purrr::list_rbind(names_to = "stn") %>% 
+    select(stn, datetimestamp, any_of(params_nut), any_of(f_nut))
+  
+  # run qaqc on the data frame
+  nut2 <- qaqc_df(nut, params_nut, type = "nut")
+  
+  # get average for each month
+  nut3 <- nut2 %>% 
+    mutate(Year = lubridate::year(datetimestamp),
+           Month = lubridate::month(datetimestamp)) %>% 
+    group_by(stn, Year, Month) %>% 
+    summarize(across(all_of(params_nut), function(x) mean(x, na.rm = TRUE))) %>% 
+    mutate(reserve = substr(stn, 1, 3))
+  
+  # make boxplots
+  for(j in seq_along(params_nut)){
+    dat_sub <- nut3[c("stn", "Year", "Month", params_nut[j])]
+    names(dat_sub)[4] <- "param"
+    p <- ggplot(dat_sub, aes(x = factor(Month), y = param, group = Month)) +
+      geom_boxplot(na.rm = TRUE) +
+      scale_y_log10() +
+      facet_wrap(~ stn, ncol = 4, scales = "free_y") +
+      labs(title = paste(params_nut[j], " - region ", rg),
+           x = "Month",
+           y = "value")
+    print(p)
+  }
+}
 ```
 
