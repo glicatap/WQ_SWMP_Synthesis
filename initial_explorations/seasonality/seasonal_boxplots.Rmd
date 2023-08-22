@@ -27,37 +27,38 @@ for(rg in stns_in_regions$region){
   # get a vector of the stations
   stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("wq$", stns_in_regions$station_code), "station_code"])
   
-  # read the data into a list
+  # read the data into a list and combine to data frame
   wq <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
     purrr::set_names(stns) %>% 
     purrr::list_rbind(names_to = "stn") %>% 
     select(stn, datetimestamp, any_of(params_wq), any_of(f_wq))
   
   # QAQC
-  wq2 <- wq %>% 
-    mutate()
+  wq2 <- qaqc_df(wq, params_wq, type = "wq")
 
 }
 ```
 
 ```{r}
-test <- wq[1:100, ]
-xs <- paste0("test$", params_wq)
-ys <- paste0("test$", f_wq)
-qaqc_wq(ensym(xs[1]), ensym(ys[1]))
+# test <- wq[sample(1:nrow(wq), size = 1000), ]
 
-wq2 <- wq %>% 
-  mutate(do_mgl = qaqc_wq(do_mgl, f_do_mgl)) 
+# run qaqc on the data frame
+wq2 <- qaqc_df(wq, params_wq, type = "wq")
 
-wq2 %>% 
-  select(stn, do_mgl, f_do_mgl) %>% 
-  filter(f_do_mgl == "<0>") %>% 
-  View()
 
-test <- paste0(params_wq, " = qaqc(", params_wq, ", ", f_wq, ")")
-# how in the heck do I loop through all the defined parameters though
-# so we can change which ones we're looking at in the definitions file
-# and this file will still apply qaqc to the relevant ones
+# get median of each param by year-month combo, then by months across years
+wq3 <- wq2 %>% 
+  mutate(Year = lubridate::year(datetimestamp),
+         Month = lubridate::month(datetimestamp)) %>% 
+  group_by(stn, Year, Month) %>% 
+  summarize(across(all_of(params_wq), function(x) median(x, na.rm = TRUE))) %>% 
+  mutate(reserve = substr(stn, 1, 3))
+```
+
+```{r}
+  ggplot(wq3, aes(x = factor(Month), y = sal, group = Month)) +
+    geom_boxplot() +
+    facet_wrap(~ stn, ncol = 4)
 
 ```
 

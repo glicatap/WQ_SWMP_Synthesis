@@ -17,7 +17,7 @@ keep_onlyQAQC <- function(data){
   data[ , names(data) %in% to_keep_qaqc]
 }
 
-
+# vector of wq data
 qaqc_wq <- function(data, f_data){
   # note these need to be provided as, e.g., wq$do_mgl, wq$f_do_mgl
   # qaqcKeep_wq_complete and qaqcKeep_wq_startsWith are defined in 'definitions.R'
@@ -28,6 +28,8 @@ qaqc_wq <- function(data, f_data){
   tmp_df$data
 }
 
+
+# vector of nut data
 qaqc_nut <- function(data, f_data){
   # note these need to be provided as, e.g., nut$chla_n, nut$f_chla_n
   # qaqcKeep_nut_complete is defined in 'definitions.R'
@@ -35,6 +37,26 @@ qaqc_nut <- function(data, f_data){
     mutate(data = case_when(f_data %in% qaqcKeep_nut_complete ~ data,
                             .default = NA_real_))
   tmp_df$data
+}
+
+# entire data frame
+qaqc_df <- function(df, param_vec, type){
+  out_df <- list()
+  if(type == "wq"){
+    for(i in seq_along(param_vec)){
+      out_df[[i]] <- qaqc_wq(unlist(df[which(names(df) == param_vec[i])]),
+                             unlist(df[which(names(df) == paste0("f_", param_vec[i]))]))
+    }
+  } else if(type == "nut") {
+    for(i in seq_along(param_vec)){
+      out_df[[i]] <- qaqc_nut(unlist(df[which(names(df) == param_vec[i])]),
+                              unlist(df[which(names(df) == paste0("f_", param_vec[i]))]))
+    }
+  }
+  out_df <- dplyr::bind_cols(out_df)
+  names(out_df) <- param_vec
+  orig_cols <- df[, which(!(names(df) %in% c(param_vec, paste0("f_", param_vec))))]
+  cbind(orig_cols, out_df)
 }
 
 

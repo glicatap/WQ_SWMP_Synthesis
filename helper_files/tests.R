@@ -4,7 +4,7 @@
 
 library(testthat)
 
-#' check 'qaqc' functions  
+#' check 'qaqc' functions for individual vectors 
 par1 <- c(5, 6, 7, 8, 9, 10, 11)
 f_par1 <- c("<1>", 
             "<1> [GIT]", 
@@ -22,3 +22,45 @@ f_par2 <- c("<1> (CAB)",
             "<0> [CAB]")
 expect_identical(qaqc_wq(par1, f_par1), c(NA, 6, NA, 8, 9, NA, 11))
 expect_identical(qaqc_nut(par1, f_par2), c(5, NA, 7, NA, 9, NA, 11))
+
+
+#' check 'qaqc_df' function
+#' wq
+parms <- c("sal", "do_mgl")
+df1 <- data.frame(index = 1:10,
+                  stn = rep("abcyzwq", 10),
+                  date = Sys.Date() + 1:10,
+                  sal = rep(5, 10),
+                  f_sal = c("<0>", "<1>", "<1> (CAB)", "<1> [GIT]", "<1> [GIT] (CSM)", 
+                            "<-3>", "<4>", "<-4>", "<1> [GIT] (CDA)", "<0> (CSM)"),
+                  do_mgl = rep(8, 10),
+                  f_do_mgl = c(c("<0>", "<1> [SWM]", "<-3> (CAB)", "<-3> [GIT]", "<-2> [GIT] (CSM)", 
+                                 "<-3>", "<4>", "<-4>", "<-2>", "<0> (CSM)")))
+df2 <- data.frame(index = 1:10,
+                  stn = rep("abcyzwq", 10),
+                  date = Sys.Date() + 1:10,
+                  sal = c(5, NA, NA, 5, 5, 
+                          NA, 5, NA, NA, 5), 
+                  do_mgl = c(8, NA, NA, NA, NA, 
+                             NA, 8, NA, NA, 8))
+expect_identical(qaqc_df(df1, parms, "wq"), df2)
+
+#' nut
+parms <- c("po4f", "chla_n")
+df1 <- data.frame(index = 1:10,
+                  stn = rep("abcyzwq", 10),
+                  date = Sys.Date() + 1:10,
+                  po4f = rep(5, 10),
+                  f_po4f = c("<0>", "<1>", "<1> (CAB)", "<-4> [SBL]", "<4>  B - K", 
+                            "<-3>", "<4>", "<5> (CSM)", "<-4> [SBL] (CHB)", "<0> (CSM)"),
+                  chla_n = rep(8, 10),
+                  f_chla_n = c(c("<0>", "<1> (CAB)", "<-3> (CAB)", "<4>  S - K", "<4>  K - H", 
+                                 "<-3>", "<4>", "<4>  K", "<-2>", "<0> (CSM)")))
+df2 <- data.frame(index = 1:10,
+                  stn = rep("abcyzwq", 10),
+                  date = Sys.Date() + 1:10,
+                  po4f = c(5, NA, 5, 5, 5, 
+                           NA, 5, 5, NA, 5), 
+                  chla_n = c(8, 8, NA, NA, NA, 
+                             NA, 8, 8, NA, 8))
+expect_identical(qaqc_df(df1, parms, "nut"), df2)
