@@ -38,6 +38,9 @@ for(rg in sort(unique(stns_in_regions$region))){
   # get the stations in a region
   stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("wq$", stns_in_regions$station_code), "station_code"])
   
+    # make sure file exists for all stations
+  stns <- stns[paste0(stns, ".RData") %in% dir(path)]
+  
   # read in the data
   wq <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
     purrr::set_names(stns) %>% 
@@ -64,10 +67,11 @@ for(rg in sort(unique(stns_in_regions$region))){
     names(dat_sub)[4] <- "param"
     p <- ggplot(dat_sub, aes(x = factor(Month), y = param, group = Month)) +
       geom_boxplot(na.rm = TRUE) +
+      scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
       facet_wrap(~ stn, ncol = 4, scales = "free_y") +
       labs(title = paste(params_wq[j], " - region ", rg),
            x = "Month",
-           y = "value")
+           y = params_wq[j])
     print(p)
   }
   
@@ -80,6 +84,9 @@ for(rg in sort(unique(stns_in_regions$region))){
 for(rg in sort(unique(stns_in_regions$region))){
   # get the stations in a region
   stns <- unlist(stns_in_regions[stns_in_regions$region == rg & grepl("nut$", stns_in_regions$station_code), "station_code"])
+  
+  # make sure file exists for all stations
+  stns <- stns[paste0(stns, ".RData") %in% dir(path)]
 
   # read in the data
   nut <- purrr::map(stns, function(x) get(load(paste0(path, "/", x, ".RData")))) %>% 
@@ -105,10 +112,11 @@ for(rg in sort(unique(stns_in_regions$region))){
     p <- ggplot(dat_sub, aes(x = factor(Month), y = param, group = Month)) +
       geom_boxplot(na.rm = TRUE) +
       scale_y_log10() +
+      scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
       facet_wrap(~ stn, ncol = 4, scales = "free_y") +
       labs(title = paste(params_nut[j], " - region ", rg),
            x = "Month",
-           y = "value")
+           y = params_nut[j])
     print(p)
   }
 }
