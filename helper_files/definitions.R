@@ -2,7 +2,7 @@
 #' as well as which QA/QC flags and codes to keep
 #' 
 #' 
-
+library(stringr)
 
 # Stations ----
 #' only want stations with both wq and nut?
