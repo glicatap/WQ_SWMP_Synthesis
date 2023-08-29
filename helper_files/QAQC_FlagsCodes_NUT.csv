@@ -102,7 +102,7 @@ discard,,<-3> [SRD] (CSM),<-3>,[SRD] (CSM),12,0,0,1,0,0,0,0
 discard,,<-3> [SUL],<-3>,[SUL],6,0,0,1,0,0,0,0
 discard,,<-3> [SUL] (CSM),<-3>,[SUL] (CSM),6,0,0,1,0,0,0,0
 keep,A = above detection limits; mostly seems accidental,<4>  A,<4>, A,57,0,0,0,0,0,0,1
-discard,mistaken combination of A-B,<4>  A - B,<4>, A - B,3,0,0,0,0,0,1,1
+discard,mistaken combination of A-B,<4>  A - B,<4>, A - B,3,0,0,0,0,0,0,1
 discard,M = missing,<4>  A - M,<4>, A - M,2,0,0,0,1,0,0,1
 keep,B = below detection,<4>  B,<4>, B,2490,0,0,0,0,0,1,0
 keep,C = calculated,<4>  B - C,<4>, B - C,23,0,0,0,0,0,1,0

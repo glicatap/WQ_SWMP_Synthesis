@@ -33,10 +33,14 @@ qaqc_wq <- function(data, f_data){
 qaqc_nut <- function(data, f_data){
   # note these need to be provided as, e.g., nut$chla_n, nut$f_chla_n
   # qaqcKeep_nut_complete is defined in 'definitions.R'
-    tmp_df <- data.frame(data, f_data) %>% 
+  tmp_df <- data.frame(data, f_data) %>% 
     mutate(data = case_when(f_data %in% qaqcKeep_nut_complete ~ data,
-                            .default = NA_real_))
-  tmp_df$data
+                            .default = NA_real_),
+           censored = case_when(is.na(data) ~ NA_integer_,
+                                f_data %in% cens_flagscodes ~ 1L,
+                                .default = 0L)) %>% 
+    select(-f_data)
+  tmp_df
 }
 
 # entire data frame
@@ -44,17 +48,21 @@ qaqc_df <- function(df, param_vec, type){
   out_df <- list()
   if(type == "wq"){
     for(i in seq_along(param_vec)){
-      out_df[[i]] <- qaqc_wq(unlist(df[which(names(df) == param_vec[i])]),
-                             unlist(df[which(names(df) == paste0("f_", param_vec[i]))]))
+      tmp2 <- data.frame(qaqc_wq(unlist(df[which(names(df) == param_vec[i])]),
+                             unlist(df[which(names(df) == paste0("f_", param_vec[i]))])))
+      names(tmp2) <- param_vec[i]
+      out_df[[i]] <- tmp2
     }
   } else if(type == "nut") {
     for(i in seq_along(param_vec)){
-      out_df[[i]] <- qaqc_nut(unlist(df[which(names(df) == param_vec[i])]),
+      tmp2 <- qaqc_nut(unlist(df[which(names(df) == param_vec[i])]),
                               unlist(df[which(names(df) == paste0("f_", param_vec[i]))]))
+      names(tmp2) <- c(param_vec[i], paste0(param_vec[i], "_cens"))
+      out_df[[i]] <- tmp2
     }
   }
   out_df <- dplyr::bind_cols(out_df)
-  names(out_df) <- param_vec
+  # names(out_df) <- param_vec
   orig_cols <- df[, which(!(names(df) %in% c(param_vec, paste0("f_", param_vec))))]
   cbind(orig_cols, out_df)
 }

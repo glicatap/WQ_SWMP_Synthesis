@@ -42,7 +42,7 @@ for(i in seq_along(stns_wq_nut)){
                                                       "no2f", "no3f",
                                                       "po4f", "chla_n"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "nut")
-  # save(datqc, file = here::here("Data_processing", "QAQCd_by_stn", 
-  #                               paste0(stns_wq_nut[i], "nut_qc.RData")))
+  save(datqc, file = here::here("Data_processing", "QAQCd_by_stn",
+                                paste0(stns_wq_nut[i], "nut_qc.RData")))
   
 }

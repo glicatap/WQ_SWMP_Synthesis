@@ -53,5 +53,10 @@ qaqcKeep_wq_complete <- c("^<1> \\[GIT\\]$",          # exactly match <1> [GIT]
 #' f is the column that should match up with the full qa/qc col
 #' KeepOrDiscard is the column defining what we should do with it
 nut_flagscodes <- read.csv(here::here("helper_files",
-                                      "QAQC_FlagsCodes_NUT.csv"))[c("f", "KeepOrDiscard")]
+                                      "QAQC_FlagsCodes_NUT.csv"))[c("f", "KeepOrDiscard", "below_detection")]
 qaqcKeep_nut_complete <- nut_flagscodes[nut_flagscodes$KeepOrDiscard == "keep", "f"]
+
+cens_flagscodes <- nut_flagscodes %>% 
+  filter(KeepOrDiscard == "keep",
+         below_detection == 1) %>% 
+  pull(f)
