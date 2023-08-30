@@ -10,8 +10,8 @@ source(here::here("helper_files", "definitions.R"))
 source(here::here("helper_files", "functions.R"))
 
 
-path <- here::here("Data_processing", "compiled_by_stn")
-outpath <- here::here("Data_processing", "QAQCd_by_stn")
+path <- here::here("Data", "compiled_by_stn")
+outpath <- here::here("Data", "QAQCd_by_stn")
 
 stns_wq <- stringr::str_sub(dir(path, pattern = "wq.RData$"), end = -9)
 stns_nut <- stringr::str_sub(dir(path, pattern = "nut.RData$"), end = -10)
