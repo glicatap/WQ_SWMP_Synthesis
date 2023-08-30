@@ -98,6 +98,35 @@ is_outsideMDL <- function(data, side = "below"){
 }
 
 
+# Aggregation ----
+
+# make lists of stats we want,
+# and summarize(across(....)) to run it:
+# across all the variables we want
+
+# summ_df <- test_df %>% 
+#   group_by(site, condition) %>% 
+#   summarize(across(c(var1, var2), 
+#                    summ_stats))
+
+
+daily_stats <- list(
+  n_valid = ~sum(!is.na(.x)),
+  min = ~min(.x, na.rm = TRUE),
+  median = ~median(.x, na.rm = TRUE),
+  max = ~max(.x, na.rm = TRUE),
+  mean = ~mean(.x, na.rm = TRUE),
+  sd = ~sd(.x, na.rm = TRUE),
+  iqr = ~IQR(.x, na.rm = TRUE)
+)
+
+daily_sums <- list(
+  n_valid = ~sum(!is.na(.x)),
+  total = ~sum(.x, na.rm = TRUE),
+  max = ~max(.x, na.rm = TRUE)
+)
+
+
 # Plots ----
 
 plot_mdl_time <- function(data, param, data_full = NULL){
