@@ -8,16 +8,13 @@ path <- here::here("Data", "downloaded")
 data_files <- grep("\\d{4}.csv", dir(path), value = TRUE)
 stats <- unique(stringr::str_sub(data_files, end = -9))
 
-# latest update 7/18/23; new HUD NUT data from 2013
-# stats <- c("hudscnut", "hudsknut", "hudtnnut", "hudtsnut")
-
 # processing code from Marcus
 # https://github.com/fawda123/swmp_rats/blob/master/R/dat_proc.R
 # modified to remove qaqc step, keep add'l qaqc columns, and keep only grab sample data
 
 
 # setup parallel backend
-cl<-makeCluster(9)  
+cl<-makeCluster(10)  
 registerDoParallel(cl)
 strt<-Sys.time()
 
@@ -63,6 +60,6 @@ foreach(stat = stats, .packages = 'SWMPr') %dopar% {
 }
 
 Sys.time() - strt
-
+beepr::beep(8)
 
 stopCluster(cl)
