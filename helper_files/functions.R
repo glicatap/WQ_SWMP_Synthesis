@@ -110,20 +110,35 @@ is_outsideMDL <- function(data, side = "below"){
 #                    summ_stats))
 
 
+# for some reason, using na.rm = TRUE causes a sum of NAs to return 0
+# this stackoverflow answer provides a way around that
+# https://stackoverflow.com/a/67335144
+# modSum <- function(x){
+#   if(all(is.na(x))){return(NA)}
+#   sum(x, na.rm = TRUE)
+# }
+
+# I've modified it to work with any function
+
+modFunn <- function(x, FUN){
+  if(all(is.na(x))){return(NA)}
+  eval(FUN(x, na.rm = TRUE))
+}
+
+
 daily_stats <- list(
   n_valid = ~sum(!is.na(.x)),
-  min = ~min(.x, na.rm = TRUE),
-  median = ~median(.x, na.rm = TRUE),
-  max = ~max(.x, na.rm = TRUE),
-  mean = ~mean(.x, na.rm = TRUE),
-  sd = ~sd(.x, na.rm = TRUE),
-  iqr = ~IQR(.x, na.rm = TRUE)
+  min = ~modFunn(.x, min),
+  median = ~modFunn(.x, median),
+  max = ~modFunn(.x, max),
+  mean = ~modFunn(.x, mean),
+  sd = ~modFunn(.x, sd),
+  iqr = ~modFunn(.x, IQR)
 )
 
 daily_sums <- list(
   n_valid = ~sum(!is.na(.x)),
-  total = ~sum(.x, na.rm = TRUE),
-  max = ~max(.x, na.rm = TRUE)
+  total = ~modFunn(.x, sum)
 )
 
 

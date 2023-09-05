@@ -44,8 +44,10 @@ foreach(stat = stns_wq, .packages = c('dplyr', 'stringr', 'lubridate')) %dopar% 
   dat_daily <- dat %>% 
     mutate(date = lubridate::as_date(datetimestamp)) %>% 
     summarize(.by = date,
-              across(c(parms_gen),
-                     daily_stats))
+              across(any_of(parms_gen),
+                     daily_stats),
+              across(any_of(parms_sums),
+                     daily_sums))
   
   # get the Inf, -Inf, and NaNs out
   to_rmv_nas <- names(dat_daily)[-which(names(dat_daily) == "date")]
