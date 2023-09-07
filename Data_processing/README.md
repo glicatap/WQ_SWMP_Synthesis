@@ -25,7 +25,7 @@ The first script only combines data for a station, and does not subset based on 
 The second subsets to only SWMP-required parameters and this project's acceptable QA/QC codes, and should be re-run any time the parameters of the data synthesis project change (which will hopefully be infrequent).   
 
 1.  `downloaded_to_compiledStns.R` - for each station, reads in and collates all files. For nutrients, only keeps grab samples (`collMethd = 1`). Removes empty columns. Generates one `.RData` file for each station.    
-2.  `compiledStns_to_QAQCdStns.R` - for each station, reads in the file and replaces data flagged/coded in ways the workgroup has agreed to discard with NAs. Generates one `.RData` file for each station.  
+2.  `compiledStns_to_QAQCdStns.R` - for each station, reads in the file and replaces data flagged/coded in ways the workgroup has agreed to discard with NAs. For nutrients, inserts a column for each parameter defining whether the data point is left-censored. Generates one `.RData` file for each station.  
 3.  `QAQCdStns_to_QAQCdDaily.R` - for WQ and MET stations, aggregates to daily values as described above.  
 4.  `QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.
 
