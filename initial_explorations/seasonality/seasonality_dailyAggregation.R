@@ -32,6 +32,12 @@ wq2 <- wq %>%
                    function(x) median(x, na.rm = TRUE))
             )
 
+do3 <- wq %>% 
+  summarize(.by = c(station, month),
+            median_domgl = median(do_mgl_median, na.rm = TRUE)) %>% 
+  group_by(station) %>% 
+  mutate(centered_median = median_domgl - median(median_domgl, na.rm = TRUE))
+
 # PAR plots ----  
 
 ggplot(met, aes(x = date, y = totpar_total, col = station)) +
@@ -113,6 +119,23 @@ ggplot() +
        x = "Day of Year",
        y = "DO (mg/L)",
        size = "years with values \non this day")
+
+ggplot() +
+  geom_col(data = do3, aes(x = as.factor(month), y = centered_median, fill = station)) +
+  facet_wrap(~station) +
+  labs(title = "DO mg/L seasonality",
+       x = "Month",
+       y = "centered monthly median DO mg/L")
+
+ggplot() +
+  geom_line(data = do3, aes(x = as.factor(month),
+                            y = centered_median,
+                            col = station,
+                            group = station),
+            size = 1) +
+  labs(title = "DO mg/L seasonality",
+       x = "Month",
+       y = "centered monthly median DO mg/L")
 
 # do < 2
 
