@@ -45,15 +45,15 @@ load(here::here("Data", "QAQCd_daily", "gndbhwq_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "wqbmpwq_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "niwolwq_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "sosvawq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "elkapwq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "lkspowq_daily.RData"))
+load(here::here("Data", "QAQCd_daily", "elknmwq_daily.RData"))
+load(here::here("Data", "QAQCd_daily", "lksbawq_daily.RData"))
 
 wq_daily <- bind_rows(list (gndbhwq = gndbhwq_daily,
                       wqbmpwq = wqbmpwq_daily,
                       sosvawq = sosvawq_daily,
                       niwolwq = niwolwq_daily,
-                      elkapwq = elkapwq_daily,
-                      lkspowq = lkspowq_daily),
+                      elknmwq = elknmwq_daily,
+                      lksbawq = lksbawq_daily),
                  .id = "station") %>% 
   mutate(doy = lubridate::yday(date),
          year = lubridate::year(date),
