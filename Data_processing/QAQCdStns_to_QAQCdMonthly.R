@@ -96,14 +96,27 @@ foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
   
-  statqc <- paste0(stat, "nut_qc")
-  
-  file_in <- here::here(path, paste0(stat, "nut.RData"))
+  file_in <- here::here(path, paste0(stat, "_qc.RData"))
   dat <- get(load(file_in))
-  parms_to_keep <- names(dat)[which(names(dat) %in% c("nh4f", "no23f", 
-                                                      "no2f", "no3f",
-                                                      "po4f", "chla_n"))]
-  datqc <- qaqc_df(dat, parms_to_keep, type = "nut")
+  
+  parms <- names(dat)[which(names(dat) %in% c("nh4f", "no23f", 
+                                              "no2f", "no3f",
+                                              "po4f", "chla_n"))]
+  
+  cens_parms <- names(dat)[which(names(dat) %in% paste0(parms, "_cens"))]
+  
+  dat_monthly <- dat %>% 
+    mutate(date = lubridate::as_date(datetimestamp),
+           year = lubridate::year(date),
+           month = lubridate::month(date)) %>% 
+    summarize(.by = c(year, month),
+              across(any_of(parms),
+                     ~modFunn(.x, mean)),
+              across(any_of(cens_parms),
+                     summary_cens))  # shoot, first I need to add the values (na.rm = TRUE), and then do cens_fun on the sum
+  
+  
+  
   assign(statqc, datqc)
   save(list = statqc, file = here::here("Data", "QAQCd_by_stn",
                                         paste0(stat, "nut_qc.RData")))

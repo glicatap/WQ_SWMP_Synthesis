@@ -141,7 +141,17 @@ summary_sums <- list(
   total = ~modFunn(.x, sum)
 )
 
+cens_fun <- function(x){
+  sumx <- sum(x, na.rm = TRUE)
+  y <- case_when(sumx == 0 ~ 0,
+                 sumx > 0 ~ 1,
+                 is.na(sumx) ~ NA)  # sum of NA + NA, na.rm = TRUE is 0 so this doesn't quite work
+  y
+}
 
+summary_cens <- list(
+  cens = ~modFunn(.x, cens_fun(sum(.x, na.rm = TRUE)))
+)
 # Plots ----
 
 plot_mdl_time <- function(data, param, data_full = NULL){

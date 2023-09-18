@@ -40,6 +40,5 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
 }
 
 Sys.time() - strt
-beepr::beep(8)
-
 stopCluster(cl)
+beepr::beep(8)
