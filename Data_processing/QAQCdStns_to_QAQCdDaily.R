@@ -52,9 +52,9 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
     mutate(date = lubridate::as_date(datetimestamp)) %>% 
     summarize(.by = date,
               across(any_of(parms_gen),
-                     daily_stats),
+                     summary_stats),
               across(any_of(parms_sums),
-                     daily_sums))
+                     summary_sums))
   
   # assign daily df to object, save, clear memory
   flnm <- paste0(stat, "_daily")
@@ -67,6 +67,5 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
 }
 
 Sys.time() - strt
-beepr::beep(8)
-
 stopCluster(cl)
+beepr::beep(8)

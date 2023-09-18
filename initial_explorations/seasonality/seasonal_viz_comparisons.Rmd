@@ -19,7 +19,7 @@ library(tidyverse)
 ```
 
 
-```{r met-data}
+```{r met-data-daily}
 load(here::here("Data", "QAQCd_daily", "gndcrmet_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "wqbchmet_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "niwolmet_daily.RData"))
@@ -40,7 +40,7 @@ met <- bind_rows(list(gndcrmet = gndcrmet_daily,
 ```
 
 
-```{r wq-data}
+```{r wq-data-daily}
 load(here::here("Data", "QAQCd_daily", "gndbhwq_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "wqbmpwq_daily.RData"))
 load(here::here("Data", "QAQCd_daily", "niwolwq_daily.RData"))
@@ -71,6 +71,41 @@ do3 <- wq_daily %>%
             median_domgl = median(do_mgl_median, na.rm = TRUE)) %>% 
   group_by(station) %>% 
   mutate(centered_median = median_domgl - median(median_domgl, na.rm = TRUE))
+```
+
+
+```{r wq-data-15min}
+gndbhwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "gndbhwq_qc.RData")))
+wqbmpwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "wqbmpwq_qc.RData")))
+niwolwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "niwolwq_qc.RData")))
+sosvawq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "sosvawq_qc.RData")))
+elknmwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "elknmwq_qc.RData")))
+lksbawq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "lksbawq_qc.RData")))
+
+wq_15min <- bind_rows(list (
+  gndbhwq = gndbhwq_qc,
+  wqbmpwq = wqbmpwq_qc,
+  sosvawq = sosvawq_qc,
+  niwolwq = niwolwq_qc,
+  elknmwq = elknmwq_qc,
+  lksbawq = lksbawq_qc),
+  .id = "station") %>% 
+  mutate(doy = lubridate::yday(datetimestamp),
+         year = lubridate::year(datetimestamp),
+         month = lubridate::month(datetimestamp))
+
+# wq_monthly <- wq_15min %>% 
+#   summarize(.by = c(station, year, month),
+#             n_years = sum(!is.na(temp_median)),
+#             across(temp_min:doLessThan5_total,
+#                    function(x) median(x, na.rm = TRUE))
+#             )
+# 
+# do3 <- wq_daily %>% 
+#   summarize(.by = c(station, month),
+#             median_domgl = median(do_mgl_median, na.rm = TRUE)) %>% 
+#   group_by(station) %>% 
+#   mutate(centered_median = median_domgl - median(median_domgl, na.rm = TRUE))
 ```
 
 

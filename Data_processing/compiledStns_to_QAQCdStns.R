@@ -28,14 +28,19 @@ foreach(stat = stns_wq, .packages = c('dplyr', 'stringr')) %dopar% {
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
   
+  statqc <- paste0(stat, "wq_qc")
+  
   file_in <- here::here(path, paste0(stat, "wq.RData"))
   dat <- get(load(file_in))
   parms_to_keep <- names(dat)[which(names(dat) %in% c("temp", "spcond", "sal", "ph", "turb",
                                      "do_pct", "do_mgl", "depth", "cdepth",
                                      "level", "clevel"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "wq")
-  save(datqc, file = here::here("Data", "QAQCd_by_stn", 
+  assign(statqc, datqc)
+  save(list = statqc, file = here::here("Data", "QAQCd_by_stn", 
                                 paste0(stat, "wq_qc.RData")))
+  rm(list = statqc)
+  rm('datqc')
   
 }
 
@@ -47,14 +52,19 @@ foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
   
+  statqc <- paste0(stat, "nut_qc")
+  
   file_in <- here::here(path, paste0(stat, "nut.RData"))
   dat <- get(load(file_in))
   parms_to_keep <- names(dat)[which(names(dat) %in% c("nh4f", "no23f", 
                                                       "no2f", "no3f",
                                                       "po4f", "chla_n"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "nut")
-  save(datqc, file = here::here("Data", "QAQCd_by_stn",
+  assign(statqc, datqc)
+  save(list = statqc, file = here::here("Data", "QAQCd_by_stn",
                                 paste0(stat, "nut_qc.RData")))
+  rm(list = statqc)
+  rm('datqc')
   
 }
 
@@ -64,6 +74,8 @@ foreach(stat = stns_met, .packages = c('dplyr', 'stringr')) %dopar% {
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
   
+  statqc <- paste0(stat, "met_qc")
+  
   file_in <- here::here(path, paste0(stat, "met.RData"))
   dat <- get(load(file_in))
   parms_to_keep <- names(dat)[which(names(dat) %in% c("atemp", "rh", "bp", 
@@ -71,12 +83,14 @@ foreach(stat = stns_met, .packages = c('dplyr', 'stringr')) %dopar% {
                                                       "wdir", "sdwdir",
                                                       "totpar", "totprcp"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "wq") # same qaqc as wq
-  save(datqc, file = here::here("Data", "QAQCd_by_stn", 
+  assign(statqc, datqc)
+  save(list = statqc, file = here::here("Data", "QAQCd_by_stn", 
                                 paste0(stat, "met_qc.RData")))
+  rm(list = statqc)
+  rm('datqc')
   
 }
 
 Sys.time() - strt
-beepr::beep(8)
-
 stopCluster(cl)
+beepr::beep(8)

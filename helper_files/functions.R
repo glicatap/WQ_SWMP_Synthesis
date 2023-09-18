@@ -126,7 +126,7 @@ modFunn <- function(x, FUN){
 }
 
 
-daily_stats <- list(
+summary_stats <- list(
   n_valid = ~sum(!is.na(.x)),
   min = ~modFunn(.x, min),
   median = ~modFunn(.x, median),
@@ -136,7 +136,7 @@ daily_stats <- list(
   iqr = ~modFunn(.x, IQR)
 )
 
-daily_sums <- list(
+summary_sums <- list(
   n_valid = ~sum(!is.na(.x)),
   total = ~modFunn(.x, sum)
 )
