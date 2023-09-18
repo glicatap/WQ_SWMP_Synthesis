@@ -91,7 +91,7 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
 
 # nut ----
 # note - also need to keep a column for censored/uncensored
-foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
+foreach(stat = stns_nut, .packages = c('dplyr', 'stringr', 'lubridate')) %dopar% {
   
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
@@ -117,11 +117,12 @@ foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
   
   
   
-  assign(statqc, datqc)
-  save(list = statqc, file = here::here("Data", "QAQCd_by_stn",
-                                        paste0(stat, "nut_qc.RData")))
-  rm(list = statqc)
-  rm('datqc')
+  flnm <- paste0(stat, "_monthly")
+  assign(flnm, dat_monthly)
+  save(list = flnm, file = here::here(outpath, 
+                                      paste0(flnm, ".RData")))
+  rm(list = flnm)
+  rm('dat_monthly')
   
 }
 
