@@ -58,6 +58,7 @@ qaqc_df <- function(df, param_vec, type){
       tmp2 <- qaqc_nut(unlist(df[which(names(df) == param_vec[i])]),
                               unlist(df[which(names(df) == paste0("f_", param_vec[i]))]))
       names(tmp2) <- c(param_vec[i], paste0(param_vec[i], "_cens"))
+      rownames(tmp2) <- NULL
       out_df[[i]] <- tmp2
     }
   }
@@ -148,8 +149,8 @@ summary_sums <- list(
 cens_fun <- function(x, ...){
   if(all(is.na(x))){return(NA)}
   sumx <- sum(x, na.rm = TRUE)
-  y <- case_when(sumx == 0 ~ 0,
-                 sumx > 0 ~ 1)
+  y <- case_when(sumx == 0 ~ 0L,
+                 sumx > 0 ~ 1L)
   y
 }
 

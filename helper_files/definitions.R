@@ -3,6 +3,7 @@
 #' 
 #' 
 library(stringr)
+library(dplyr)
 
 # Stations ----
 #' only want stations with both wq and nut?
@@ -14,14 +15,14 @@ library(stringr)
 mstns <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) %>%  #read.csv threw an error for some reason
   janitor::clean_names() %>%   
   filter(status == "Active")
-stns_wq <- str_sub(grep("wq$", mstns$station_code, value = TRUE),
+stns_wq_d <- str_sub(grep("wq$", mstns$station_code, value = TRUE),
                    end = -3)
-stns_nut <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
+stns_nut_d <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
                     end = -4)
-stns_wq_nut <- intersect(stns_wq, stns_nut)
-stns_in_regions <- mstns[grepl(paste(stns_wq_nut, collapse = "|"), mstns$station_code), c("station_code", "region")]
+stns_wq_nut_d <- intersect(stns_wq_d, stns_nut_d)
+stns_in_regions <- mstns[grepl(paste(stns_wq_nut_d, collapse = "|"), mstns$station_code), c("station_code", "region")]
 # cleanup  
-rm(mstns, stns_nut, stns_wq)
+rm(mstns, stns_nut_d, stns_wq_d)
 
 
 # Parameters ----
