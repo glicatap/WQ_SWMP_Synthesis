@@ -113,7 +113,7 @@ foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
               across(any_of(parms),
                      ~modFunn(.x, mean)),
               across(any_of(cens_parms),
-                     summary_cens))  # shoot, first I need to add the values (na.rm = TRUE), and then do cens_fun on the sum
+                     cens_fun))
   
   
   

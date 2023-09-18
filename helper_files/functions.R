@@ -141,17 +141,19 @@ summary_sums <- list(
   total = ~modFunn(.x, sum)
 )
 
-cens_fun <- function(x){
+# for nutrient data, need to know if it's censored
+# in _qc files, there is a _cens column, with 0 for uncensored, 1 for censored, and NA if empty
+# when averaging values, if any are censored, then the average should be considered censored
+
+cens_fun <- function(x, ...){
+  if(all(is.na(x))){return(NA)}
   sumx <- sum(x, na.rm = TRUE)
   y <- case_when(sumx == 0 ~ 0,
-                 sumx > 0 ~ 1,
-                 is.na(sumx) ~ NA)  # sum of NA + NA, na.rm = TRUE is 0 so this doesn't quite work
+                 sumx > 0 ~ 1)
   y
 }
 
-summary_cens <- list(
-  cens = ~modFunn(.x, cens_fun(sum(.x, na.rm = TRUE)))
-)
+
 # Plots ----
 
 plot_mdl_time <- function(data, param, data_full = NULL){
