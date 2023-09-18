@@ -127,7 +127,7 @@ modFunn <- function(x, FUN){
 
 
 summary_stats <- list(
-  n_valid = ~sum(!is.na(.x)),
+  nValid = ~sum(!is.na(.x)),
   min = ~modFunn(.x, min),
   median = ~modFunn(.x, median),
   max = ~modFunn(.x, max),
@@ -137,7 +137,7 @@ summary_stats <- list(
 )
 
 summary_sums <- list(
-  n_valid = ~sum(!is.na(.x)),
+  nValid = ~sum(!is.na(.x)),
   total = ~modFunn(.x, sum)
 )
 
