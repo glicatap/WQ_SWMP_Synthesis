@@ -33,7 +33,8 @@ The second subsets to only SWMP-required parameters and this project's acceptabl
 3.  `QAQCdStns_to_QAQCdDaily.R` - for WQ and MET stations, aggregates to daily values as described above.  
 4.  `QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
 5.  `QAQCdStns_to_QAQCdMonthly.R` - for WQ, MET, and NUT stations, aggregates to monthly values as described above. This script could be run anytime after step 2 above (`compiledStns_to_QAQCdStns.R`).  
-6.  `QAQCdMonthly_to_MonthlyByType.R` - not written or run yet! Will use monthly files from step 5, and combine all monthly information for each type into a single file. Will result in 3 final files: one each for WQ, MET, and NUT.  
+6.  `QAQCdMonthly_byType.R` - Using monthly aggregated files from step 5, combines all monthly information for each type (WQ, MET, NUT) into a single file, containing all stations. Writes both `.RData` and `.csv` files for each.  
+
 
 To write out session info from the day of processing, open an R session and run the following code. It will open all libraries used and capture the session info in a text file, in the `Data_processing` folder.    
 
@@ -59,9 +60,15 @@ Final data files were downloaded from the CDMO on 8/30/2023.
 3.  `QAQCdStns_to_QAQCdDaily.R` - 9/18/2023  
 4.  `QAQCdDaily_to_csv.R` - 9/18/2023  
 5.  `QAQCdStns_to_QAQCdMonthly.R` -  9/18/2023   
-6.  `QAQCdMonthly_to_MonthlyByType.R` - not written or run yet! 
+6.  `QAQCdMonthly_to_MonthlyByType.R` - 9/19/2023 
 
 
-## Future scripts  
+## Still to-do  
 
--  can probably put all monthly aggregations of a single type into a single file: 20 yrs x 12 months/yr x 1 row/month x 150 stations = 36,000 rows - generally comparable to a single year's worth of 15-minute data.   
+Some things to think about and/or do:  
+
+-  any months with no data are probably just not present. Might be better to make sure all combinations of year-month for a station are present, even if a row is full of NAs. Probably should tackle this in monthly aggregation step?  
+-  should we round values? Particularly means and sds can be pretty long numbers that aren't meaningful after a certain number of sig figs.  
+-  would be worth having a few volunteers to gut check the outputs from their reserve - I was as careful as possible, but still could have missed something. Should make sure nothing is obviously weird or off, with people who are familiar with the data and stations.  
+-  could use help making a data dictionary - should be simple, just tedious. For each file type, make a table or list with variable names and definitions (e.g. `atemp_min` = minimum air temperature, degrees Celsius, for that month; `atemp_median` = median air temperature, degrees Celsius, for that month; `rh_min` = minimum relative humidity, %, for that month; etc.)  
+  
