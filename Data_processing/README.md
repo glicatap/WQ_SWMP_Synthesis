@@ -17,6 +17,10 @@ Because there's so much data, I've added the `Data/` folder to `.gitignore`. In 
     -  for WQ and MET: nValid for how many data points that month passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For precipitation, columns are nValid and a monthly total. For PAR, values were first summed at the daily level; then nValid, min, median, max, mean, sd, and iqr were calculated on the daily totals.  
     -  In the WQ files, I've tabulated how many DO_mgl values were <2 and <5. Those both come with 'nValid' and 'total' (so the proportion for how many readings in a month were < 2 mg/L could be calculated as `doLessThan2_total/doLessThan2_nValid`).  
     -  for NUT: Valid monthly replicate values were averaged. For the censored column, if at least one valid replicate was identified as censored, the average was also identified as censored.  
+-  `QAQCd_monthly_byType` - compilation of all stations for each data type. Contains 6 files: one `.RData` and one `.csv` for each data type: `SWMP_WQ`, `SWMP_MET`, `SWMP_NUT`. Once quality-checked and any questions/issues are addressed, these will be the final monthly files used in SWMP Synthesis data analysis. **Note**: these files contain all stations that have data - inactive stations or those with short duration will need to be removed before analysis, if appropriate. Additionally, the number of rows may change as we ensure all year-month combinations are represented for each station (e.g. we may need to insert blank rows for months with no data).    
+    -  WQ file contains 27,605 rows from 154 stations  
+    -  MET file contains 6,909 rows from 37 stations  
+    -  NUT file contains 28,693 rows from 156 stations  
 
 ## Running the scripts  
 
@@ -70,5 +74,5 @@ Some things to think about and/or do:
 -  any months with no data are probably just not present. Might be better to make sure all combinations of year-month for a station are present, even if a row is full of NAs. Probably should tackle this in monthly aggregation step?  
 -  should we round values? Particularly means and sds can be pretty long numbers that aren't meaningful after a certain number of sig figs.  
 -  would be worth having a few volunteers to gut check the outputs from their reserve - I was as careful as possible, but still could have missed something. Should make sure nothing is obviously weird or off, with people who are familiar with the data and stations.  
--  could use help making a data dictionary - should be simple, just tedious. For each file type, make a table or list with variable names and definitions (e.g. `atemp_min` = minimum air temperature, degrees Celsius, for that month; `atemp_median` = median air temperature, degrees Celsius, for that month; `rh_min` = minimum relative humidity, %, for that month; etc.)  
+-  could use help making a data dictionary - should be simple, just tedious. For each file type, make a table or list with variable names and definitions (e.g. `atemp_min` = minimum air temperature, degrees Celsius, from all valid 15-minute data that month; `atemp_median` = median air temperature, degrees Celsius, from all valid 15-minute data that month; `rh_min` = minimum relative humidity, %, from all valid 15-minute data that month; etc.)  
   
