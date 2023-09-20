@@ -16,146 +16,62 @@ knitr::opts_chunk$set(echo = FALSE,
 
 ```{r}
 library(tidyverse)
+library(patchwork)
 ```
 
+```{r}
+stns <- c("gndbhwq",
+          "wqbmpwq",
+          "niwolwq",
+          "sosvawq",
+          "elknmwq",
+          "lksbawq")
 
-```{r met-data-daily}
-load(here::here("Data", "QAQCd_daily", "gndcrmet_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "wqbchmet_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "niwolmet_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "soscmmet_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "elkcwmet_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "lkspomet_daily.RData"))
+paths_daily <- here::here("Data", "QAQCd_daily", paste0(stns, "_daily.RData"))
+names(paths_daily) <- stns
 
-met <- bind_rows(list(gndcrmet = gndcrmet_daily,
-                 wqbchmet = wqbchmet_daily,
-                 soscmmet = soscmmet_daily,
-                 niwolmet = niwolmet_daily,
-                 elkcwmet = elkcwmet_daily,
-                 lkspomet = lkspomet_daily),
-                 .id = "station") %>% 
-  mutate(doy = lubridate::yday(date),
-         year = lubridate::year(date),
-         month = lubridate::month(date))
+stns_nut <- str_replace(stns, "wq$", "nut")
 ```
 
-
-```{r wq-data-daily}
-load(here::here("Data", "QAQCd_daily", "gndbhwq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "wqbmpwq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "niwolwq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "sosvawq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "elknmwq_daily.RData"))
-load(here::here("Data", "QAQCd_daily", "lksbawq_daily.RData"))
-
-wq_daily <- bind_rows(list (gndbhwq = gndbhwq_daily,
-                      wqbmpwq = wqbmpwq_daily,
-                      sosvawq = sosvawq_daily,
-                      niwolwq = niwolwq_daily,
-                      elknmwq = elknmwq_daily,
-                      lksbawq = lksbawq_daily),
-                 .id = "station") %>% 
+```{r load-data}
+# daily files all by station;
+# use purrr to read all in and bind together
+wq_daily <- paths_daily %>% 
+  purrr::map(~get(load(.x))) %>% 
+  purrr::list_rbind(names_to = "station") %>% 
   mutate(doy = lubridate::yday(date),
          year = lubridate::year(date),
          month = lubridate::month(date))
 
-wq2 <- wq_daily %>% 
+# generate overall medians by day of year (across all years)
+wq2 <- wq_daily %>%
   summarize(.by = c(station, doy),
             n_years = sum(!is.na(temp_median)),
             across(temp_min:doLessThan5_total,
                    function(x) median(x, na.rm = TRUE))
             )
 
-do3 <- wq_daily %>% 
+# monthly files are already combined;
+# just read them in and filter to the subset of stations we're looking at here
+wq_monthly <- get(load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))) %>% 
+  filter(station %in% stns) 
+rm(wq)
+
+# generate overall medians by month (across all years)
+wq3 <- wq_monthly %>%
   summarize(.by = c(station, month),
-            median_domgl = median(do_mgl_median, na.rm = TRUE)) %>% 
-  group_by(station) %>% 
-  mutate(centered_median = median_domgl - median(median_domgl, na.rm = TRUE))
+            n_years = sum(!is.na(temp_median)),
+            across(temp_min:doLessThan5_total,
+                   function(x) median(x, na.rm = TRUE))
+            )
+
+nut_monthly <- get(load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))) %>% 
+  filter(station %in% stns_nut) 
+rm(nut)
 ```
 
 
-```{r wq-data-15min}
-gndbhwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "gndbhwq_qc.RData")))
-wqbmpwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "wqbmpwq_qc.RData")))
-niwolwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "niwolwq_qc.RData")))
-sosvawq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "sosvawq_qc.RData")))
-elknmwq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "elknmwq_qc.RData")))
-lksbawq_qc <- get(load(here::here("Data", "QAQCd_by_stn", "lksbawq_qc.RData")))
-
-wq_15min <- bind_rows(list (
-  gndbhwq = gndbhwq_qc,
-  wqbmpwq = wqbmpwq_qc,
-  sosvawq = sosvawq_qc,
-  niwolwq = niwolwq_qc,
-  elknmwq = elknmwq_qc,
-  lksbawq = lksbawq_qc),
-  .id = "station") %>% 
-  mutate(doy = lubridate::yday(datetimestamp),
-         year = lubridate::year(datetimestamp),
-         month = lubridate::month(datetimestamp))
-
-# wq_monthly <- wq_15min %>% 
-#   summarize(.by = c(station, year, month),
-#             n_years = sum(!is.na(temp_median)),
-#             across(temp_min:doLessThan5_total,
-#                    function(x) median(x, na.rm = TRUE))
-#             )
-# 
-# do3 <- wq_daily %>% 
-#   summarize(.by = c(station, month),
-#             median_domgl = median(do_mgl_median, na.rm = TRUE)) %>% 
-#   group_by(station) %>% 
-#   mutate(centered_median = median_domgl - median(median_domgl, na.rm = TRUE))
-```
-
-
-```{r, eval = FALSE}
-# PAR plots ----  
-
-ggplot(met, aes(x = date, y = totpar_total, col = station)) +
-  geom_point(alpha = 0.2) +
-  coord_cartesian(ylim = c(0, 75000)) +
-  labs(title = "PAR",
-       x = "Date",
-       y = "total daily PAR (mmol/m^2 for entire day)")
-
-ggplot() +
-  geom_line(data = met, aes(x = date, y = totpar_total, col = station)) +
-  coord_cartesian(ylim = c(0, 75000)) +
-  facet_wrap(~station)
-```
-
-
-```{r par-plots2, eval = FALSE}
-ggplot(met, aes(x = doy, y = totpar_total, col = station)) +
-  geom_point(alpha = 0.1) +
-  coord_cartesian(ylim = c(0, 75000)) +
-  geom_smooth(method = "loess")
-
-ggplot(met, aes(x = doy, y = totpar_total, col = station)) +
-  geom_smooth(method = "loess") +
-  labs(title = "PAR annual pattern",
-       subtitle = "LOESS smooth",
-       x = "Day of Year",
-       y = "total PAR (mmol/m^2) for entire day") +
-  theme_bw()
-
-
-ggplot(met, aes(x = doy, y = totpar_total, col = station)) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "loess", col = "black") +
-  coord_cartesian(ylim = c(0, 75000)) +
-  facet_wrap(~station) +
-  labs(title = "PAR annual pattern",
-       subtitle = "raw data",
-       x = "Day of Year",
-       y = "total PAR (mmol/m^2) for entire day")
-```
-
-
-```{r do-plots}
-# DO plots ----
-# do mg/L
+```{r}
 ggplot() +
   geom_point(data = wq_daily, aes(x = doy, y = do_mgl_median, col = year), 
              alpha = 0.3, size = 0.7) +
@@ -165,8 +81,45 @@ ggplot() +
        subtitle = "orange line is overall median for that day",
        x = "Day of Year",
        y = "DO (mg/L)")
+```
 
+How much information do we lose if we make that picture by month instead?  
+
+```{r}
 ggplot() +
+  geom_point(data = wq_monthly, aes(x = factor(month), y = do_mgl_median, col = year), 
+             alpha = 0.6, size = 1.5) +
+  facet_wrap(~station) +
+  geom_line(data = wq3, aes(x = month, y = do_mgl_median), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly median DO mg/L",
+       subtitle = "orange line is overall median for that month",
+       x = "Month",
+       y = "DO (mg/L)")
+```
+
+Could also overlay the points on a boxplot, with or without coloring by year (getting hard to see and interpret those colors).    
+
+```{r}
+ggplot() +
+  geom_boxplot(data = wq_monthly, aes(x = factor(month), y = do_mgl_median, group = month)) +
+  geom_point(data = wq_monthly, aes(x = month, y = do_mgl_median, col = year), 
+             alpha = 0.6, size = 2, shape = 18) +
+  facet_wrap(~station) +
+  geom_line(data = wq3, aes(x = month, y = do_mgl_median), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly median DO mg/L",
+       subtitle = "orange line is overall median for that month; blue points are individual years",
+       x = "Month",
+       y = "DO (mg/L)")
+```
+
+The graph above kind of lets you see when fewer years are included in a box - like December and March at LKS. It doesn't seem like having fewer years of data impacts the seasonal pattern too much, because the seasonal pattern is just so big.  
+
+Using lines for year, in addition to color - again, do we lose information by going to monthly?  
+
+```{r}
+p1 <- ggplot() +
   geom_line(data = wq_daily, aes(x = doy, y = do_mgl_median, col = year), 
             alpha = 0.3, size = 0.7) +
   facet_wrap(~station) +
@@ -175,7 +128,28 @@ ggplot() +
        x = "Day of Year",
        y = "DO (mg/L)")
 
-ggplot() +
+
+p2 <- ggplot() +
+  geom_line(data = wq_monthly, aes(x = factor(month), y = do_mgl_median, col = year,
+                                   group = year), 
+            alpha = 0.3, size = 0.7) +
+  facet_wrap(~station) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly median DO mg/L",
+       subtitle = "one line per year - see when there's less data at ice stations",
+       x = "Month",
+       y = "DO (mg/L)")
+
+p1 + p2 + plot_layout(guides = "collect")
+```
+
+We do lose some information - most noticeable here is that huge variation at SOS during mid-summer. And the extent of day-to-day variation, e.g. at GND and WQB. There must be a way to incorporate variability like this into seasonal metrics..... right?  
+
+
+Now for overall comparisons between stations:  
+
+```{r}
+p1 <- ggplot() +
   geom_line(data = wq2, aes(x = doy, y = do_mgl_median, col = station), 
             size = 1, alpha = 0.7) +
   labs(title = "Overall median of daily median DO mg/L",
@@ -183,22 +157,41 @@ ggplot() +
        x = "Day of Year",
        y = "DO (mg/L)")
 
-ggplot() +
-  geom_col(data = do3, aes(x = as.factor(month), y = centered_median, fill = station)) +
-  facet_wrap(~station) +
-  labs(title = "DO mg/L seasonality",
+p2 <- ggplot() +
+  geom_line(data = wq3, aes(x = month, y = do_mgl_median, col = station), 
+            size = 1, alpha = 0.7) +
+  scale_x_continuous(breaks = 1:12, labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Overall median of monthly median DO mg/L",
+       subtitle = "how do stations compare to each other?",
        x = "Month",
-       y = "centered monthly median DO mg/L")
+       y = "DO (mg/L)")
 
+p1 + p2 + plot_layout(guides = "collect")
+```
+
+For this level of variation, I think monthly is fine.  
+
+
+## Centered monthly medians  
+
+```{r}
+wq4 <- wq3 %>% 
+  select(station, month, do_mgl_median) %>% 
+  group_by(station) %>% 
+  mutate(centered = do_mgl_median - median(do_mgl_median, na.rm = TRUE))
+```
+
+
+```{r}
 ggplot() +
-  geom_line(data = do3, aes(x = as.factor(month),
-                            y = centered_median,
-                            col = station,
-                            group = station),
-            size = 1) +
+  geom_col(data = wq4, aes(x = as.factor(month), y = centered, fill = station)) +
+  facet_wrap(~station) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
   labs(title = "DO mg/L seasonality",
+       subtitle = "anomaly of monthly median",
        x = "Month",
-       y = "centered monthly median DO mg/L")
+       y = "centered monthly median DO mg/L") +
+  theme(legend.position = "none")
 
 ```
 
