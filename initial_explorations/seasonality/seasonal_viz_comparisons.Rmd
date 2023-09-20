@@ -1,6 +1,6 @@
 ---
 title: "Seasonality Viz Comparisons"
-output: pdf_document
+output: html_document
 date: "`r Sys.Date()`"
 ---
 
@@ -9,8 +9,8 @@ knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
                       error = TRUE,
-                      fig.height = 5,
-                      fig.width = 7)
+                      fig.height = 6,
+                      fig.width = 9)
 ```
 
 
@@ -25,7 +25,9 @@ stns <- c("gndbhwq",
           "niwolwq",
           "sosvawq",
           "elknmwq",
-          "lksbawq")
+          "lksbawq",
+          "heew2wq",
+          "heekkwq")
 
 paths_daily <- here::here("Data", "QAQCd_daily", paste0(stns, "_daily.RData"))
 names(paths_daily) <- stns
@@ -68,8 +70,32 @@ wq3 <- wq_monthly %>%
 nut_monthly <- get(load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))) %>% 
   filter(station %in% stns_nut) 
 rm(nut)
+
+nut2 <- nut_monthly %>% 
+  summarize(.by = c(station, month),
+            across(po4f:chla_n,
+                   function(x) median(x, na.rm = TRUE))
+            )
 ```
 
+# About this document  
+
+So far I've generated graphs for DO mg/L and Chl a. They are in different tabs below, under "Visualizing Seasonality". The graphs are in the same order in each tab. For DO mg/L, I was able to make some graphs using daily aggregated data as well as monthly. Chl a is only at the monthly level. For chl a, most graphs are made two ways: with a y-axis on the normal scale, and with a log-10 scale.  
+
+We tried to choose stations across a variety of regions, but also get some representation from stations where sondes are regularly removed in winter (`lksbawq` and `wqbmpwq`) and new stations (`heew2wq`, established in 2019, and `heekkwq`, established in late 2020).  
+
+# Quantifying Seasonality  
+
+Here are a few thoughts, to start discussion. I've tried to think, as I've looked at the DO and chl graphs below, about "what numbers could we pull out to describe what's happening here?" So far, I've gotten generally similar answers that would describe all of the [monthly] graphs, though the questions become most clear in my mind by looking at the bar graph of anomalies:  
+
+-  **how big** is the variation, from the month with the lowest value to the month with the highest? Compare, e.g., DO at `sosvawq` to... well, most of the others. `elknmwq` has the next smallest variation, and the other sites all seem to have generally large ranges.  
+-  **when** do we see the *highest* and *lowest* values? At `elknmwq`, DO seems to be lowest, and generally similar, from June-September. At `gndbhwq`, July-Sept. are lowest, with August being the "peak low". At `lksbawq`, it's more like May-August/September, with June as the "peak low".
+-  **how steep** is the line from month-to-month? This sort of goes hand-in-hand with "how big is the variation" - `gndbhwq` has a much steeper line in the line graphs than `sosvawq` - but could also potentially capture things like.... maybe two stations have similar variation within a year, but one of the sites shows smooth gradual change from month to month, and the other site has distinct periods of several months similarly high, then a rapid change, then several months similarly low. I'm not entirely sure slope is a way to capture this but I think it's something worth trying to capture.  
+
+
+# Visualizing Seasonality  {.tabset}  
+
+## DO mg/L  
 
 ```{r}
 ggplot() +
@@ -104,9 +130,10 @@ Could also overlay the points on a boxplot, with or without coloring by year (ge
 ggplot() +
   geom_boxplot(data = wq_monthly, aes(x = factor(month), y = do_mgl_median, group = month)) +
   geom_point(data = wq_monthly, aes(x = month, y = do_mgl_median, col = year), 
-             alpha = 0.6, size = 2, shape = 18) +
+             alpha = 0.4, size = 2, shape = 18) +
   facet_wrap(~station) +
-  geom_line(data = wq3, aes(x = month, y = do_mgl_median), col = "orange", size = 1) +
+  geom_line(data = wq3, aes(x = month, y = do_mgl_median), col = "orange", 
+            size = 1, alpha = 0.7) +
   scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
   labs(title = "Monthly median DO mg/L",
        subtitle = "orange line is overall median for that month; blue points are individual years",
@@ -172,7 +199,7 @@ p1 + p2 + plot_layout(guides = "collect")
 For this level of variation, I think monthly is fine.  
 
 
-## Centered monthly medians  
+### Centered monthly medians  
 
 ```{r}
 wq4 <- wq3 %>% 
@@ -194,4 +221,139 @@ ggplot() +
   theme(legend.position = "none")
 
 ```
+
+## Chl a  
+
+```{r}
+ggplot() +
+  geom_point(data = nut_monthly, aes(x = factor(month), y = chla_n, col = year), 
+             alpha = 0.6, size = 1.5) +
+  facet_wrap(~station) +
+  geom_line(data = nut2, aes(x = month, y = chla_n), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly Chl a (ug/L)",
+       subtitle = "orange line is overall median for that month",
+       x = "Month",
+       y = "Chl a (ug/L)")
+
+ggplot() +
+  geom_point(data = nut_monthly, aes(x = factor(month), y = chla_n, col = year), 
+             alpha = 0.6, size = 1.5) +
+  facet_wrap(~station) +
+  geom_line(data = nut2, aes(x = month, y = chla_n), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  scale_y_log10() +
+  labs(title = "Monthly Chl a (ug/L)",
+       subtitle = "note log scale; orange line is overall median for that month",
+       x = "Month",
+       y = "Chl a (ug/L)")
+```
+
+Could also overlay the points on a boxplot, with or without coloring by year (getting hard to see and interpret those colors).    
+
+```{r}
+ggplot() +
+  geom_boxplot(data = nut_monthly, aes(x = factor(month), y = chla_n, group = month)) +
+  geom_point(data = nut_monthly, aes(x = month, y = chla_n, col = year), 
+             alpha = 0.6, size = 2, shape = 18) +
+  facet_wrap(~station) +
+  geom_line(data = nut2, aes(x = month, y = chla_n), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly Chl a",
+       subtitle = "orange line is overall median for that month; blue points are individual years",
+       x = "Month",
+       y = "Chl a (ug/L)")
+
+ggplot() +
+  geom_boxplot(data = nut_monthly, aes(x = factor(month), y = chla_n, group = month)) +
+  geom_point(data = nut_monthly, aes(x = month, y = chla_n, col = year), 
+             alpha = 0.6, size = 2, shape = 18) +
+  facet_wrap(~station) +
+  geom_line(data = nut2, aes(x = month, y = chla_n), col = "orange", size = 1) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  scale_y_log10() +
+  labs(title = "Monthly Chl a",
+       subtitle = "note log scale; orange line is overall median for that month; blue points are individual years",
+       x = "Month",
+       y = "Chl a (ug/L)")
+```
+
+Using lines for year, in addition to color.  
+
+```{r}
+ggplot() +
+  geom_line(data = nut_monthly, aes(x = factor(month), y = chla_n, col = year,
+                                   group = year), 
+            alpha = 0.3, size = 0.7) +
+  facet_wrap(~station) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Monthly Chl a",
+       subtitle = "one line per year - see when there's less data at ice stations",
+       x = "Month",
+       y = "Chl a (ug/L)")
+
+ggplot() +
+  geom_line(data = nut_monthly, aes(x = factor(month), y = chla_n, col = year,
+                                   group = year), 
+            alpha = 0.3, size = 0.7) +
+  facet_wrap(~station) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  scale_y_log10() +
+  labs(title = "Monthly Chl a",
+       subtitle = "note log scale; one line per year - see when there's less data at ice stations",
+       x = "Month",
+       y = "Chl a (ug/L)")
+```
+
+Now for overall comparisons between stations:  
+
+```{r}
+ggplot() +
+  geom_line(data = nut2, aes(x = month, y = chla_n, col = station), 
+            size = 1, alpha = 0.7) +
+  scale_x_continuous(breaks = 1:12, labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Overall median of monthly Chl a",
+       subtitle = "how do stations compare to each other?",
+       x = "Month",
+       y = "Chl a (ug/L)")
+
+
+ggplot() +
+  geom_line(data = nut2, aes(x = month, y = chla_n, col = station), 
+            size = 1, alpha = 0.7) +
+  scale_x_continuous(breaks = 1:12, labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  scale_y_log10() +
+  labs(title = "Overall median of monthly Chl a",
+       subtitle = "note log scale; how do stations compare to each other?",
+       x = "Month",
+       y = "Chl a (ug/L)")
+
+```
+
+Log scale seems more important when plotting monthly data than monthly medians - the second graph here, with the log scale, was just flattened out a bit.    
+
+
+### Centered monthly medians  
+
+```{r}
+nut3 <- nut2 %>% 
+  select(station, month, chla_n) %>% 
+  group_by(station) %>% 
+  mutate(centered = chla_n - median(chla_n, na.rm = TRUE))
+```
+
+
+```{r}
+ggplot() +
+  geom_col(data = nut3, aes(x = as.factor(month), y = centered, fill = station)) +
+  facet_wrap(~station) +
+  scale_x_discrete(labels = c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")) +
+  labs(title = "Chl a seasonality",
+       subtitle = "anomaly of monthly median",
+       x = "Month",
+       y = "centered monthly median chl a (ug/L)") +
+  theme(legend.position = "none")
+
+```
+
 
