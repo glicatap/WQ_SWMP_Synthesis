@@ -1,0 +1,107 @@
+Data Dictionary for files in the `QAQCd_monthly_byType` directory  
+
+*******************************
+*******************************
+
+SWMP_monthlyMET.csv and .RData
+-------------------------------
+Meteorological data, aggregated by month from 15-minute instrument readings, across 37 stations
+6909 rows, 54 columns
+-------------------------------
+Variables and definitions:  
+-  station: Character. 8-letter station code. First 3 letters represent the individual Reserve; next two letters identify the station within the reserve; last three letters are "met" to denote meteorological data.    
+-  year: Integer. 4-digit year (e.g. "2002").     
+-  month: Integer. Numeric month (e.g. "1" for January).     
+-  atemp_nValid: Integer. Count of air temperature readings within the month that were valid (not rejected due to QA/QC).  
+-  atemp_min: Numeric. Units: degrees Celsius. Minimum of accepted air temperature readings within the month.
+-  atemp_median: Numeric. Units: degrees Celsius. Median of accepted air temperature readings within the month.
+-  atemp_max: Numeric. Units: degrees Celsius. Maximum of accepted air temperature readings within the month.
+-  atemp_mean: Numeric. Units: degrees Celsius. Arithmetic mean of accepted air temperature readings within the month.
+-  atemp_sd: Numeric. Units: degrees Celsius. Standard deviation of accepted air temperature readings within the month.
+-  atemp_iqr: Numeric. Units: degrees Celsius. Interquartile range of accepted air temperature readings within the month.
+-  rh_nValid: Integer. Count of relative humidity readings within the month that were valid (not rejected due to QA/QC).
+-  rh_min: Numeric. Units: percent saturation (%). Minimum of accepted relative humidity readings within the month.
+-  rh_median: Numeric. Units: percent saturation (%). Median of accepted relative humidity readings within the month.
+-  rh_max: Numeric. Units: percent saturation (%). Maximum of accepted relative humidity readings within the month.
+-  rh_mean: Numeric. Units: percent saturation (%). Arithmetic mean of accepted relative humidity readings within the month.
+-  rh_sd: Numeric. Units: percent saturation (%). Standard deviation of accepted relative humidity readings within the month.
+-  rh_iqr: Numeric. Units: percent saturation (%). Interquartile range of accepted relative humidity readings within the month.
+-  bp_nValid: Integer. Count of barometric pressure readings within the month that were valid (not rejected due to QA/QC).
+-  bp_min: Numeric. Units: millibars (mb). Minimum of accepted barometric pressure readings within the month.
+-  bp_median: Numeric. Units: millibars (mb). Median of accepted barometric pressure readings within the month.
+-  bp_max: Numeric. Units: millibars (mb). Maximum of accepted barometric pressure readings within the month.
+-  bp_mean: Numeric. Units: millibars (mb). Arithmetic mean of accepted barometric pressure readings within the month.
+-  bp_sd: Numeric. Units: millibars (mb). Standard deviation of accepted barometric pressure readings within the month.
+-  bp_iqr: Numeric. Units: millibars (mb). Interquartile range of accepted barometric pressure readings within the month.
+-  wspd_nValid: Integer. Count of wind speed readings within the month that were valid (not rejected due to QA/QC). 15-minute wind speed readings are the average of 5-second scans within the 15-minute window. All variables labeled 'wspd' are aggregations of these 15-minute average readings.  
+-  wspd_min: Numeric. Units: meters per second (m/s). Minimum of accepted wind speed readings within the month.
+-  wspd_median: Numeric. Units: meters per second (m/s). Median of accepted wind speed readings within the month.
+-  wspd_max: Numeric. Units: meters per second (m/s). Maximum of accepted wind speed readings within the month.
+-  wspd_mean: Numeric. Units: meters per second (m/s). Arithmetic mean of accepted wind speed readings within the month.
+-  wspd_sd: Numeric. Units: meters per second (m/s). Standard deviation of accepted wind speed readings within the month.
+-  wspd_iqr: Numeric. Units: meters per second (m/s). Interquartile range of accepted wind speed readings within the month.
+-  maxwspd_nValid: Integer. Count of 'max' wind speed readings within the month that were valid (not rejected due to QA/QC). 15-minute wind speed readings are the average of 5-second scans within the 15-minute window. Max wind speed is the maximum 5-second reading within the 15-minute window. All variables labeled 'maxwspd' are aggregations of these 15-minute maxima.  
+-  maxwspd_min: Numeric. Units: meters per second (m/s). Minimum of accepted max wind speed readings within the month.
+-  maxwspd_median: Numeric. Units: meters per second (m/s). Median of accepted max wind speed readings within the month.
+-  maxwspd_max: Numeric. Units: meters per second (m/s). Maximum of accepted max wind speed readings within the month.
+-  maxwspd_mean: Numeric. Units: meters per second (m/s). Arithmetic mean of accepted max wind speed readings within the month.
+-  maxwspd_sd: Numeric. Units: meters per second (m/s). Standard deviation of accepted max wind speed readings within the month.
+-  maxwspd_iqr: Numeric. Units: meters per second (m/s). Interquartile range of accepted max wind speed readings within the month.
+-  wdir_nValid: Integer. Count of wind direction readings within the month that were valid (not rejected due to QA/QC). These aggregations may not be meaningful. Generally for wdir: average wind direction measured in degrees true North as of April 1, 2008. Prior to April 1, 2008 wind direction was measured with no correction for magnetic declination. See Reserve metadata for exact date of shift to true North. 
+-  wdir_min: Numeric. Units: degrees. Minimum of accepted wind direction readings within the month.
+-  wdir_median: Numeric. Units: degrees. Median of accepted wind direction readings within the month.
+-  wdir_max: Numeric. Units: degrees. Maximum of accepted wind direction readings within the month.
+-  wdir_mean: Numeric. Units: degrees. Arithmetic mean of accepted wind direction readings within the month.
+-  wdir_sd: Numeric. Units: degrees. Standard deviation of accepted wind direction readings within the month.
+-  wdir_iqr: Numeric. Units: degrees. Interquartile range of accepted wind direction readings within the month.
+-  totprcp_nValid: Integer. Count of total precipitation readings within the month that were valid (not rejected due to QA/QC).
+-  totprcp_total: Numeric. Units: millimeters (mm). Monthly total amount of precipitation.  
+-  dailyPAR_nValid: Integer. Count of daily Photosynthetically Active Radiation (PAR) values within the month that were valid (not rejected due to QA/QC). 15-minute instrument readings for PAR are the sum of 5-second readings during each 15-minute period. For this aggregation, values were first summed at the daily level; then nValid, min, median, max, mean, sd, and iqr were calculated on the daily totals. Units: millimoles per square meter (mmol/(m^2)); total flux over each 24-hour period. 
+-  dailyPAR_min: Numeric. Units: millimoles per square meter (mmol/(m^2)). Minimum of accepted daily PAR values within the month.
+-  dailyPAR_median: Numeric. Units: millimoles per square meter (mmol/(m^2)). Median of accepted daily PAR values within the month.
+-  dailyPAR_max: Numeric. Units: millimoles per square meter (mmol/(m^2)). Maximum of accepted daily PAR values within the month.
+-  dailyPAR_mean: Numeric. Units: millimoles per square meter (mmol/(m^2)). Arithmetic mean of accepted daily PAR values within the month.
+-  dailyPAR_sd: Numeric. Units: millimoles per square meter (mmol/(m^2)). Standard deviation of accepted daily PAR values within the month.
+-  dailyPAR_iqr: Numeric. Units: millimoles per square meter (mmol/(m^2)). Interquartile Range of accepted daily PAR values within the month.
+
+*******************************
+*******************************
+
+SWMP_monthlyNUT.csv and .RData
+-------------------------------
+Nutrient data, aggregated by month from replicate monthly grab samples, across 156 stations
+28,693 rows, 15 columns
+-------------------------------
+Variables and definitions:  
+-  station: Character. 8-letter station code. First 3 letters represent the individual Reserve; next two letters identify the station within the reserve; last three letters are "nut" to denote nutrient data.   
+-  year: Integer. 4-digit year (e.g. "2002").    
+-  month: Integer. numeric month (e.g. "1" for January).   
+-  po4f: Numeric. Units: milligrams per Liter (mg/L) as P. Dissolved orthophosphate (PO4). 
+-  nh4f: Numeric. Units: milligrams per Liter (mg/L) as N. Dissolved ammonium (NH4).
+-  no2f: Numeric. Units: milligrams per Liter (mg/L) as N. Dissolved nitrite (NO2).
+-  no3f: Numeric. Units: milligrams per Liter (mg/L) as N. Dissolved nitrate (NO3).
+-  no23f: Numeric. Units: milligrams per Liter (mg/L) as N. Dissolved nitrite + nitrate (NO2+3).
+-  chla_n: Numeric. Units: micrograms per Liter (ug/L). Chlorophyll a.
+-  po4f_cens: Integer. Indicator of whether at least one po4f value for the month was censored (below detection limit). 0 if not censored; 1 if censored. If a sample was censored, its value was represented by the detection limit in the data. If both replicates were censored, the value in the po4f column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the po4f column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the po4f column is the true average, and the value in this column is 0.
+-  nh4f_cens: Integer. Indicator of whether at least one nh4f value was censored (below detection limit). 0 if not censored; 1 if censored. If both replicates were censored, the value in the nh4f column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the nh4f column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the nh4f column is the true average, and the value in this column is 0.
+-  no2f_cens: Integer. Indicator of whether at least one no2f value was censored (below detection limit). 0 if not censored; 1 if censored. If censored, the value in the no2f column represents the detection limit. If both replicates were censored, the value in the no2f column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the no2f column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the no2f column is the true average, and the value in this column is 0.
+-  no3f_cens: Integer. Indicator of whether at least one no3f value was censored (below detection limit). 0 if not censored; 1 if censored. If censored, the value in the no3f column represents the detection limit. If both replicates were censored, the value in the no3f column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the no3f column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the no3f column is the true average, and the value in this column is 0.
+-  no23f_cens: Integer. Indicator of whether at least one no23f value was censored (below detection limit). 0 if not censored; 1 if censored. If censored, the value in the no23f column represents the detection limit. If both replicates were censored, the value in the no23f column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the no23f column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the no23f column is the true average, and the value in this column is 0.
+-  chla_n_cens: Integer. Indicator of whether at least one chla_n value was censored (below detection limit). 0 if not censored; 1 if censored. If censored, the value in the chla_n column represents the detection limit. If both replicates were censored, the value in the chla_n column is the detection limit, and the value in this column is 1. If only one replicate was censored, the value in the chla_n column represents the average of the uncensored value and the detection limit, and the value in this column is 1. If both replicates were uncensored, the value in the chla_n column is the true average, and the value in this column is 0.
+
+
+*******************************
+*******************************
+
+
+SWMP_monthlyWQ.csv and .RData
+-------------------------------
+Water Quality data, aggregated by month from 15-minute instrument readings, across 154 stations
+27,605 rows, 84 columns
+-------------------------------
+Variables and definitions:  
+-  station: Character. 7-letter station code. First 3 letters represent the individual Reserve; next two letters identify the station within the reserve; last two letters are "wq" to denote water quality data.   
+-  year: Integer. 4-digit year (e.g. "2002").    
+-  month: Integer. numeric month (e.g. "1" for January).   
+-
+
