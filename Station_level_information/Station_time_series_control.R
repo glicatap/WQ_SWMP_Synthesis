@@ -13,6 +13,9 @@ reserves <- c("ace", "apa", "cbm", "cbv", "del", "elk", "gnd", "grb", "gtm",
 reserves <- c("ace", "del", "gnd", "gtm", "job", "wkb")
 # what didnt' work the second time:
 reserves <- c("gnd", "wkb") # ran them manually
+res = "lks"
+res = "niw"
+res = "gnd"
 
 # setup parallel backend
 cl<-makeCluster(10)  

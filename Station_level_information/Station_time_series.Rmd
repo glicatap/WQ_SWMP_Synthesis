@@ -6,7 +6,7 @@ output:
     toc_float: yes
     toc_depth: 2
 params:
-  reserve: "niw"
+  reserve: "lks"
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
@@ -68,22 +68,21 @@ dat_long <- dat %>%
                names_to = c("param", "stat"),
                names_sep = "_",
                values_to = "value") %>% 
-  pivot_wider(names_from = stat,
-              values_from = value) %>% 
+  # pivot_wider(names_from = stat,
+  #             values_from = value) %>% 
   mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")))
 ```
 
-```{r loop-through-wq-parms, results = "asis"}
+```{r, results = "asis", fig.width = 7, fig.height = 7}
 parms <- unique(dat_long$param)
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
-  p <- ggplot(dat_sub, aes(x = date, y = median)) +
-    geom_line(aes(col = "median")) +
-    geom_line(aes(y = min, col = "min")) +
-    geom_line(aes(y = max, col = "max")) +
-    facet_wrap(~station) +
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
+    geom_line(size = 0.5) +
+    geom_point(size = 0.9) +
+    facet_grid(station ~ stat) +
     theme_bw() +
     theme(legend.position = "none") +
     labs(title = paste(parms[i], "monthly min/median/max"),
@@ -92,6 +91,29 @@ for(i in seq_along(parms)){
   print(p)
   cat("\n")
 }
+```
+
+
+
+```{r loop-through-wq-parms, results = "asis"}
+# parms <- unique(dat_long$param)
+# for(i in seq_along(parms)){
+#   cat("\n")
+#   cat("##", parms[i], "\n")
+#   dat_sub <- filter(dat_long, param == parms[i])
+#   p <- ggplot(dat_sub, aes(x = date, y = median)) +
+#     geom_line(aes(col = "median")) +
+#     geom_line(aes(y = min, col = "min")) +
+#     geom_line(aes(y = max, col = "max")) +
+#     facet_wrap(~station) +
+#     theme_bw() +
+#     theme(legend.position = "none") +
+#     labs(title = paste(parms[i], "monthly min/median/max"),
+#          x = "Date",
+#          y = "value")
+#   print(p)
+#   cat("\n")
+# }
 ```
 
 
