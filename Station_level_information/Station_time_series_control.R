@@ -24,7 +24,7 @@ strt<-Sys.time()
 
 # process all stations
 foreach(res = reserves, .packages = c('xfun', 'rmarkdown')) %dopar% {
-  outname <- paste0(toupper(res), "_TimeSeries-3.html")
+  outname <- paste0(toupper(res), "_TimeSeries-4.html")
 
   try(
     xfun::Rscript_call(

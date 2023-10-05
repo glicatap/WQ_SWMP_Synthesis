@@ -22,7 +22,16 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(janitor)
+library(plotly)
 ```
+
+```{r, include = FALSE}
+# generate a ggplotly object before loops to make loops work
+p2 <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length)) +
+  geom_point()
+ggplotly(p2)
+```
+
 
 ```{r active-stations}
 mstns <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) %>%  #read.csv threw an error for some reason
@@ -103,8 +112,8 @@ for(i in seq_along(parms)){
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
-    geom_line(size = 0.5) +
-    geom_point(size = 0.9) +
+    geom_line(linewidth = 0.3) +
+    geom_point(size = 0.6) +
     facet_grid(station ~ stat2) +
     theme_bw() +
     theme(legend.position = "top",
@@ -113,7 +122,15 @@ for(i in seq_along(parms)){
     labs(x = "Date",
          y = "value",
          col = "")
-  print(p)
+  
+  ggplotly(p,
+           width = 675, height = 675) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
+  # print(p)
   cat("\n")
 }
 ```
@@ -179,8 +196,8 @@ for(i in seq_along(parms)){
   
   dat_sub <- filter(dat_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
-    geom_line(size = 0.5) +
-    geom_point(size = 0.9) +
+    geom_line(linewidth = 0.3) +
+    geom_point(size = 0.6) +
     facet_grid(station ~ stat2) +
     theme_bw() +
     theme(legend.position = "top",
@@ -190,7 +207,13 @@ for(i in seq_along(parms)){
          y = "value",
          col = "")
   
-  print(p)
+    ggplotly(p,
+           width = 675, height = 350) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.25, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+    
   cat("\n")
   
 }
@@ -199,14 +222,21 @@ cat("\n")
 cat("##", "totprcp", "\n")
 dat_sub <- filter(dat_long, param == "totprcp")
 p <- ggplot(dat_sub, aes(x = date, y = value)) +
-  geom_line(col = "navy") +
-  geom_point(col = "navy", size = 0.9) +
+  geom_line(col = "navy", linewidth = 0.3) +
+  geom_point(col = "navy", size = 0.6) +
   facet_wrap(~station, ncol = 1) +
   theme_bw() +
   theme(legend.position = "none") +
   labs(x = "Date",
        y = "value")
-print(p)
+
+ggplotly(p,
+           width = 675, height = 350) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+
 cat("\n")
 ```
 
@@ -246,8 +276,8 @@ for(i in seq_along(parms)){
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
-    geom_line(col = "gray60") +
-    geom_point(alpha = 0.6) +
+    geom_line(col = "gray60", alpha = 0.7, linewidth = 0.3) +
+    geom_point(alpha = 0.6, size = 1) +
     facet_wrap(~station, ncol = 2) +
     theme_bw() +
     theme(legend.position = "top",
@@ -256,7 +286,14 @@ for(i in seq_along(parms)){
     labs(x = "Date",
          y = "value",
          col = "below detection")
-  print(p)
+  
+  ggplotly(p,
+           width = 675, height = 675) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
   cat("\n")
 }
 ```
@@ -264,31 +301,6 @@ for(i in seq_along(parms)){
 
 # Nutrients - log scale  
 
-```{r subset-nut-data2}
-# filter: keep only this reserve, and active stations
-# select: identifying columns and min/median/max; no empty columns
-# rename to remove extra underscores
-dat <- nut %>% 
-  filter(reserve == params$reserve,
-         station %in% stns_active) %>% 
-  remove_empty("cols") %>% 
-  rename(any_of(col_matching))
-
-# pivot
-dat_long <- dat %>% 
-  select(-reserve) %>% 
-  pivot_longer(4:ncol(.),
-               names_to = c("param", "info"),
-               names_sep = "_",
-               values_to = "value") %>% 
-  pivot_wider(names_from = info,
-              values_from = value) %>% 
-  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
-         cens = case_when(cens == 1 ~ "yes",
-                          cens == 0 ~ "no",
-                          .default = as.character(cens))) %>% 
-  rename("value" = "val")
-```
 
 ```{r loop-through-nut-parms2, results = "asis"}
 parms <- unique(dat_long$param)
@@ -297,8 +309,8 @@ for(i in seq_along(parms)){
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
-    geom_line(col = "gray60") +
-    geom_point(alpha = 0.6) +
+    geom_line(col = "gray60", alpha = 0.6, linewidth = 0.3) +
+    geom_point(alpha = 0.7, size = 1) +
     facet_wrap(~station, ncol = 2) +
     scale_y_log10() +
     theme_bw() +
@@ -308,7 +320,14 @@ for(i in seq_along(parms)){
     labs(x = "Date",
          y = "value",
          col = "below detection")
-  print(p)
+  
+  ggplotly(p,
+           width = 675, height = 675) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
   cat("\n")
 }
 ```
