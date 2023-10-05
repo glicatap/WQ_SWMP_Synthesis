@@ -1,5 +1,6 @@
 ---
 title: "`r toupper(params$reserve)` Time Series Graphs"
+date: "generated `r Sys.Date()`"
 output: 
   html_document: 
     toc: yes
@@ -8,6 +9,41 @@ output:
 params:
   reserve: "gnd"
 ---
+
+# About this file  
+
+These are time series graphs of monthly data for all required SWMP parameters at your reserve, going back to 2002 [or each station's start date, if it was later than 2002]. Only stations labelled "Active" as of 8/29/2023 in the `sampling_stations` csv that accompanies CDMO downloads are included here, but all stations are present in the dataset.   
+
+## How to navigate this document  
+
+On the left is a floating table of contents for navigating between major sections of output:  
+
+-  Water Quality  
+-  Weather    
+-  Nutrients    
+-  Nutrients with log-10 y-axis   
+
+When you click on one of those headers, or scroll down the document, the floating table of contents will expand to reveal the individual parameters within each section. Parameter naming is generally the same as in the CDMO's SWMP database, though all have been changed to lower case and underscores (_) have been replaced by dashes (-).  
+
+
+## Plot layout and interactivity  
+
+WQ and MET plots each consist of two columns, with one row for each station. The left column contains monthly minimum and maximum values, with median values in the right column.  
+
+NUT plots also contain two columns, but the columns are not meaningful. There is simply one panel for each station. Because nutrient data can have high outliers, plots are provided with both a regular y-axis and a log-10 y-axis.    
+
+**Please make sure all values and ranges look reasonable. Also make sure there aren't any data gaps that you didn't expect.** Remember gaps can be caused not just by missing data, but by data flagged suspect or rejected.    
+
+## How data were processed and aggregated  
+
+The CDMO's Advanced Query System Zip download was used to download data from all SWMP stations for 2002 - 2022. This download contained a single file for each station, for each year. Files for each station were combined, with **only grab samples** kept from nutrient files (no diel samples). Then any data points flagged and coded in ways the NERRS Synthesis work group decided to discard were discarded. Typically this included any points flagged as suspect or rejected. Finally, these QA/QC'd data files were aggregated to monthly frequency in the following ways:  
+
+-  **WQ and MET** - from the valid (not discarded) 15-minute readings, minimum, median, and maximum were calculated and are shown here for most parameters. Exceptions are total precipitation, where valid readings were summed to monthly totals; and PAR, where 15-minute readings were summed for each day, and the daily values were summarized as minimum, median, and maximum.  
+-  **NUT** - valid monthly replicate values were averaged. During file processing, a column was added for each nutrient to indicate whether that value had been censored (e.g. was below detection), based on the QA/QC flags and codes. In the monthly aggregation, if at least one valid replicate was identified as censored, the average was also identified as censored. Points on the nutrient plots are colored by whether or not this average was censored.  
+
+More detail is available on request!  
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
@@ -265,7 +301,8 @@ dat_long <- dat %>%
   mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
          cens = case_when(cens == 1 ~ "yes",
                           cens == 0 ~ "no",
-                          .default = as.character(cens))) %>% 
+                          .default = as.character(cens)),
+         val = round(val, 4)) %>% 
   rename("value" = "val")
 ```
 
@@ -288,9 +325,9 @@ for(i in seq_along(parms)){
          col = "below detection")
   
   ggplotly(p,
-           width = 675, height = 675) %>%  
+           width = 675, height = 450) %>%  
     layout(legend = list(orientation = "h",
-                         y = 1.11, x = 0)) %>% 
+                         y = 1.18, x = 0)) %>% 
     htmltools::tagList() %>%
     print()
   
@@ -322,9 +359,9 @@ for(i in seq_along(parms)){
          col = "below detection")
   
   ggplotly(p,
-           width = 675, height = 675) %>%  
+           width = 675, height = 450) %>%  
     layout(legend = list(orientation = "h",
-                         y = 1.11, x = 0)) %>% 
+                         y = 1.18, x = 0)) %>% 
     htmltools::tagList() %>%
     print()
   
