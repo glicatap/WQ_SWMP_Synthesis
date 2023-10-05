@@ -3,28 +3,20 @@
 library(foreach)
 library(doParallel)
 
-outpath <- here::here("Station_level_information", "time_series_graphs")
 reserves <- c("ace", "apa", "cbm", "cbv", "del", "elk", "gnd", "grb", "gtm", 
               "hee", "hud", "jac", "job", "kac", "lks", "mar", "nar", "niw", 
               "noc", "owc", "pdb", "rkb", "sap", "sfb", "sos", "tjr", "wel", 
               "wkb", "wqb")
-# reserves <- c("gnd", "lks", "niw")
-# what didn't work the first time:
-reserves <- c("ace", "del", "gnd", "gtm", "job", "wkb")
-# what didnt' work the second time:
-reserves <- c("gnd", "wkb") # ran them manually
-res = "lks"
-res = "niw"
-res = "gnd"
 
 # setup parallel backend
-cl<-makeCluster(10)  
-registerDoParallel(cl)
+# cl<-makeCluster(6)  
+# registerDoParallel(cl)
 strt<-Sys.time()
 
 # process all stations
-foreach(res = reserves, .packages = c('xfun', 'rmarkdown')) %dopar% {
-  outname <- paste0(toupper(res), "_TimeSeries-4.html")
+foreach(res = reserves) %do% {
+  outpath <- here::here("Station_level_information", "time_series_graphs")
+  outname <- paste0(toupper(res), "_TimeSeries.html")
 
   try(
     xfun::Rscript_call(
@@ -37,5 +29,5 @@ foreach(res = reserves, .packages = c('xfun', 'rmarkdown')) %dopar% {
 }
 
 Sys.time() - strt
-stopCluster(cl)
+# stopCluster(cl)
 beepr::beep(8)

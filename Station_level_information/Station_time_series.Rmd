@@ -28,9 +28,11 @@ When you click on one of those headers, or scroll down the document, the floatin
 
 ## Plot layout and interactivity  
 
-WQ and MET plots each consist of two columns, with one row for each station. The left column contains monthly minimum and maximum values, with median values in the right column.  
+*Hovering over a point* on any plot will bring up a bubble showing the date (really just year-month, with an arbitrary day value of 15), the value of the parameter, and other identifying information (min/median/max; censored or not). You can *zoom in* by clicking and dragging your mouse to highlight an interesting area within a graph panel. When you *hover over any part of a graph*, a toolbar will pop up in the upper right corner, and you can reset the axes (zoom back out), use other zoom options, and even save the plot as an image file. 
 
-NUT plots also contain two columns, but the columns are not meaningful. There is simply one panel for each station. Because nutrient data can have high outliers, plots are provided with both a regular y-axis and a log-10 y-axis.    
+**WQ and MET** plots each consist of two columns, with one row for each station. The left column contains monthly minimum and maximum values, with median values in the right column.  
+
+**NUT** plots also contain two columns, but the columns are not meaningful. There is simply one panel for each station. Because nutrient data can have high outliers, plots are provided with both a regular y-axis and a log-10 y-axis.    
 
 **Please make sure all values and ranges look reasonable. Also make sure there aren't any data gaps that you didn't expect.** Remember gaps can be caused not just by missing data, but by data flagged suspect or rejected.    
 
