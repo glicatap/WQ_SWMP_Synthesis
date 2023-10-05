@@ -6,13 +6,15 @@ output:
     toc_float: yes
     toc_depth: 2
 params:
-  reserve: "lks"
+  reserve: "gnd"
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
-                      error = TRUE)
+                      error = TRUE,
+                      fig.width = 7,
+                      fig.height = 7)
 ```
 
 ```{r}
@@ -21,6 +23,17 @@ library(tidyr)
 library(ggplot2)
 library(janitor)
 ```
+
+```{r active-stations}
+mstns <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) %>%  #read.csv threw an error for some reason
+  janitor::clean_names() %>%   
+  filter(status == "Active")
+
+stns_active <- mstns %>% 
+  mutate(station_code = stringr::str_squish(station_code)) %>% 
+  pull(station_code)
+```
+
 
 ```{r load-data}
 path <- here::here("Data", "QAQCd_monthly_byType")
@@ -45,19 +58,24 @@ col_matching <- c("do-mgl_min" = "do_mgl_min",
                   "do-pct_min" = "do_pct_min",
                   "do-pct_median" = "do_pct_median",
                   "do-pct_max" = "do_pct_max",
-                  "chla_min" = "chla_n_min",
-                  "chla_median" = "chla_n_median",
-                  "chla_max" = "chla_n_max")
+                  "chla_val" = "chla_n",
+                  "chla_cens" = "chla_n_cens",
+                  "po4f_val" = "po4f",
+                  "nh4f_val" = "nh4f",
+                  "no2f_val" = "no2f",
+                  "no3f_val" = "no3f",
+                  "no23f_val" = "no23f")
 ```
 
 # Water Quality  
 
 ```{r subset-wq-data}
-# filter: keep only this reserve
+# filter: keep only this reserve, and active stations
 # select: identifying columns and min/median/max; no empty columns
 # rename to remove extra underscores
 dat <- wq %>% 
-  filter(reserve == params$reserve) %>% 
+  filter(reserve == params$reserve,
+         station %in% stns_active) %>% 
   select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max")) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
@@ -70,10 +88,15 @@ dat_long <- dat %>%
                values_to = "value") %>% 
   # pivot_wider(names_from = stat,
   #             values_from = value) %>% 
-  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")))
+  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
+         stat2 = case_when(stat %in% c("min", "max") ~ "min.max",
+                           stat == "median" ~ "median",
+                           .default = stat),
+         stat2 = forcats::fct_relevel(stat2, "min.max", "median"),
+         stat = forcats::fct_relevel(stat, "min", "median", "max"))
 ```
 
-```{r, results = "asis", fig.width = 7, fig.height = 7}
+```{r, results = "asis"}
 parms <- unique(dat_long$param)
 for(i in seq_along(parms)){
   cat("\n")
@@ -82,12 +105,14 @@ for(i in seq_along(parms)){
   p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
     geom_line(size = 0.5) +
     geom_point(size = 0.9) +
-    facet_grid(station ~ stat) +
+    facet_grid(station ~ stat2) +
     theme_bw() +
-    theme(legend.position = "none") +
-    labs(title = paste(parms[i], "monthly min/median/max"),
-         x = "Date",
-         y = "value")
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "")
   print(p)
   cat("\n")
 }
@@ -124,7 +149,8 @@ for(i in seq_along(parms)){
 # select: identifying columns and min/median/max; no empty columns
 # rename to remove extra underscores
 dat <- met %>% 
-  filter(reserve == params$reserve) %>% 
+  filter(reserve == params$reserve,
+         station %in% stns_active) %>% 
   select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max"), ends_with("total")) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
@@ -135,29 +161,35 @@ dat_long <- dat %>%
                names_to = c("param", "stat"),
                names_sep = "_",
                values_to = "value") %>% 
-  pivot_wider(names_from = stat,
-              values_from = value) %>% 
-  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")))
+  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
+         stat2 = case_when(stat %in% c("min", "max") ~ "min.max",
+                           stat == "median" ~ "median",
+                           .default = stat),
+         stat2 = forcats::fct_relevel(stat2, "min.max", "median"),
+         stat = forcats::fct_relevel(stat, "min", "median", "max"))
 ```
 
-```{r loop-through-met-parms, results = "asis", fig.height = 4, fig.width = 6}
+```{r loop-through-met-parms, results = "asis", fig.height = 4, fig.width = 7}
 parms <- unique(dat_long$param)
 parms <- parms[-which(parms == "totprcp")] # precip treated differently, below loop
 
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
+  
   dat_sub <- filter(dat_long, param == parms[i])
-  p <- ggplot(dat_sub, aes(x = date, y = median)) +
-    geom_line(aes(col = "median")) +
-    geom_line(aes(y = min, col = "min")) +
-    geom_line(aes(y = max, col = "max")) +
-    facet_wrap(~station) +
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
+    geom_line(size = 0.5) +
+    geom_point(size = 0.9) +
+    facet_grid(station ~ stat2) +
     theme_bw() +
-    theme(legend.position = "none") +
-    labs(title = paste(parms[i], "monthly min/median/max"),
-         x = "Date",
-         y = "value")
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "")
+  
   print(p)
   cat("\n")
   
@@ -166,14 +198,13 @@ for(i in seq_along(parms)){
 cat("\n")
 cat("##", "totprcp", "\n")
 dat_sub <- filter(dat_long, param == "totprcp")
-p <- ggplot(dat_sub, aes(x = date, y = total)) +
-  geom_line(col = "blue") +
-  geom_point(col = "blue", size = 0.6) +
-  facet_wrap(~station) +
+p <- ggplot(dat_sub, aes(x = date, y = value)) +
+  geom_line(col = "navy") +
+  geom_point(col = "navy", size = 0.9) +
+  facet_wrap(~station, ncol = 1) +
   theme_bw() +
   theme(legend.position = "none") +
-  labs(title = "totprcp",
-       x = "Date",
+  labs(x = "Date",
        y = "value")
 print(p)
 cat("\n")
@@ -183,24 +214,29 @@ cat("\n")
 # Nutrients  
 
 ```{r subset-nut-data}
-# filter: keep only this reserve
+# filter: keep only this reserve, and active stations
 # select: identifying columns and min/median/max; no empty columns
 # rename to remove extra underscores
 dat <- nut %>% 
-  filter(reserve == params$reserve) %>% 
+  filter(reserve == params$reserve,
+         station %in% stns_active) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
 
-# where do censored columns start
-parms_end <- min(grep("cens$", names(dat))) - 1
-
 # pivot
 dat_long <- dat %>% 
-  select(1:parms_end) %>% 
+  select(-reserve) %>% 
   pivot_longer(4:ncol(.),
-               names_to = "param",
+               names_to = c("param", "info"),
+               names_sep = "_",
                values_to = "value") %>% 
-  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")))
+  pivot_wider(names_from = info,
+              values_from = value) %>% 
+  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
+         cens = case_when(cens == 1 ~ "yes",
+                          cens == 0 ~ "no",
+                          .default = as.character(cens))) %>% 
+  rename("value" = "val")
 ```
 
 ```{r loop-through-nut-parms, results = "asis"}
@@ -209,14 +245,17 @@ for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
-  p <- ggplot(dat_sub, aes(x = date, y = value)) +
-    geom_point(col = "blue", size = 0.6) +
-    geom_line(col = "blue") +
-    facet_wrap(~station) +
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
+    geom_line(col = "gray60") +
+    geom_point(alpha = 0.6) +
+    facet_wrap(~station, ncol = 2) +
     theme_bw() +
-    labs(title = parms[i],
-         x = "Date",
-         y = "value")
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "below detection")
   print(p)
   cat("\n")
 }
@@ -226,24 +265,29 @@ for(i in seq_along(parms)){
 # Nutrients - log scale  
 
 ```{r subset-nut-data2}
-# filter: keep only this reserve
+# filter: keep only this reserve, and active stations
 # select: identifying columns and min/median/max; no empty columns
 # rename to remove extra underscores
 dat <- nut %>% 
-  filter(reserve == params$reserve) %>% 
+  filter(reserve == params$reserve,
+         station %in% stns_active) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
 
-# where do censored columns start
-parms_end <- min(grep("cens$", names(dat))) - 1
-
 # pivot
 dat_long <- dat %>% 
-  select(1:parms_end) %>% 
+  select(-reserve) %>% 
   pivot_longer(4:ncol(.),
-               names_to = "param",
+               names_to = c("param", "info"),
+               names_sep = "_",
                values_to = "value") %>% 
-  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")))
+  pivot_wider(names_from = info,
+              values_from = value) %>% 
+  mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
+         cens = case_when(cens == 1 ~ "yes",
+                          cens == 0 ~ "no",
+                          .default = as.character(cens))) %>% 
+  rename("value" = "val")
 ```
 
 ```{r loop-through-nut-parms2, results = "asis"}
@@ -252,15 +296,18 @@ for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
   dat_sub <- filter(dat_long, param == parms[i])
-  p <- ggplot(dat_sub, aes(x = date, y = value)) +
-    geom_point(col = "blue", size = 0.6) +
-    geom_line(col = "blue") +
-    facet_wrap(~station) +
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
+    geom_line(col = "gray60") +
+    geom_point(alpha = 0.6) +
+    facet_wrap(~station, ncol = 2) +
     scale_y_log10() +
     theme_bw() +
-    labs(title = parms[i],
-         x = "Date",
-         y = "value")
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "below detection")
   print(p)
   cat("\n")
 }
