@@ -125,63 +125,63 @@ Variables and definitions:
 -  sal_sd: Numeric. Units: practical salinity units (psu). Standard deviation of accepted salinity readings within the month.
 -  sal_iqr: Numeric. Units: practical salinity units (psu). Interquartile range of accepted salinity readings within the month.
 -  do_pct_nValid: Integer. Count of Dissolved Oxygen percent saturation (DO%) readings within the month that were valid (not rejected due to QA/QC).
--  do_pct_min: Numeric. Units: percent saturation (%). Minimum of DO% readings within the month.
--  do_pct_median: Numeric. Units: percent saturation (%). Median of DO% readings within the month.
--  do_pct_max: Numeric. Units: percent saturation (%). Maximum of DO% readings within the month.
--  do_pct_mean: Numeric. Units: percent saturation (%). Arithmetic mean of DO% readings within the month.
--  do_pct_sd: Numeric. Units: percent saturation (%). Standard deviation of DO% readings within the month.
--  do_pct_iqr: Numeric. Units: percent saturation (%). Interquartile range of DO% readings within the month.
+-  do_pct_min: Numeric. Units: percent saturation (%). Minimum of accepted DO% readings within the month.
+-  do_pct_median: Numeric. Units: percent saturation (%). Median of accepted DO% readings within the month.
+-  do_pct_max: Numeric. Units: percent saturation (%). Maximum of accepted DO% readings within the month.
+-  do_pct_mean: Numeric. Units: percent saturation (%). Arithmetic mean of accepted DO% readings within the month.
+-  do_pct_sd: Numeric. Units: percent saturation (%). Standard deviation of accepted DO% readings within the month.
+-  do_pct_iqr: Numeric. Units: percent saturation (%). Interquartile range of accepted DO% readings within the month.
 -  do_mgl_nValid: Integer. Count of Dissolved Oxygen concentration (DO mg/L) readings within the month that were valid (not rejected due to QA/QC).
--  do_mgl_min: Numeric. Units: milligrams per Liter (mg/L). Minimum of DO mg/L readings within the month.
--  do_mgl_median: Numeric. Units: milligrams per Liter (mg/L). Median of DO mg/L readings within the month.
--  do_mgl_max: Numeric. Units: milligrams per Liter (mg/L). Maximum of DO mg/L readings within the month.
--  do_mgl_mean: Numeric. Units: milligrams per Liter (mg/L). Arithmetic mean of DO mg/L readings within the month.
--  do_mgl_sd: Numeric. Units: milligrams per Liter (mg/L). Standard deviation of DO mg/L readings within the month.
--  do_mgl_iqr: Numeric. Units: milligrams per Liter (mg/L). Interquartile range of DO mg/L readings within the month.
+-  do_mgl_min: Numeric. Units: milligrams per Liter (mg/L). Minimum of accepted DO mg/L readings within the month.
+-  do_mgl_median: Numeric. Units: milligrams per Liter (mg/L). Median of accepted DO mg/L readings within the month.
+-  do_mgl_max: Numeric. Units: milligrams per Liter (mg/L). Maximum of accepted DO mg/L readings within the month.
+-  do_mgl_mean: Numeric. Units: milligrams per Liter (mg/L). Arithmetic mean of accepted DO mg/L readings within the month.
+-  do_mgl_sd: Numeric. Units: milligrams per Liter (mg/L). Standard deviation of accepted DO mg/L readings within the month.
+-  do_mgl_iqr: Numeric. Units: milligrams per Liter (mg/L). Interquartile range of accepted DO mg/L readings within the month.
 -  depth_nValid: Integer. Count of depth readings within the month that were valid (not rejected due to QA/QC). Depth is calculated using pressure, and is not corrected for atmospheric pressure. Depth represents the depth of the instrument's sensor below the water's surface.    
--  depth_min: Numeric. Units: meters (m). Minimum of depth readings within the month.
--  depth_median: Numeric. Units: meters (m). Median of depth readings within the month.
--  depth_max: Numeric. Units: meters (m). Maximum of depth readings within the month.
--  depth_mean: Numeric. Units: meters (m). Arithmetic mean of depth readings within the month.
--  depth_sd: Numeric. Units: meters (m). Standard deviation of depth readings within the month.
--  depth_iqr: Numeric. Units: meters (m). Interquartile range of depth readings within the month.
+-  depth_min: Numeric. Units: meters (m). Minimum of accepted depth readings within the month.
+-  depth_median: Numeric. Units: meters (m). Median of accepted depth readings within the month.
+-  depth_max: Numeric. Units: meters (m). Maximum of accepted depth readings within the month.
+-  depth_mean: Numeric. Units: meters (m). Arithmetic mean of accepted depth readings within the month.
+-  depth_sd: Numeric. Units: meters (m). Standard deviation of accepted depth readings within the month.
+-  depth_iqr: Numeric. Units: meters (m). Interquartile range of accepted depth readings within the month.
 -  cdepth_nValid: Integer. Count of corrected depth readings within the month that were valid (not rejected due to QA/QC). Raw depth from the instrument is mathematically corrected for atmospheric pressure using barometric pressure readings from the nearest SWMP weather station. Depth represents the depth of the instrument's sensor below the water's surface.   
--  cdepth_min: Numeric. Units: meters (m). Minimum of corrected depth readings within the month.
--  cdepth_median: Numeric. Units: meters (m). Median of corrected depth readings within the month.
--  cdepth_max: Numeric. Units: meters (m). Maximum of corrected depth readings within the month.
--  cdepth_mean: Numeric. Units: meters (m). Arithmetic mean of corrected depth readings within the month.
--  cdepth_sd: Numeric. Units: meters (m). Standard deviation of corrected depth readings within the month.
--  cdepth_iqr: Numeric. Units: meters (m). Interquartile range of corrected depth readings within the month.
--  ph_nValid: 
--  ph_min: 
--  ph_median: 
--  ph_max: 
--  ph_mean: 
--  ph_sd: 
--  ph_iqr: 
--  turb_nValid: 
--  turb_min: 
--  turb_median: 
--  turb_max: 
--  turb_mean: 
--  turb_sd: 
--  turb_iqr: 
--  doLessThan2_nValid: 
--  doLessThan2_total: 
--  doLessThan5_nValid: 
--  doLessThan5_total: 
--  level_nValid: Integer. Count of water level readings within the month that were valid (not rejected due to QA/QC). Raw depth from the instrument is mathematically corrected for atmospheric pressure using barometric pressure readings from the nearest SWMP weather station. Depth represents the depth of the instrument's sensor below the water's surface. 
--  level_min: 
--  level_median: 
--  level_max: 
--  level_mean: 
--  level_sd: 
--  level_iqr: 
--  clevel_nValid: 
--  clevel_min: 
--  clevel_median: 
--  clevel_max: 
--  clevel_mean: 
--  clevel_sd: 
--  clevel_iqr: 
+-  cdepth_min: Numeric. Units: meters (m). Minimum of accepted corrected depth readings within the month.
+-  cdepth_median: Numeric. Units: meters (m). Median of accepted corrected depth readings within the month.
+-  cdepth_max: Numeric. Units: meters (m). Maximum of accepted corrected depth readings within the month.
+-  cdepth_mean: Numeric. Units: meters (m). Arithmetic mean of accepted corrected depth readings within the month.
+-  cdepth_sd: Numeric. Units: meters (m). Standard deviation of accepted corrected depth readings within the month.
+-  cdepth_iqr: Numeric. Units: meters (m). Interquartile range of accepted corrected depth readings within the month.
+-  ph_nValid: Integer. Count of pH readings within the month that were valid (not rejected due to QA/QC).  
+-  ph_min: Numeric. Units: standard units. Minimum of accepted pH readings within the month.  
+-  ph_median: Numeric. Units: standard units. Median of accepted pH readings within the month. 
+-  ph_max: Numeric. Units: standard units. Maximum of accepted pH readings within the month. 
+-  ph_mean: Numeric. Units: standard units. Arithmetic mean of accepted pH readings within the month. 
+-  ph_sd: Numeric. Units: standard units. Standard deviation of accepted pH readings within the month. 
+-  ph_iqr: Numeric. Units: standard units. Interquartile range of accepted pH readings within the month. 
+-  turb_nValid: Integer. Count of turbidity readings within the month that were valid (not rejected due to QA/QC).  
+-  turb_min: Numeric. Units: formazin nephelometric units (FNU). Minimum of accepted turbidity readings within the month. 
+-  turb_median: Numeric. Units: formazin nephelometric units (FNU). Median of accepted turbidity readings within the month.  
+-  turb_max: Numeric. Units: formazin nephelometric units (FNU). Maximum of accepted turbidity readings within the month. 
+-  turb_mean: Numeric. Units: formazin nephelometric units (FNU). Arithmetic mean of accepted turbidity readings within the month. 
+-  turb_sd: Numeric. Units: formazin nephelometric units (FNU). Standard deviation of accepted turbidity readings within the month. 
+-  turb_iqr: Numeric. Units: formazin nephelometric units (FNU). Interquartile range of accepted turbidity readings within the month. 
+-  doLessThan2_nValid: Integer. Count of Dissolved Oxygen concentration (DO mg/L) readings within the month that were valid (not rejected due to QA/QC), and could be used to determine how many readings were < 2 mg/L.  
+-  doLessThan2_total: Integer. Count of valid DO mg/L readings within the month that were < 2 mg/L.  
+-  doLessThan5_nValid: Integer. Count of Dissolved Oxygen concentration (DO mg/L) readings within the month that were valid (not rejected due to QA/QC), and could be used to determine how many readings were < 5 mg/L.
+-  doLessThan5_total: Integer. Count of valid DO mg/L readings within the month that were < 5 mg/L.  
+-  level_nValid: Integer. Count of water level readings within the month that were valid (not rejected due to QA/QC). Water level is based on sonde depth, but referenced to the NAVD88 vertical datum.  
+-  level_min: Numeric. Units: meters (m) relative to NAVD88. Minimum of accepted water level readings within the month. 
+-  level_median: Numeric. Units: meters (m) relative to NAVD88. Median of accepted water level readings within the month.  
+-  level_max: Numeric. Units: meters (m) relative to NAVD88. Maximum of accepted water level readings within the month.  
+-  level_mean: Numeric. Units: meters (m) relative to NAVD88. Arithmetic mean of accepted water level readings within the month. 
+-  level_sd: Numeric. Units: meters (m) relative to NAVD88. Standard deviation of accepted water level readings within the month. 
+-  level_iqr: Numeric. Units: meters (m) relative to NAVD88. Interquartile range of accepted water level readings within the month. 
+-  clevel_nValid: Integer. Count of corrected (for atmospheric pressure) water level readings within the month that were valid (not rejected due to QA/QC). Water level is based on sonde depth, but referenced to the NAVD88 vertical datum. Raw depth/level readings from the instrument are mathematically corrected for atmospheric pressure using barometric pressure readings from the nearest SWMP weather station. 
+-  clevel_min: Numeric. Units: meters (m) relative to NAVD88. Minimum of accepted corrected water level readings within the month. 
+-  clevel_median: Numeric. Units: meters (m) relative to NAVD88. Median of accepted corrected water level readings within the month. 
+-  clevel_max: Numeric. Units: meters (m) relative to NAVD88. Maximum of accepted corrected water level readings within the month. 
+-  clevel_mean: Numeric. Units: meters (m) relative to NAVD88. Arithmetic mean of accepted corrected water level readings within the month. 
+-  clevel_sd: Numeric. Units: meters (m) relative to NAVD88. Standard devation of accepted corrected water level readings within the month. 
+-  clevel_iqr: Numeric. Units: meters (m) relative to NAVD88. Interquartile range of accepted corrected water level readings within the month. 
 
