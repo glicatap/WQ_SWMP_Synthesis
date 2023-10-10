@@ -16,7 +16,7 @@ strt<-Sys.time()
 # process all stations
 foreach(res = reserves) %do% {
   outpath <- here::here("Station_level_information", "time_series_graphs")
-  outname <- paste0(toupper(res), "_TimeSeries.html")
+  outname <- paste0(toupper(res), "_TimeSeries_updated.html")
 
   try(
     xfun::Rscript_call(

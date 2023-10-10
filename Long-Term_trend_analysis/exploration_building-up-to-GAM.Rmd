@@ -288,4 +288,153 @@ I trust the GAM so far. The linear term is similar as the linear model when ther
 
 How to look at the residual autocorrelation in the first place..... hmmmm.  
 
+Some info in this Gavin Simpson blog post: https://fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/  
+
+Though from my course I know that ACF and pACF can be wrong if you have missing data, which we most certainly do. Would be better to make a variogram; just need to find the code.  
+
+But here's how to look at acf/pacf of gam output:  
+
+```{r}
+acf(cbmip_gam2$residuals)
+acf(gndbc_gam1$residuals)
+acf(niwol_gam1$residuals)
+```
+
+
+```{r}
+library(gstat)
+library(sp) # RETIRING OCTOBER 2023
+library(ggplot2)
+```
+
+```{r}
+niw2 <- na.omit(niwol)
+#' We can also make a variogram to check for temporal dependency.
+MyData2 <- data.frame(resids   = niwol_gam1$residuals, 
+                      Time = niw2$dec_date, 
+                      Ones = rep(1, nrow(niw2)))
+coordinates(MyData2) <- c("Time", "Ones")
+MyData2
+
+V1 <- variogram(resids ~ Time,  
+                MyData2, 
+                # cutoff  = 159,
+                cressie = TRUE)
+V1
+
+#' Plot the variogram
+p <- ggplot()
+p <- p + geom_point(data = V1,
+                    aes(x = dist, 
+                        y = gamma))
+p <- p + xlab("Time") + ylab("Semi-variogram")
+p <- p + theme(text = element_text(size = 15)) 
+p <- p + theme(legend.position="none") 
+p
+```
+
+```{r}
+acf(niwol_gam1$residuals)
+pacf(niwol_gam1$residuals) 
+```
+
+"The partial autocorrelation at lag k is the correlation that results after removing the effect of any correlations due to the terms at shorter lags." - p. 81, section 4.5.6, Introductory Time Series with R. Via: https://machinelearningmastery.com/gentle-introduction-autocorrelation-partial-autocorrelation/ 
+ 
+That link says "A partial autocorrelation is a summary of the relationship between an observation in a time series with observations at prior time steps with the relationships of intervening observations removed."  
+
+So if I'm interpreting things right: even though that NIW acf plot looks like there's correlation through the first 5 lags, the pacf plot shows that if we remove the correlation from the first lag, we'd have taken care of it.  
+
+```{r}
+gndhs2 <- na.omit(gndhs)
+#' We can also make a variogram to check for temporal dependency.
+MyData2 <- data.frame(resids   = gndhs_gam2$residuals, 
+                      Time = gndhs2$dec_date, 
+                      Ones = rep(1, nrow(gndhs2)))
+coordinates(MyData2) <- c("Time", "Ones")
+MyData2
+
+V1 <- variogram(resids ~ Time,  
+                MyData2, 
+                # cutoff  = 159,
+                cressie = TRUE)
+V1
+
+#' Plot the variogram
+p <- ggplot()
+p <- p + geom_point(data = V1,
+                    aes(x = dist, 
+                        y = gamma))
+p <- p + xlab("Time") + ylab("Semi-variogram")
+p <- p + theme(text = element_text(size = 15)) 
+p <- p + theme(legend.position="none") 
+p
+```
+
+
+```{r}
+# E3 is pearson residuals from a fitted model using OU dependency
+IC2$E3 <- resid(M3.ou, type = "pearson")
+
+#' We can also make a variogram to check for temporal dependency.
+MyData2 <- data.frame(E3   = IC2$E3, 
+                      Year = IC2$Year - 1005, 
+                      Ones = rep(1, nrow(IC2)))
+coordinates(MyData2) <- c("Year", "Ones")
+MyData2
+
+V1 <- variogram(E3 ~ Year,  
+                MyData2, 
+                cutoff  = 159,
+                cressie = TRUE)
+V1
+
+#' Plot the variogram
+p <- ggplot()
+p <- p + geom_point(data = V1,
+                    aes(x = dist, 
+                        y = gamma))
+p <- p + xlab("Year") + ylab("Semi-variogram")
+p <- p + theme(text = element_text(size = 15)) 
+p <- p + theme(legend.position="none") 
+p
+```
+
+
+Build up the seasonal GAM with gamm and play around with that.  
+
+_gam1 are uncensored, with seasonal term  
+_gam2 are censored, with seasonal term
+
+```{r}
+gndhs_gam3 <- gamm(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+                   data = gndhs)
+
+summary(gndhs_gam3$gam)
+# summary(gndhs_gam3$lme)
+```
+
+Results are essentially the same as from _gam1.  (very small differences in a couple spots)  
+
+
+```{r}
+cbvgi_gam3 <- gamm(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+                   data = cbvgi)
+
+summary(cbvgi_gam3$gam)
+# summary(gndhs_gam3$lme)
+```
+
+cbvgi is the one where it's the mdl making it look weird. Make sure censoring works in gamm like it does in gam.  
+
+IT DOES NOT. 'gamm' can't work with family cnorm. Guess I need to figure it out in glmmTMB.  
+
+```{r}
+cbvgi_gam4 <- gamm(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                   family = cnorm(),
+                   data = cbvgi,
+                   method = "REML")
+summary(cbvgi_gam4$gam)
+```
+
+
 # GAM with all of it  

@@ -7,7 +7,7 @@ output:
     toc_float: yes
     toc_depth: 2
 params:
-  reserve: "gnd"
+  reserve: "wqb"
 ---
 
 # About this file  
@@ -16,7 +16,7 @@ These are time series graphs of monthly data for all required SWMP parameters at
 
 ## How to navigate this document  
 
-On the left is a floating table of contents for navigating between major sections of output:  
+On the left is a floating table of contents for navigating between major sections of output. It moves through the three main types of SWMP data, first only the primary parameters of focus for the SWMP Synthesis project. After the primary focal nutrients have been graphed, the document cycles back to remaining water quality, weather, and nutrient parameters.    
 
 -  Water Quality  
 -  Weather    
@@ -81,7 +81,6 @@ stns_active <- mstns %>%
   pull(station_code)
 ```
 
-
 ```{r load-data}
 path <- here::here("Data", "QAQCd_monthly_byType")
 
@@ -102,9 +101,11 @@ nut$reserve <- substr(nut$station, start = 1, stop = 3)
 col_matching <- c("do-mgl_min" = "do_mgl_min",
                   "do-mgl_median" = "do_mgl_median",
                   "do-mgl_max" = "do_mgl_max",
+                  "do-mgl_nValid" = "do_mgl_nValid",
                   "do-pct_min" = "do_pct_min",
                   "do-pct_median" = "do_pct_median",
                   "do-pct_max" = "do_pct_max",
+                  "do-pct_nValid" = "do_pct_nValid",
                   "chla_val" = "chla_n",
                   "chla_cens" = "chla_n_cens",
                   "po4f_val" = "po4f",
@@ -114,7 +115,19 @@ col_matching <- c("do-mgl_min" = "do_mgl_min",
                   "no23f_val" = "no23f")
 ```
 
-# Water Quality  
+
+```{r primary-secondary-params}
+wq_primary <- c("temp", "spcond", "sal", "do-pct", "do-mgl", "turb")
+wq_secondary <- c("ph", "depth", "cdepth", "level", "clevel")
+
+met_primary <- c("atemp", "dailyPAR")
+met_secondary <- c("rh", "bp", "wspd", "maxwspd", "wdir")
+
+nut_primary <- c("chla", "nh4f", "no23f", "po4f")
+nut_secondary <- c("no2f", "no23f")
+```
+
+# Water Quality - Primary  
 
 ```{r subset-wq-data}
 # filter: keep only this reserve, and active stations
@@ -123,35 +136,43 @@ col_matching <- c("do-mgl_min" = "do_mgl_min",
 dat <- wq %>% 
   filter(reserve == params$reserve,
          station %in% stns_active) %>% 
-  select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max")) %>% 
+  select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max"), ends_with("nValid")) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
 
 # pivot
-dat_long <- dat %>% 
+wq_long <- dat %>% 
   pivot_longer(4:ncol(dat),
                names_to = c("param", "stat"),
                names_sep = "_",
                values_to = "value") %>% 
-  # pivot_wider(names_from = stat,
-  #             values_from = value) %>% 
+  pivot_wider(names_from = stat,
+              values_from = value) %>%
+  pivot_longer(min:max,
+               names_to = "stat",
+               values_to = "value") %>% 
   mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
          stat2 = case_when(stat %in% c("min", "max") ~ "min.max",
                            stat == "median" ~ "median",
                            .default = stat),
          stat2 = forcats::fct_relevel(stat2, "min.max", "median"),
-         stat = forcats::fct_relevel(stat, "min", "median", "max"))
+         stat = forcats::fct_relevel(stat, "min", "median", "max"),
+         hoverText = paste0(stat, " ", param, "\n", year, "-", month, "\n",
+                            "value: ", value, "\n", 
+                            "valid points: ", nValid))
 ```
 
 ```{r, results = "asis"}
-parms <- unique(dat_long$param)
+parms <- unique(wq_long$param) 
+parms <- parms[which(parms %in% wq_primary)]
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
-  dat_sub <- filter(dat_long, param == parms[i])
+  dat_sub <- filter(wq_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
     geom_line(linewidth = 0.3) +
-    geom_point(size = 0.6) +
+    geom_point(aes(text = hoverText), # this produces a warning but trying any other way messes up the line geom
+               size = 0.6) +
     facet_grid(station ~ stat2) +
     theme_bw() +
     theme(legend.position = "top",
@@ -161,7 +182,9 @@ for(i in seq_along(parms)){
          y = "value",
          col = "")
   
-  ggplotly(p,
+  
+    ggplotly(p,
+           tooltip = "text",
            width = 675, height = 675) %>%  
     layout(legend = list(orientation = "h",
                          y = 1.11, x = 0)) %>% 
@@ -175,29 +198,7 @@ for(i in seq_along(parms)){
 
 
 
-```{r loop-through-wq-parms, results = "asis"}
-# parms <- unique(dat_long$param)
-# for(i in seq_along(parms)){
-#   cat("\n")
-#   cat("##", parms[i], "\n")
-#   dat_sub <- filter(dat_long, param == parms[i])
-#   p <- ggplot(dat_sub, aes(x = date, y = median)) +
-#     geom_line(aes(col = "median")) +
-#     geom_line(aes(y = min, col = "min")) +
-#     geom_line(aes(y = max, col = "max")) +
-#     facet_wrap(~station) +
-#     theme_bw() +
-#     theme(legend.position = "none") +
-#     labs(title = paste(parms[i], "monthly min/median/max"),
-#          x = "Date",
-#          y = "value")
-#   print(p)
-#   cat("\n")
-# }
-```
-
-
-# Weather  
+# Weather - Primary  
 
 ```{r subset-met-data}
 # filter: keep only this reserve
@@ -206,36 +207,50 @@ for(i in seq_along(parms)){
 dat <- met %>% 
   filter(reserve == params$reserve,
          station %in% stns_active) %>% 
-  select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max"), ends_with("total")) %>% 
+  select(station, year, month, ends_with("min"), ends_with("median"), ends_with("max"), ends_with("total"), ends_with("nValid")) %>% 
   remove_empty("cols") %>% 
   rename(any_of(col_matching))
 
 # pivot
-dat_long <- dat %>% 
+met_long <- dat %>% 
   pivot_longer(4:ncol(dat),
                names_to = c("param", "stat"),
                names_sep = "_",
+               values_to = "value") %>% 
+  pivot_wider(names_from = stat,
+              values_from = value) %>%
+  pivot_longer(min:max,
+               names_to = "stat",
                values_to = "value") %>% 
   mutate(date = lubridate::ymd(paste(year, month, "15", sep = "-")),
          stat2 = case_when(stat %in% c("min", "max") ~ "min.max",
                            stat == "median" ~ "median",
                            .default = stat),
          stat2 = forcats::fct_relevel(stat2, "min.max", "median"),
-         stat = forcats::fct_relevel(stat, "min", "median", "max"))
+         stat = forcats::fct_relevel(stat, "min", "median", "max"),
+         hoverText = paste0(stat, " ", param, "\n", 
+                            year, "-", month, "\n",
+                            "value: ", value, "\n", 
+                            "valid points: ", nValid),
+         precipText = paste0(param, "\n", 
+                             year, "-", month, "\n",
+                             "value: ", total, "\n",
+                            "valid points: ", nValid))
 ```
 
 ```{r loop-through-met-parms, results = "asis", fig.height = 4, fig.width = 7}
-parms <- unique(dat_long$param)
-parms <- parms[-which(parms == "totprcp")] # precip treated differently, below loop
+parms <- unique(met_long$param) 
+parms <- parms[which(parms %in% met_primary)]  # precip treated differently, below loop
 
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
   
-  dat_sub <- filter(dat_long, param == parms[i])
+  dat_sub <- filter(met_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
     geom_line(linewidth = 0.3) +
-    geom_point(size = 0.6) +
+    geom_point(aes(text = hoverText), # this produces a warning but trying any other way messes up the line geom
+               size = 0.6) +
     facet_grid(station ~ stat2) +
     theme_bw() +
     theme(legend.position = "top",
@@ -246,6 +261,7 @@ for(i in seq_along(parms)){
          col = "")
   
     ggplotly(p,
+             tooltip = "text",
            width = 675, height = 350) %>%  
     layout(legend = list(orientation = "h",
                          y = 1.25, x = 0)) %>% 
@@ -258,10 +274,11 @@ for(i in seq_along(parms)){
 
 cat("\n")
 cat("##", "totprcp", "\n")
-dat_sub <- filter(dat_long, param == "totprcp")
-p <- ggplot(dat_sub, aes(x = date, y = value)) +
+dat_sub <- filter(met_long, param == "totprcp")
+p <- ggplot(dat_sub, aes(x = date, y = total)) +
   geom_line(col = "navy", linewidth = 0.3) +
-  geom_point(col = "navy", size = 0.6) +
+  geom_point(aes(text = precipText),
+             col = "navy", size = 0.6) +
   facet_wrap(~station, ncol = 1) +
   theme_bw() +
   theme(legend.position = "none") +
@@ -269,6 +286,7 @@ p <- ggplot(dat_sub, aes(x = date, y = value)) +
        y = "value")
 
 ggplotly(p,
+         tooltip = "text",
            width = 675, height = 350) %>%  
     layout(legend = list(orientation = "h",
                          y = 1.11, x = 0)) %>% 
@@ -279,7 +297,7 @@ cat("\n")
 ```
 
 
-# Nutrients  
+# Nutrients - Primary  
 
 ```{r subset-nut-data}
 # filter: keep only this reserve, and active stations
@@ -292,7 +310,7 @@ dat <- nut %>%
   rename(any_of(col_matching))
 
 # pivot
-dat_long <- dat %>% 
+nut_long <- dat %>% 
   select(-reserve) %>% 
   pivot_longer(4:ncol(.),
                names_to = c("param", "info"),
@@ -309,11 +327,12 @@ dat_long <- dat %>%
 ```
 
 ```{r loop-through-nut-parms, results = "asis"}
-parms <- unique(dat_long$param)
+parms <- unique(nut_long$param) 
+parms <- parms[which(parms %in% nut_primary)]
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
-  dat_sub <- filter(dat_long, param == parms[i])
+  dat_sub <- filter(nut_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
     geom_line(col = "gray60", alpha = 0.7, linewidth = 0.3) +
     geom_point(alpha = 0.6, size = 1) +
@@ -338,15 +357,164 @@ for(i in seq_along(parms)){
 ```
 
 
-# Nutrients - log scale  
+# Nutrients - Primary; log scale  
 
 
 ```{r loop-through-nut-parms2, results = "asis"}
-parms <- unique(dat_long$param)
+parms <- unique(nut_long$param) 
+parms <- parms[which(parms %in% nut_primary)]
+
 for(i in seq_along(parms)){
   cat("\n")
   cat("##", parms[i], "\n")
-  dat_sub <- filter(dat_long, param == parms[i])
+  dat_sub <- filter(nut_long, param == parms[i])
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
+    geom_line(col = "gray60", alpha = 0.6, linewidth = 0.3) +
+    geom_point(alpha = 0.7, size = 1) +
+    facet_wrap(~station, ncol = 2) +
+    scale_y_log10() +
+    theme_bw() +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "below detection")
+  
+  ggplotly(p,
+           width = 675, height = 450) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.18, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
+  cat("\n")
+}
+```
+
+
+# Water Quality - Secondary  
+
+```{r, results = "asis"}
+parms <- unique(wq_long$param) 
+parms <- parms[which(parms %in% wq_secondary)]
+
+for(i in seq_along(parms)){
+  cat("\n")
+  cat("##", parms[i], "\n")
+  dat_sub <- filter(wq_long, param == parms[i])
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
+    geom_line(linewidth = 0.3) +
+    geom_point(aes(text = hoverText), # this produces a warning but trying any other way messes up the line geom
+               size = 0.6) +
+    facet_grid(station ~ stat2) +
+    theme_bw() +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "")
+  
+  
+    ggplotly(p,
+           tooltip = "text",
+           width = 675, height = 675) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.11, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
+  # print(p)
+  cat("\n")
+}
+```
+
+
+
+# Weather - Secondary  
+
+```{r, results = "asis"}
+parms <- unique(met_long$param) 
+parms <- parms[which(parms %in% met_secondary)]
+
+for(i in seq_along(parms)){
+  cat("\n")
+  cat("##", parms[i], "\n")
+  
+  dat_sub <- filter(met_long, param == parms[i])
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = stat)) +
+    geom_line(linewidth = 0.3) +
+    geom_point(aes(text = hoverText), # this produces a warning but trying any other way messes up the line geom
+               size = 0.6) +
+    facet_grid(station ~ stat2) +
+    theme_bw() +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "")
+  
+    ggplotly(p,
+             tooltip = "text",
+           width = 675, height = 350) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.25, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+    
+  cat("\n")
+  
+}
+```
+
+
+# Nutrients - Secondary  
+
+```{r results = "asis"}
+parms <- unique(nut_long$param) 
+parms <- parms[which(parms %in% nut_secondary)]
+
+for(i in seq_along(parms)){
+  cat("\n")
+  cat("##", parms[i], "\n")
+  dat_sub <- filter(nut_long, param == parms[i])
+  p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
+    geom_line(col = "gray60", alpha = 0.7, linewidth = 0.3) +
+    geom_point(alpha = 0.6, size = 1) +
+    facet_wrap(~station, ncol = 2) +
+    theme_bw() +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "below detection")
+  
+  ggplotly(p,
+           width = 675, height = 450) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.18, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+  
+  cat("\n")
+}
+```
+
+
+# Nutrients - Secondary, log scale  
+
+
+```{r, results = "asis"}
+parms <- unique(nut_long$param) 
+parms <- parms[which(parms %in% nut_secondary)]
+
+for(i in seq_along(parms)){
+  cat("\n")
+  cat("##", parms[i], "\n")
+  dat_sub <- filter(nut_long, param == parms[i])
   p <- ggplot(dat_sub, aes(x = date, y = value, col = cens)) +
     geom_line(col = "gray60", alpha = 0.6, linewidth = 0.3) +
     geom_point(alpha = 0.7, size = 1) +
