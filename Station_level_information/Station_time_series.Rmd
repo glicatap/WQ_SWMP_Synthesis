@@ -272,30 +272,48 @@ for(i in seq_along(parms)){
   
 }
 
-cat("\n")
-cat("##", "totprcp", "\n")
-dat_sub <- filter(met_long, param == "totprcp")
-p <- ggplot(dat_sub, aes(x = date, y = total)) +
-  geom_line(col = "navy", linewidth = 0.3) +
-  geom_point(aes(text = precipText),
-             col = "navy", size = 0.6) +
-  facet_wrap(~station, ncol = 1) +
-  theme_bw() +
-  theme(legend.position = "none") +
-  labs(x = "Date",
-       y = "value")
-
-ggplotly(p,
-         tooltip = "text",
-           width = 675, height = 350) %>%  
-    layout(legend = list(orientation = "h",
-                         y = 1.11, x = 0)) %>% 
-    htmltools::tagList() %>%
-    print()
-
-cat("\n")
 ```
 
+```{r, results = "asis"}
+parms <- "totprcp"
+for(i in seq_along(parms)){
+  cat("\n")
+  cat("##", parms[i], "\n")
+  
+  dat_sub <- filter(met_long, param == parms[i]) %>% 
+    select(-value, -stat, -stat2, -hoverText) %>% 
+    rename("value" = total,
+           "hoverText" = precipText) %>% 
+    distinct()
+  
+  p <- ggplot(dat_sub, aes(x = date, y = value)) +
+    geom_line(linewidth = 0.3,
+              col = "navy") +
+    geom_point(aes(text = hoverText), # this produces a warning but trying any other way messes up the line geom
+               size = 0.6,
+               col = "navy") +
+    facet_wrap(~ station, ncol = 1) +
+    theme_bw() +
+    theme(legend.position = "top",
+          legend.justification = "left",
+          legend.margin = margin(c(0,0,0,0))) +
+    labs(x = "Date",
+         y = "value",
+         col = "")
+  
+    ggplotly(p,
+             tooltip = "text",
+           width = 675, height = 350) %>%  
+    layout(legend = list(orientation = "h",
+                         y = 1.25, x = 0)) %>% 
+    htmltools::tagList() %>%
+    print()
+    
+  cat("\n")
+  
+}
+
+```
 
 # Nutrients - Primary  
 
