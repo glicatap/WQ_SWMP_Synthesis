@@ -429,11 +429,151 @@ cbvgi is the one where it's the mdl making it look weird. Make sure censoring wo
 IT DOES NOT. 'gamm' can't work with family cnorm. Guess I need to figure it out in glmmTMB.  
 
 ```{r}
-cbvgi_gam4 <- gamm(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+# cbvgi_gam4 <- gamm(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+#                    family = cnorm(),
+#                    data = cbvgi,
+#                    method = "REML")
+# summary(cbvgi_gam4$gam)
+```
+
+Does bam work with cnorm?  
+
+```{r}
+cbvgi_gam4 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
                    family = cnorm(),
                    data = cbvgi,
                    method = "REML")
-summary(cbvgi_gam4$gam)
+summary(cbvgi_gam4)
+```
+
+...yes it does...
+
+Now how to figure out the autocorrelation?  
+
+```{r}
+cbvgi_gam4 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  discrete = TRUE,
+                  data = cbvgi,
+                  method = "fREML")
+summary(cbvgi_gam4)
+```
+
+Can I pull it from the residuals? Or is that circular?  
+
+```{r}
+rawresids <- cbvgi_gam4$residuals
+attr(rawresids, "censor") <- NULL
+acf(rawresids)
+acf(rawresids)[1]
+gamrho <- acf(rawresids)[1]$acf
+```
+
+
+```{r}
+cbvgi_gam5 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  discrete = TRUE,
+                  rho = gamrho,  # from above
+                  data = cbvgi,
+                  method = "fREML")
+summary(cbvgi_gam5)
+
+rawresids <- cbvgi_gam5$residuals
+attr(rawresids, "censor") <- NULL
+
+ARresids <- mgcv:::AR.resid(rawresids, rho = cbvgi_gam5$AR1.rho)
+
+plot(ARresids)
+acf(ARresids)
+```
+
+
+```{r}
+cbvgi_gam4b <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbvgi,
+                  method = "fREML")
+summary(cbvgi_gam4b)
+
+rawresids <- cbvgi_gam4b$residuals
+attr(rawresids, "censor") <- NULL
+acf(rawresids)
+acf(rawresids)[1]
+gamrho <- acf(rawresids)[1]$acf
+```
+
+
+```{r}
+cbvgi_gam5b <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  discrete = TRUE,
+                  rho = gamrho,  # from above
+                  data = cbvgi,
+                  method = "fREML")
+summary(cbvgi_gam5b)
+
+rawresids <- cbvgi_gam5b$residuals
+attr(rawresids, "censor") <- NULL
+
+ARresids <- mgcv:::AR.resid(rawresids, rho = cbvgi_gam5$AR1.rho)
+
+plot(ARresids)
+acf(ARresids)
+```
+
+standardized residuals are what you look at after including AR correlation in the model. Needed to pull an internal function from mgcv in order to calculate them due to the censoring.
+
+
+uncensored bam, to figure out how to get at the standardized residuals:  
+```{r}
+testgam <- bam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+               discrete = TRUE,
+               rho = 0.26,
+               data = cbvgi,
+               method = "fREML")
+summary(testgam)
+plot(residuals(testgam))
+plot(testgam$std.rsd)
+acf(testgam$std.rsd)
+```
+
+Can I make my own standardized residuals? Problem is the residuals here have attributes for censoring, with -Inf involved.... but there are numeric values too, so maybe I can manually divide those by the standard deviation of the residuals?  
+
+```{r}
+rawresids <- cbvgi_gam5$residuals
+attr(rawresids, "censor") <- NULL
+
+ARresids <- mgcv:::AR.resid(rawresids, rho = cbvgi_gam5$AR1.rho)
+
+plot(ARresids)
+acf(ARresids)
+
+resids2 <- scale(rawresids)
+
+gam_stdres <- rawresids / sd(rawresids)
+
+plot(gam_stdres)
+acf(gam_stdres)
+acf(resids2)
+
+acf(gam_stdres)[1]
+
+ 
+```
+
+
+Nope, that doesn't come out the same as the standardized residuals pulled from `testgam$std.rsd`.  
+
+```{r}
+rawresids <- residuals(testgam)
+
+gam_stdres <- rawresids / sd(rawresids)
+
+plot(gam_stdres)
+acf(gam_stdres)
+
+acf(gam_stdres)[1]
 ```
 
 
