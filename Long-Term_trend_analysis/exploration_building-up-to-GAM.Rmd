@@ -1,6 +1,9 @@
 ---
 title: "Long-Term Trend Analyses - GAM testing"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 date: "`r Sys.Date()`"
 ---
 
@@ -16,6 +19,7 @@ library(dplyr)
 library(lubridate)
 library(broom)
 library(mgcv)
+library(NADA2)
 ```
 
 
@@ -26,7 +30,7 @@ Trying to see if I can really run the GAM that I want to run to incorporate ever
 -  autocorrelation of errors  
 -  censored data  
 
-Will use decimal date, so trends will be per year.  
+Will use decimal date, so trends will be per year. Will use log-transformed nutrient concentrations.    
 
 # Data  
 
@@ -110,126 +114,355 @@ niwol <- filter(wq, station == "niwolwq") %>%
          param = cdepth_median)
 ```
 
+# CBMIPNUT {.tabset}  
 
+PO4 - seems to (visually) have a negative trend. No censoring.  
 
-# Simple linear regression {.tabset}  
-
-See if trends get picked up here regardless.  
-
-## nut  
-
-### untransformed  
+## Simple Regression  
 
 ```{r}
-cbmip1 <- lm(nut ~ dec_date, data = cbmip)
-cbvgi1 <- lm(nut ~ dec_date, data = cbvgi)
-gndhs1 <- lm(nut ~ dec_date, data = gndhs)
-```
-
-```{r}
-
+cbmip_lm <- lm(lognut ~ dec_date, data = cbmip)
+summary(cbmip_lm)
+acf(residuals(cbmip_lm))[1]
 ```
 
 
-### log transformed  
+## Censored Regression  
+
+Censored regression using the `NADA2` package doesn't work with this station because there are no censored values.  
+
+
+
+## GAM w/censoring  
+
+This slope should be the same as that from censored regression - which in this case should be the same as from simple linear regression.  
+
+
+
+
+## GAM w/seasonality only  
+
+This slope will be most comparable to the simple regression model.  
+
+Seasonal term is highly significant. Linear trend slope looks the same as before, though standard error is a bit smaller.  R^2 went up from about 0.2 (linear model) to about 0.5.  
+
+Even after accounting for seasonality, there's autocorrelation in the residuals; much less though.  
 
 ```{r}
-cbmip1b <- lm(lognut ~ dec_date, data = cbmip)
-cbvgi1b <- lm(lognut ~ dec_date, data = cbvgi)
-gndhs1b <- lm(lognut ~ dec_date, data = gndhs)
-```
-
-```{r}
-
-```
-
-
-## wq  
-
-```{r}
-gndpc1 <- lm(param ~ dec_date, data = gndpc)
-gndbc1 <- lm(param ~ dec_date, data = gndbc)
-niwol1 <- lm(param ~ dec_date, data = niwol)
-```
-
-
-
-
-# Censored regression (nut only)  
-
-See if the nutrient trends are/aren't picked up when we ignore all the other pieces (seasonality/autocorrelation in particular).  
-
-These are log-transformed by default. Compare them to log values.  CBM's is throwing an error for some reason. The error message is that there is no "y" argument. (???) Additionally, no censored values, so 'gofTest' was called.  
-
-```{r}
-library(NADA2)
-
-with(gndhs, cencorreg(nut, cens, dec_date))
-with(cbvgi, cencorreg(nut, cens, dec_date))
-
-```
-
-Censored regression correctly eliminates the positive trend from the regular lm for CBV (only looks like it's increasing because the detection limit increased). Coefficient for GNDHS was pretty similar between the two methods.    
-
-# GAM with seasonality  
-
-## nut  
-
-```{r}
-cbmip_gam1 <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+cbmip_gam_seas <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
                   data = cbmip)
-summary(cbmip_gam1)
+summary(cbmip_gam_seas)
+acf(residuals(cbmip_gam_seas))[1]
 ```
 
-Seasonal term is highly significant. Linear trend slope looks the same as before, though standard error is a bit smaller.  R^2 went up from about 0.2 to about 0.5.  
+
+## GAM w/cens + seasonality  
 
 ```{r}
-cbvgi_gam1 <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+cbmip$lognut_mat <- cbind(cbmip$lognut, cbmip$cens2)
+cbmip_gam_censseas <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip,
+                  method = "REML")
+summary(cbmip_gam_censseas)
+acf(residuals(cbmip_gam_censseas))[1]
+```
+
+Similar slope to all that came before with this station. 
+
+
+***  
+
+# CBVGINUT {.tabset}  
+
+NO23 - MDL increases; looks like the nutrient itself probably doesn't, so accounting for censoring is important.  
+
+## Simple Regression  
+
+```{r}
+cbvgi_lm <- lm(lognut ~ dec_date, data = cbvgi)
+summary(cbvgi_lm)
+plot(residuals(cbvgi_lm))
+acf(residuals(cbvgi_lm, type = "pearson"))
+acf(residuals(cbvgi_lm, type = "pearson"))[1]
+```
+
+
+## Censored regression  
+
+Censored regression correctly avoids identifying a positive trend in the nutrient.  
+
+```{r}
+cbvgi_cr <- with(cbvgi, cencorreg(nut, cens, dec_date,
+                                  verbose = 0))
+summary(cbvgi_cr)
+```
+
+```{r}
+# # different package: survival
+# library(survival)
+# survreg(Surv(lognut, cens>0, type = "left") ~ dec_date, data = cbvgi)
+```
+
+
+## GAM w/censoring  
+
+This slope should be the same as that from censored regression.  
+
+
+## GAM w/seasonality only  
+
+This slope will be most comparable to the simple regression model, and will be an inaccurate slope due to censoring. Seasonal term is significant. R^2 went up from 0.03 to 0.23. Even after accounting for seasonality, there's autocorrelation in the residuals.  
+
+```{r}
+cbvgi_gam_seas <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
                   data = cbvgi)
-summary(cbvgi_gam1)
+summary(cbvgi_gam_seas)
+acf(residuals(cbvgi_gam_seas))
 ```
 
-Remember this is an inaccurate slope due to censoring. It's similar to that of the linear regression. Seasonal term is again significant. R^2 went up from 0.03 to 0.23.  
+
+## GAM w/cens + seasonality  
+
+Got a similar slope to the censored regression! -0.014 for the GAM; -0.008 for cenreg. Neither statistically significant. Can see from the GAM that seasonality is significant. Negative R^2 though?  
 
 ```{r}
-gndhs_gam1 <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+# need a matrix with nutrient and censoring values
+cbvgi$lognut_mat <- cbind(cbvgi$lognut, cbvgi$cens2)
+cbvgi_gam_censseas <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbvgi,
+                  method = "REML")
+summary(cbvgi_gam_censseas)
+acf(residuals(cbvgi_gam_censseas))[1]
+```
+
+
+
+***  
+
+# GNDHSNUT {.tabset}  
+
+NH4F - seems to be decreasing, even with decreasing MDL.  
+
+## Simple Regression  
+
+```{r}
+gndhs_lm <- lm(lognut ~ dec_date, data = gndhs)
+summary(gndhs_lm)
+plot(residuals(gndhs_lm))
+acf(residuals(gndhs_lm, type = "pearson"))
+acf(residuals(gndhs_lm, type = "pearson"))[1]
+```
+
+Not really any autocorrelation in the residuals.  
+
+## Censored regression  
+
+```{r}
+gndhs_cr <- with(gndhs, cencorreg(nut, cens, dec_date,
+                                  verbose = 0))
+summary(gndhs_cr)
+```
+
+
+## GAM w/censoring  
+
+This slope should be the same as that from censored regression.  
+
+
+## GAM w/seasonality only  
+
+This slope will be most comparable to the simple regression model. Slope is about the same as linear model. Seasonal term not significant. R^2 0.21 vs. 0.20 from linear model. Seasonal term doesn't impact the output in a negative way though; it's just not needed to explain this particular model.   
+
+```{r}
+gndhs_gam_seas <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
                   data = gndhs)
-summary(gndhs_gam1)
+summary(gndhs_gam_seas)
 ```
-
-Slope is about the same as linear model. Seasonal term not significant. R^2 0.21 vs. 0.20 from linear model. Seasonal term doesn't impact the output in a negative way though; it's just not needed to explain this particular model.  
-
-Maybe this is how we can "test" for seasonality???
-
-## wq  
 
 ```{r}
-gndpc_gam1 <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = gndpc)
-summary(gndpc_gam1)
+acf(residuals(gndhs_gam_seas))
 ```
+
+Not seeing autocorrelation in the residuals.  
+
+## GAM w/cens + seasonality  
+
+Again, all similar.
+
+```{r}
+gndhs$lognut_mat <- cbind(gndhs$lognut, gndhs$cens2)
+gndhs_gam_censseas <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = gndhs,
+                  method = "REML")
+summary(gndhs_gam_censseas)
+acf(residuals(gndhs_gam_censseas))[1]
+```
+
+ 
+
+
+
+***  
+
+# GNDPCWQ {.tabset}  
+
+spcond_median seems to be decreasing (?)  
+
+## Simple Regression  
+
+```{r}
+gndpc_lm <- lm(param ~ dec_date, data = gndpc)
+summary(gndpc_lm)
+acf(residuals(gndpc_lm))[1]
+```
+
+Can see some seasonality in the residuals.  
+
+
+## Simple GAM  
+
+Should see same results as simple linear regression.  
+
+
+## GAM w/seasonality  
+
+Hopefully we get the same slope, but are accounting for seasonality.  
 
 Seasonal term significant. Slope -0.477, st. error 0.080. R^2 0.50.  
 From linear model, slope was -0.4892, st. error 0.1079, R^2 0.097. Seasonal GAM improved R^2 and standard error; didn't really change slope.  
 
+Substantial autocorrelation (though it seems that accounting for seasonality took care of some of that).  
+
 ```{r}
-gndbc_gam1 <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = gndbc)
-summary(gndbc_gam1)
+gndpc_gam_seas <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
+                  data = gndpc)
+summary(gndpc_gam_seas)
+acf(residuals(gndpc_gam_seas))[1]
+pacf(residuals(gndpc_gam_seas))
 ```
+
+
+## GAM w/AR  
+
+Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
+
+
+
+## GAM w/AR + seasonality  
+
+The ultimate model.  
+
+```{r}
+gndpc_gam_ar <- gamm(param ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = gndpc,
+                     correlation = corAR1(form = ~1|month),
+                     method = "REML")
+summary(gndpc_gam_ar$gam)
+```
+
+
+
+
+# GNDBCWQ {.tabset}  
+
+cdepth_median seems to be increasing  
+
+## Simple Regression  
+
+```{r}
+gndbc_lm <- lm(param ~ dec_date, data = gndbc)
+summary(gndbc_lm)
+acf(residuals(gndbc_lm))[1]
+pacf(residuals(gndbc_lm))
+```
+
+## Simple GAM  
+
+Should see same results as simple linear regression.  
+
+
+## GAM w/seasonality  
+
+Hopefully we get the same slope, but are accounting for seasonality. 
 
 Seasonal term significant. Slope 0.032, st. error 0.002. R^2 0.76.  
-From linear model, slope was 0.033, st. error 0.003, R^2 0.50. Seasonal GAM improved R^2 greatly and (slightly) standard error; didn't really change slope.  
+From linear model, slope was 0.033, st. error 0.003, R^2 0.50. Seasonal GAM improved R^2 greatly and (slightly) standard error; didn't really change slope. 
 
+Some autocorrelation in the residuals but not as much as I'd thought.  
 
 ```{r}
-niwol_gam1 <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = niwol)
-summary(niwol_gam1)
+gndbc_gam_seas <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
+                  data = gndbc)
+summary(gndbc_gam_seas)
+acf(residuals(gndbc_gam_seas))[1]
 ```
 
-Seasonal term significant. Slope 0.006, st. error 0.002, slope slightly significant now - p = 0.046. R^2 0.35.  
-From linear model, slope was 0.004, st. error 0.002, R^2 0.017. Seasonal GAM greatly improved R^2. Didn't change standard error but did move slope to significant (p from linear model was 0.117), interestingly. Wonder if that will change when autocorrelation comes into play.    
+ 
+## GAM w/AR  
+
+Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
+
+
+## GAM w/AR + seasonality  
+
+The ultimate model.  
+
+
+
+
+# NIWOLWQ {.tabset}  
+
+do-pct - doesn't seem to be changing (visually) 
+
+## Simple Regression  
+
+```{r}
+niwol_lm <- lm(param ~ dec_date, data = niwol)
+summary(niwol_lm)
+plot(residuals(niwol_lm))
+acf(residuals(niwol_lm, type = "pearson"))
+acf(residuals(niwol_lm, type = "pearson"))[1]
+```
+
+
+## Simple GAM  
+
+Should see same results as simple linear regression.  
+
+
+## GAM w/seasonality  
+
+Hopefully we get the same slope, but are accounting for seasonality.  
+
+Seasonal term significant. Slope 0.0036, st. error 0.002, slope slightly significant now - p = 0.046. R^2 0.35.  
+From linear model, slope was 0.004, st. error 0.002, R^2 0.017. Seasonal GAM greatly improved R^2. Didn't change standard error but did move slope to significant (p from linear model was 0.117), interestingly. Wonder if that will change when autocorrelation comes into play.   
+
+```{r}
+niwol_gam_seas <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
+                  data = niwol)
+summary(niwol_gam_seas)
+acf(residuals(niwol_gam_seas))[1]
+```
+
+
+
+## GAM w/AR  
+
+Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
+
+
+## GAM w/AR + seasonality  
+
+The ultimate model.  
+
+
+
+***  
+***  
+
 
 # GAM with seasonality and censoring (nutrients only)  
 
@@ -237,46 +470,6 @@ mgcv::gam with cnorm family (censored data)
 
 https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/cnorm.html  
 
-
-```{r}
-# need a matrix with nutrient and censoring values
-cbvgi$lognut_mat <- cbind(cbvgi$lognut, cbvgi$cens2)
-cbvgi_gam2 <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
-                  family = cnorm(),
-                  data = cbvgi,
-                  method = "REML")
-summary(cbvgi_gam2)
-```
-
-Got a similar slope to the censored regression! -0.014 for the GAM; -0.008 for cenreg. Neither statistically significant. Can see from the GAM that seasonality is significant.
-
-```{r}
-with(cbvgi, cencorreg(nut, cens, dec_date))
-```
-
-
-```{r}
-cbmip$lognut_mat <- cbind(cbmip$lognut, cbmip$cens2)
-cbmip_gam2 <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
-                  family = cnorm(),
-                  data = cbmip,
-                  method = "REML")
-summary(cbmip_gam2)
-```
-
-Similar slope to all that came before with this station. 
-
-
-```{r}
-gndhs$lognut_mat <- cbind(gndhs$lognut, gndhs$cens2)
-gndhs_gam2 <- gam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
-                  family = cnorm(),
-                  data = gndhs,
-                  method = "REML")
-summary(gndhs_gam2)
-```
-
-Again, similar. 
 
 
 # Summary so far  
