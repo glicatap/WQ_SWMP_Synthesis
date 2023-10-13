@@ -1,1 +1,0 @@
-This folder is for all the station-level descriptive information we want to generate. All calculations will be based off of final processed data, and outputs will be suitable for sharing as supplementary information for a manuscript.  
