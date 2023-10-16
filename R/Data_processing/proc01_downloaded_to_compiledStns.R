@@ -14,7 +14,9 @@ stats <- unique(stringr::str_sub(data_files, end = -9))
 
 
 # setup parallel backend
-cl<-makeCluster(10)  
+ncores <- detectCores()
+ncores <- max(1, ncores - 2)
+cl<-makeCluster(ncores)  
 registerDoParallel(cl)
 strt<-Sys.time()
 

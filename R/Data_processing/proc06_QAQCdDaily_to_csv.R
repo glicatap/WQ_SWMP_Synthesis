@@ -14,7 +14,9 @@ stns_met <- stringr::str_sub(dir(path, pattern = "met_daily.RData$"), end = -13)
 stns_wqANDmet <- c(stns_wq, stns_met)
 
 # setup parallel backend
-cl<-makeCluster(10)  
+ncores <- detectCores()
+ncores <- max(1, ncores - 2)
+cl<-makeCluster(ncores)  
 registerDoParallel(cl)
 strt<-Sys.time()
 
