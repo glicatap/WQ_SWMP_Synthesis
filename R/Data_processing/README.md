@@ -60,8 +60,8 @@ Final data files were downloaded from the CDMO on 8/30/2023.
 
 1.  `proc01_downloaded_to_compiledStns.R` - 9/18/2023. Originally run on 8/30/2023 but re-run to ensure I hadn't only selected active stations, or wq + nut stations. At this point, we mean to include all stations.      
 2.  `proc02_compiledStns_to_QAQCdStns.R` - 10/16/2023; updated to remove -99 values  
-3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  9/18/2023   
-4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 9/19/2023  
+3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  10/16/2023; after removing -99s AND requiring at least 1 week's worth of valid data in a month before calculating stats   
+4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 10/16/2023  
 5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 9/18/2023  
 6.  `proc06_QAQCdDaily_to_csv.R` - 9/18/2023  
 

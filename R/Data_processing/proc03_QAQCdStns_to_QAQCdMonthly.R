@@ -154,7 +154,8 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate', 'ti
   save(list = flnm, file = here::here(outpath, 
                                       paste0(flnm, ".RData")))
   rm(list = flnm)
-  rm('dat_monthly')
+  rm(dat_monthly, dat_monthly_longer, dat_monthly_final,
+     summary_calc_params, dat)
   
 }
 
