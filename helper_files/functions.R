@@ -126,6 +126,7 @@ modFunn <- function(x, FUN){
   eval(FUN(x, na.rm = TRUE))
 }
 
+# summary stats ----
 
 summary_stats <- list(
   nValid = ~sum(!is.na(.x)),

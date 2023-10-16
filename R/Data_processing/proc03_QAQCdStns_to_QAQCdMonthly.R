@@ -8,6 +8,8 @@
 library(doParallel)
 library(foreach)
 library(dplyr)
+library(tidyr)
+library(stringr)
 library(lubridate)
 
 
@@ -27,7 +29,7 @@ registerDoParallel(cl)
 strt<-Sys.time()
 
 # wq and met----
-foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %dopar% {
+foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate', 'tidyr')) %dopar% {
   
   source(here::here("helper_files", "definitions.R"))
   source(here::here("helper_files", "functions.R"))
@@ -38,16 +40,18 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
   if(str_ends(stat, "wq")){
   dat <- dat %>% 
     mutate(doLessThan2 = do_mgl < 2,
-           doLessThan5 = do_mgl < 5)
+           doLessThan5 = do_mgl < 5) %>% 
+    rename("do-pct" = do_pct,
+           "do-mgl" = do_mgl)  # for easier pivoting of DO params
   }
   
-  
+  # general parameters to calculate summaries of
   parms_gen <- names(dat)[which(names(dat) %in% c("temp", "spcond", "sal", "ph", "turb",
-                                                  "do_pct", "do_mgl", "depth", "cdepth",
+                                                  "do-pct", "do-mgl", "depth", "cdepth",
                                                   "level", "clevel",
                                                   "atemp", "rh", "bp", "wspd", "maxwspd",
                                                   "wdir"))]
-  
+  # parameters that need to be summed
   parms_sums <- names(dat)[which(names(dat) %in% c("totprcp", 
                                                    "doLessThan2", "doLessThan5"))]
   
@@ -63,6 +67,8 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
                      summary_stats),
               across(any_of(parms_sums),
                      summary_sums))
+  
+  
   
   # calculate daily PAR and do min, median, etc. on that value
   # at a monthly level. then join to dat_monthly
@@ -80,10 +86,71 @@ foreach(stat = stns_wqANDmet, .packages = c('dplyr', 'stringr', 'lubridate')) %d
     dat_monthly <- left_join(dat_monthly, par_monthly, by = c("year", "month"))
   }
   
+  # make sure there is at least one week's worth of data points
+  # 672 points when 15-minute data; 336 when 30-minute data
+  # if not, remove the summary statistics
+
+  # only need to worry about 30-minute sampling for WQ
+  # MET has always been 15-minute only  
+  if(str_ends(stat, "wq")){
+    summary_calc_params <- dat %>% 
+      mutate(year = year(datetimestamp),
+             month = month(datetimestamp),
+             minute = minute(datetimestamp)) %>% 
+      summarize(.by = c(year, month),
+                fifmins = ifelse(15L %in% unique(minute), TRUE, FALSE),
+                across(temp:doLessThan5, function(x) sum(!is.na(x)))) %>% 
+      pivot_longer(temp:doLessThan5,
+                   names_to = "param", 
+                   values_to = "nValid") %>% 
+      mutate(nValid_min = ifelse(fifmins, 672, 336),
+             enoughToCalc = nValid >= nValid_min)
+  }
+  
+  
+  if(str_ends(stat, "met")){
+    summary_calc_params <- dat %>% 
+      mutate(year = year(datetimestamp),
+             month = month(datetimestamp)) %>% 
+      summarize(.by = c(year, month),
+                across(atemp:totprcp, function(x) sum(!is.na(x)))) %>% 
+      pivot_longer(atemp:totprcp,
+                   names_to = "param", 
+                   values_to = "nValid") %>% 
+      mutate(param = case_when(param == "totpar" ~ "dailyPAR",
+                               .default = param),
+             nValid_min = 672,
+             enoughToCalc = nValid >= nValid_min)
+  }
+  
+  
+  # join the tables and if there were values calculated on 
+  # fewer than the number of data points we need, replace them with NA
+  dat_monthly_longer <- dat_monthly %>% 
+    pivot_longer(-c(year, month),
+                 names_to = c("param", "stat"),
+                 names_sep = "_",
+                 values_to = "value") %>% 
+    left_join(summary_calc_params) %>% 
+    mutate(value = case_when(stat == "nValid" ~ value,
+                             enoughToCalc == FALSE ~ NA_real_,
+                             .default = value))
+  
+  # pivot back to one row per month format
+  # also change DO names back to the _ format, if present 
+  dat_monthly_final <- dat_monthly_longer %>% 
+    select(year, month, param, stat, value) %>% 
+    mutate(param = case_when(param == "do-mgl" ~ "do_mgl",
+                             param == "do-pct" ~ "do_pct",
+                             .default = param)) %>% 
+    pivot_wider(names_from = c("param", "stat"),
+                names_sep = "_",
+                values_from = value)
+  
   
   # assign df to object, save, clear memory
   flnm <- paste0(stat, "_monthly")
-  assign(flnm, dat_monthly)
+  assign(flnm, dat_monthly_final)
   save(list = flnm, file = here::here(outpath, 
                                       paste0(flnm, ".RData")))
   rm(list = flnm)
