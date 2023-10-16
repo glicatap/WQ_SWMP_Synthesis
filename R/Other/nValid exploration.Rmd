@@ -1,0 +1,135 @@
+---
+title: ""
+output: html_document
+date: "2023-10-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      error = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(stringr)
+```
+
+Trying to find out if there are any natural breakpoints in how much data is available for a parameter in any given month. 1-2 points within a month is obviously not enough. How about a week's worth?  
+
+At 15-minute intervals, there could be up to 96 readings per day. A week would be 672 readings.  
+
+
+## Water quality  
+
+```{r}
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+```
+
+```{r}
+wq2 <- wq %>% 
+  select(station, year, month, ends_with("nValid")) 
+
+names(wq2)[4:16] <- str_remove(names(wq2)[4:16], "_nValid")
+
+wq3 <- wq2 %>% 
+  pivot_longer(temp:clevel,
+               names_to = "param",
+               values_to = "nValid") %>% 
+  summarize(.by = c(param, nValid),
+            freq = n())
+```
+
+```{r}
+wq3 %>% 
+  filter(nValid >= 0,
+         param %in% c("temp", "sal", "spcond", "depth", "do_pct", "do_mgl", "ph", "turb")) %>% 
+  ggplot(aes(x = nValid, y = freq)) +
+  geom_point(alpha = 0.3) +
+  geom_segment(aes(x = nValid, xend = nValid, y = 0, yend = freq),
+               alpha = 0.1) +
+  facet_wrap(~param) +
+  # coord_cartesian(xlim = c(10, 2000)) +
+  scale_y_log10()
+```
+
+## MET  
+
+```{r}
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyMET.RData"))
+```
+
+```{r}
+met2 <- met %>% 
+  select(station, year, month, ends_with("nValid")) 
+
+names(met2)[4:11] <- str_remove(names(met2)[4:11], "_nValid")
+
+met3 <- met2 %>% 
+  pivot_longer(atemp:dailyPAR,
+               names_to = "param",
+               values_to = "nValid") %>% 
+  summarize(.by = c(param, nValid),
+            freq = n())
+```
+
+```{r}
+met3 %>% 
+  filter(nValid >= 0) %>% 
+  ggplot(aes(x = nValid, y = freq)) +
+  geom_point(alpha = 0.3) +
+  geom_segment(aes(x = nValid, xend = nValid, y = 0, yend = freq),
+               alpha = 0.1) +
+  facet_wrap(~param) +
+  # coord_cartesian(xlim = c(10, 2000)) +
+  scale_y_log10()
+```
+
+## How much do we lose  
+
+.....if we restrict it to >= 672 valid within a month. NOTE: for 15-minute readings, this represents a week. In earlier years where readings were only at 30-minute intervals, this is two weeks.  
+
+per parameter: how many months have 0? how many have >= 672? How many have 1-672?  
+
+```{r}
+summary_stats2 <- list(
+  x0 = ~sum(.x == 0, na.rm = TRUE),
+  x1to671 = ~sum(.x > 0 & .x < 672, na.rm = TRUE),
+  x672 = ~sum(.x >= 672, na.rm = TRUE)
+)
+```
+
+
+```{r}
+wq2 %>% 
+  rename("do-pct" = do_pct,
+         "do-mgl" = do_mgl) %>% 
+  summarize(across(temp:clevel,
+                   summary_stats2)) %>% 
+  pivot_longer(cols = everything(),
+               names_to = c("param", "rangeOfnValid"),
+               names_sep = "_",
+               values_to = "nMonths") %>% 
+  pivot_wider(names_from = rangeOfnValid,
+              values_from = nMonths) %>% 
+  mutate(pctLost = round(100 * x1to671 / (x1to671 + x672), 2)) %>% 
+  knitr::kable()
+```
+
+Losing less than 5% of monthly values (of which we have up around 25,000) for WQ if we use 672 as the cutoff.  
+
+```{r}
+met2 %>% 
+  summarize(across(atemp:totprcp,
+                   summary_stats2)) %>% 
+  pivot_longer(cols = everything(),
+               names_to = c("param", "rangeOfnValid"),
+               names_sep = "_",
+               values_to = "nMonths") %>% 
+  pivot_wider(names_from = rangeOfnValid,
+              values_from = nMonths) %>% 
+  mutate(pctLost = round(100 * x1to671 / (x1to671 + x672), 2)) %>% 
+  knitr::kable()
+```
+
+....and less than 2% of our points for MET.  
+
+For daily PAR, will need to use 7 because it's a number of days, not a number of readings.  
