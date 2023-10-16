@@ -32,13 +32,12 @@ The first script only combines data for a station, and does not subset based on 
 
 The second subsets to only SWMP-required parameters and this project's acceptable QA/QC codes, and should be re-run any time the parameters of the data synthesis project change (which will hopefully be infrequent).   
 
-1.  `downloaded_to_compiledStns.R` - for each station, reads in and collates all files. For nutrients, only keeps grab samples (`collMethd = 1`). Removes empty columns. Generates one `.RData` file for each station.    
-2.  `compiledStns_to_QAQCdStns.R` - for each station, reads in the file and replaces data flagged/coded in ways the workgroup has agreed to discard with NAs. For nutrients, inserts a column for each parameter defining whether the data point is left-censored. Generates one `.RData` file for each station.  
-3.  `QAQCdStns_to_QAQCdDaily.R` - for WQ and MET stations, aggregates to daily values as described above.  
-4.  `QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
-5.  `QAQCdStns_to_QAQCdMonthly.R` - for WQ, MET, and NUT stations, aggregates to monthly values as described above. This script could be run anytime after step 2 above (`compiledStns_to_QAQCdStns.R`).  
-6.  `QAQCdMonthly_byType.R` - Using monthly aggregated files from step 5, combines all monthly information for each type (WQ, MET, NUT) into a single file, containing all stations. Writes both `.RData` and `.csv` files for each.  
-
+1.  `proc01_downloaded_to_compiledStns.R` - for each station, reads in and collates all files. For nutrients, only keeps grab samples (`collMethd = 1`). Removes empty columns. Generates one `.RData` file for each station.    
+2.  `proc02_compiledStns_to_QAQCdStns.R` - for each station, reads in the file and replaces data flagged/coded in ways the workgroup has agreed to discard with NAs. For nutrients, inserts a column for each parameter defining whether the data point is left-censored. Generates one `.RData` file for each station.  
+3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` - for WQ, MET, and NUT stations, aggregates to monthly values as described above.   
+4.  `proc04_QAQCdMonthly_byType.R` - Using monthly aggregated files from step 5, combines all monthly information for each type (WQ, MET, NUT) into a single file, containing all stations. Writes both `.RData` and `.csv` files for each.  
+5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - optional; for WQ and MET stations, aggregates to daily values as described above.  
+6.  `proc06_QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
 
 To write out session info from the day of processing, open an R session and run the following code. It will open all libraries used and capture the session info in a text file, in the `Data_processing` folder.    
 
@@ -59,12 +58,12 @@ capture.output(devtools::session_info(), file = file_out)
 
 Final data files were downloaded from the CDMO on 8/30/2023.  
 
-1.  `downloaded_to_compiledStns.R` - 9/18/2023. Originally run on 8/30/2023 but re-run to ensure I hadn't only selected active stations, or wq + nut stations. At this point, we mean to include all stations.      
-2.  `compiledStns_to_QAQCdStns.R` - 9/18/2023  
-3.  `QAQCdStns_to_QAQCdDaily.R` - 9/18/2023  
-4.  `QAQCdDaily_to_csv.R` - 9/18/2023  
-5.  `QAQCdStns_to_QAQCdMonthly.R` -  9/18/2023   
-6.  `QAQCdMonthly_to_MonthlyByType.R` - 9/19/2023 
+1.  `proc01_downloaded_to_compiledStns.R` - 9/18/2023. Originally run on 8/30/2023 but re-run to ensure I hadn't only selected active stations, or wq + nut stations. At this point, we mean to include all stations.      
+2.  `proc02_compiledStns_to_QAQCdStns.R` - 10/16/2023; updated to remove -99 values  
+3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  9/18/2023   
+4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 9/19/2023  
+5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 9/18/2023  
+6.  `proc06_QAQCdDaily_to_csv.R` - 9/18/2023  
 
 
 ## Still to-do  
@@ -73,6 +72,3 @@ Some things to think about and/or do:
 
 -  any months with no data are probably just not present. Might be better to make sure all combinations of year-month for a station are present, even if a row is full of NAs. Probably should tackle this in monthly aggregation step?  
 -  should we round values? Particularly means and sds can be pretty long numbers that aren't meaningful after a certain number of sig figs.  
--  would be worth having a few volunteers to gut check the outputs from their reserve - I was as careful as possible, but still could have missed something. Should make sure nothing is obviously weird or off, with people who are familiar with the data and stations.  
--  could use help making a data dictionary - should be simple, just tedious. For each file type, make a table or list with variable names and definitions (e.g. `atemp_min` = minimum air temperature, degrees Celsius, from all valid 15-minute data that month; `atemp_median` = median air temperature, degrees Celsius, from all valid 15-minute data that month; `rh_min` = minimum relative humidity, %, from all valid 15-minute data that month; etc.)  
-  
