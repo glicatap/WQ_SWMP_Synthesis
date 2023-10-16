@@ -8,19 +8,20 @@ Because there's so much data, I've added the `Data/` folder to `.gitignore`. In 
 
 -  `downloaded` - files from the AQS zip download    
 -  `compiled_by_stn` - .Rdata files for each individual station, containing all years, all parameters, and qa/qc flag columns. Empty data columns and their associated flag columns will be removed. Data frames are named as the station only; e.g. `gndbhwq`.      
--  `QAQCd_by_stn` - .Rdata files for each individual station. Only required SWMP parameters have been kept. If data points do not fall within this Synthesis project's 'keep' parameters (defined in the `helper_files/definitions.R` script), they have been replaced with `NA`. For nutrient columns, a column indicating whether each value has been censored has been added (0 if not censored; 1 if censored, e.g. below the MDL). WQ and MET files remain at their 15-minute timesteps. F_ columns (those with QA/QC flags and codes) have been removed; all data points present in these files are considered "acceptable" for this project's purposes. Data frames are named as the station, followed by "_qc"; e.g. `gndbhwq_qc`.  
--  `QAQCd_daily` - aggregation of WQ and MET data to daily values. This folder contains .RData files. Data frames are named as the station, followed by "_daily"; e.g. `gndbhwq_daily`. 
-    -  Each row is a date, and each column is some sort of aggregation of a parameter: nValid for how many data points that day passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For things like precipitation and PAR, there's just nValid and total, which sums up the values for the day.  
-    -  In the WQ files, I've tabulated how many DO_mgl values were <2 and <5. Those both come with 'nValid' and 'total' (so the proportion for how many readings in a day were < 2 mg/L could be calculated as `doLessThan2_total/doLessThan2_nValid`).  
--  `QAQCd_daily_csvs` - the .RData files from the step above, with a column added for station, and saved out as .csv files. These are easier to share than .RData files but are also larger.  
--  `QAQCd_monthly` - aggregation of WQ, MET, and NUT data to monthly values, originating from the 15-minute data (for WQ/MET) and monthly replicate grab samples (NUT). This folder contains .RData files. Data frames are named as the station, followed by "_monthly"; e.g. `gndbhwq_monthly`. Each row contains a single year and month, and each column is some sort of aggregation of a parameter.  
+-  `QAQCd_by_stn` - .Rdata files for each individual station. Only required SWMP parameters have been kept. If data points do not fall within this Synthesis project's 'keep' parameters (defined in the `helper_files/definitions.R` script), they have been replaced with `NA`. Some older files contained `-99` rather than `NA`; these values have been replaced with `NA`. For nutrient columns, a column indicating whether each value has been censored has been added (0 if not censored; 1 if censored, e.g. below the MDL). WQ and MET files remain at their 15- or 30-minute timesteps. F_ columns (those with QA/QC flags and codes) have been removed; all data points present in these files are considered "acceptable" for this project's purposes. Data frames are named as the station, followed by "_qc"; e.g. `gndbhwq_qc`.  
+-  `QAQCd_monthly` - aggregation of WQ, MET, and NUT data to monthly values, originating from the 15- or 30-minute data (for WQ/MET) and monthly replicate grab samples (NUT). This folder contains .RData files. Data frames are named as the station, followed by "_monthly"; e.g. `gndbhwq_monthly`. Each row contains a single year and month, and each column is some sort of aggregation of a parameter.    
     -  for WQ and MET: nValid for how many data points that month passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For precipitation, columns are nValid and a monthly total. For PAR, values were first summed at the daily level; then nValid, min, median, max, mean, sd, and iqr were calculated on the daily totals.  
+    -  Monthly aggregated stats were only calculated if a parameter had at least one week's worth of valid (non-NA) data points during that month. For typical 15-minute data, the cutoff was 672 points. MET data has always been collected at 15-minute intervals. WQ data was collected at 30-minute intervals at many stations prior to 2007. When this was the case, the cutoff for calculation of monthly stats was 336 points. The script `proc03_QAQCdStns_to_QCQCdMonthly.R` contains code determining whether time values of xx:15 and xx:45 were present within a given month; if so, data were at 15-minute intervals and the cutoff was set to 672. Otherwise the data were collected at 30-minute intervals and the cutoff was 336. nValid is present for every parameter, but values of min/median/max/etc. when nValid is below these cutoffs were turned into `NA`.    
     -  In the WQ files, I've tabulated how many DO_mgl values were <2 and <5. Those both come with 'nValid' and 'total' (so the proportion for how many readings in a month were < 2 mg/L could be calculated as `doLessThan2_total/doLessThan2_nValid`).  
     -  for NUT: Valid monthly replicate values were averaged. For the censored column, if at least one valid replicate was identified as censored, the average was also identified as censored.  
 -  `QAQCd_monthly_byType` - compilation of all stations for each data type. Contains 6 files: one `.RData` and one `.csv` for each data type: `SWMP_WQ`, `SWMP_MET`, `SWMP_NUT`. Once quality-checked and any questions/issues are addressed, these will be the final monthly files used in SWMP Synthesis data analysis. **Note**: these files contain all stations that have data - inactive stations or those with short duration will need to be removed before analysis, if appropriate. Additionally, the number of rows may change as we ensure all year-month combinations are represented for each station (e.g. we may need to insert blank rows for months with no data).    
     -  WQ file contains 27,605 rows from 154 stations  
     -  MET file contains 6,909 rows from 37 stations  
     -  NUT file contains 28,693 rows from 156 stations  
+-  `QAQCd_daily` - aggregation of WQ and MET data to daily values. This folder contains .RData files. Data frames are named as the station, followed by "_daily"; e.g. `gndbhwq_daily`. 
+    -  Each row is a date, and each column is some sort of aggregation of a parameter: nValid for how many data points that day passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For things like precipitation and PAR, there's just nValid and total, which sums up the values for the day.  
+    -  In the WQ files, I've tabulated how many DO_mgl values were <2 and <5. Those both come with 'nValid' and 'total' (so the proportion for how many readings in a day were < 2 mg/L could be calculated as `doLessThan2_total/doLessThan2_nValid`).  
+-  `QAQCd_daily_csvs` - the .RData files from the step above, with a column added for station, and saved out as .csv files. These are easier to share than .RData files but are also larger.  
 
 ## Running the scripts  
 
@@ -44,13 +45,14 @@ To write out session info from the day of processing, open an R session and run 
 ```{r}
 library(SWMPr)
 library(dplyr)
+library(tidyr)
 library(stringr)
 library(lubridate)
 library(foreach)
 library(doParallel)
 
 flnm <- paste0("session_info_", Sys.Date(), ".txt")
-file_out <- here::here("Data_processing", flnm)
+file_out <- here::here("R", "Data_processing", flnm)
 capture.output(devtools::session_info(), file = file_out)
 ```
 
