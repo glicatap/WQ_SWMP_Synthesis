@@ -3,10 +3,12 @@
 # data with suspect/rejected flags with NAs
 # according to the flags and codes we've discsused and agreed to keep
 # which are defined in the helper_files/definitions.R script
+# also replacing any "-99"s with NAs
 
 library(doParallel)
 library(foreach)
 library(dplyr)
+library(stringr)
 
 
 path <- here::here("Data", "compiled_by_stn")
@@ -36,6 +38,9 @@ foreach(stat = stns_wq, .packages = c('dplyr', 'stringr')) %dopar% {
                                      "do_pct", "do_mgl", "depth", "cdepth",
                                      "level", "clevel"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "wq")
+  # also get rid of -99s
+  datqc[datqc == -99] <- NA
+  
   assign(statqc, datqc)
   save(list = statqc, file = here::here("Data", "QAQCd_by_stn", 
                                 paste0(stat, "wq_qc.RData")))
@@ -60,6 +65,9 @@ foreach(stat = stns_nut, .packages = c('dplyr', 'stringr')) %dopar% {
                                                       "no2f", "no3f",
                                                       "po4f", "chla_n"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "nut")
+  # also get rid of -99s
+  datqc[datqc == -99] <- NA
+  
   assign(statqc, datqc)
   save(list = statqc, file = here::here("Data", "QAQCd_by_stn",
                                 paste0(stat, "nut_qc.RData")))
@@ -83,6 +91,10 @@ foreach(stat = stns_met, .packages = c('dplyr', 'stringr')) %dopar% {
                                                       "wdir", "sdwdir",
                                                       "totpar", "totprcp"))]
   datqc <- qaqc_df(dat, parms_to_keep, type = "wq") # same qaqc as wq
+  
+  # also get rid of -99s
+  datqc[datqc == -99] <- NA
+  
   assign(statqc, datqc)
   save(list = statqc, file = here::here("Data", "QAQCd_by_stn", 
                                 paste0(stat, "met_qc.RData")))
