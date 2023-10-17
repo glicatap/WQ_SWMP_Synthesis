@@ -27,6 +27,8 @@ Because there's so much data, I've added the `Data/` folder to `.gitignore`. In 
 
 Scripts should be run within the `WQ_SWMP_Synthesis.Rproj` project file. The `here` package is used to make file paths relative to the root directory.  
 
+Each script should be run in a clean R session (e.g., if you were already using R via RStudio, go to the 'Session' menu and select 'Restart R').
+
 **Note:** these data files were processed on a computer with 12 cores. The `foreach` and `doParallel` packages were used to employ parallel processing. These scripts are set to detect the number of cores on a user's computer, and use that number minus 2 (leaving 2 for other processes) for parallel computing.  
 
 ### Necessary packages  
@@ -56,7 +58,7 @@ The second subsets to only SWMP-required parameters and this project's acceptabl
 5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - optional; for WQ and MET stations, aggregates to daily values as described above.  
 6.  `proc06_QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
 
-To write out session info from the day of processing, open an R session and run the following code. It will open all libraries used and capture the session info in a text file, in the `Data_processing` folder.    
+To write out session info from the day of processing, open an R session and run the following code. It will open all libraries used and capture the session info in a text file, in the `Data_processing` folder. The following uses the `devtools` package, which can be installed with the command `install.packages("devtools")`.     
 
 ```{r}
 library(SWMPr)
@@ -80,8 +82,8 @@ Final data files were downloaded from the CDMO on 8/30/2023.
 2.  `proc02_compiledStns_to_QAQCdStns.R` - 10/16/2023; updated to remove -99 values  
 3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  10/16/2023; after removing -99s AND requiring at least 1 week's worth of valid data in a month before calculating stats   
 4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 10/16/2023  
-5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 9/18/2023  
-6.  `proc06_QAQCdDaily_to_csv.R` - 9/18/2023  
+5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 10/17/2023; after removal of -99s  
+6.  `proc06_QAQCdDaily_to_csv.R` - 10/17/2023  
 
 
 ## Still to-do  
