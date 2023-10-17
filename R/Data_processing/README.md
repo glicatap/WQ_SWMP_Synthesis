@@ -7,7 +7,7 @@ This sub-directory is for scripts to move data through the process from CDMO dow
 Because there's so much data, I've added the `Data/` folder to `.gitignore`. In earlier versions of code, the subdirectories below were in this same `Data_processing` folder; but with the final download from the CDMO on 8/30/23 (request submitted to AQS on 8/29/23; zip downloaded the next morning), I have moved subdirectories to the main `Data` folder. Data processing scripts will remain in this `Data_processing` folder, and work on files in the `Data` folder. Those subfolders are:  
 
 -  `downloaded` - files from the AQS zip download    
--  `compiled_by_stn` - .Rdata files for each individual station, containing all years, all parameters, and qa/qc flag columns. Empty data columns and their associated flag columns will be removed. Data frames are named as the station only; e.g. `gndbhwq`.      
+-  `compiled_by_stn` - .Rdata files for each individual station, containing all years, all parameters, and qa/qc flag columns. Empty data columns and their associated flag columns will be removed. NUT files contain only grab samples (not diel). Data frames are named as the station only; e.g. `gndbhwq`.      
 -  `QAQCd_by_stn` - .Rdata files for each individual station. Only required SWMP parameters have been kept. If data points do not fall within this Synthesis project's 'keep' parameters (defined in the `helper_files/definitions.R` script), they have been replaced with `NA`. Some older files contained `-99` rather than `NA`; these values have been replaced with `NA`. For nutrient columns, a column indicating whether each value has been censored has been added (0 if not censored; 1 if censored, e.g. below the MDL). WQ and MET files remain at their 15- or 30-minute timesteps. F_ columns (those with QA/QC flags and codes) have been removed; all data points present in these files are considered "acceptable" for this project's purposes. Data frames are named as the station, followed by "_qc"; e.g. `gndbhwq_qc`.  
 -  `QAQCd_monthly` - aggregation of WQ, MET, and NUT data to monthly values, originating from the 15- or 30-minute data (for WQ/MET) and monthly replicate grab samples (NUT). This folder contains .RData files. Data frames are named as the station, followed by "_monthly"; e.g. `gndbhwq_monthly`. Each row contains a single year and month, and each column is some sort of aggregation of a parameter.    
     -  for WQ and MET: nValid for how many data points that month passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For precipitation, columns are nValid and a monthly total. For PAR, values were first summed at the daily level; then nValid, min, median, max, mean, sd, and iqr were calculated on the daily totals.  
@@ -19,13 +19,29 @@ Because there's so much data, I've added the `Data/` folder to `.gitignore`. In 
     -  MET file contains 6,909 rows from 37 stations  
     -  NUT file contains 28,693 rows from 156 stations  
 -  `QAQCd_daily` - aggregation of WQ and MET data to daily values. This folder contains .RData files. Data frames are named as the station, followed by "_daily"; e.g. `gndbhwq_daily`. 
-    -  Each row is a date, and each column is some sort of aggregation of a parameter: nValid for how many data points that day passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For things like precipitation and PAR, there's just nValid and total, which sums up the values for the day.  
+    -  Each row is a date, and each column is some sort of aggregation of a parameter, in the same way aggregation was performed for monthly values: nValid for how many data points that day passed qa/qc; and min, median, max, mean, sd, and iqr for all of the parameters that should be processed that way. For precipitation and PAR, there's just nValid and total, which sums up the values for the day. There was no minimum number of valid points within a day for aggregations to be performed.    
     -  In the WQ files, I've tabulated how many DO_mgl values were <2 and <5. Those both come with 'nValid' and 'total' (so the proportion for how many readings in a day were < 2 mg/L could be calculated as `doLessThan2_total/doLessThan2_nValid`).  
 -  `QAQCd_daily_csvs` - the .RData files from the step above, with a column added for station, and saved out as .csv files. These are easier to share than .RData files but are also larger.  
 
 ## Running the scripts  
 
-**Note:** these data files were processed on a computer with 12 cores. The `foreach` and `doParallel` packages were used to employ 10 cores for parallel processing. If someone else runs these scripts, you may need to adjust the core number in the scripts (line 17 in `downloaded_to_compiledStns.R` and line 22 in `compiledStns_to_QAQCdStns.R`).  
+Scripts should be run within the `WQ_SWMP_Synthesis.Rproj` project file. The `here` package is used to make file paths relative to the root directory.  
+
+**Note:** these data files were processed on a computer with 12 cores. The `foreach` and `doParallel` packages were used to employ parallel processing. These scripts are set to detect the number of cores on a user's computer, and use that number minus 2 (leaving 2 for other processes) for parallel computing.  
+
+### Necessary packages  
+
+These scripts employ several packages that may need to be installed. Versions used are included in parentheses. Generally none of them use the latest updates except for `SWMPr`.   
+
+-  for data compilation: `SWMPr` (2.4.3.9000), `purrr` (1.0.1)    
+-  for data wrangling and selection: `dplyr` (1.1.0), `tidyr` (1.3.0), `stringr` (1.5.0), `lubridate` (1.9.0)  
+-  for overall running: `here` (1.0.1), `foreach` (1.5.2), `doParallel` (1.0.17), `beepr` (1.3)  
+
+All packages are available on CRAN and their latest versions can be installed with the following command:  
+
+```{r}
+install.packages(c("SWMPr", "purrr", "dplyr", "tidyr", "stringr", "lubridate", "here", "foreach", "doParallel", "beepr"))
+```
 
 ### Order to run scripts  
 
