@@ -25,9 +25,9 @@ Because there's so much data, I've added the `Data/` folder to `.gitignore`. In 
 
 ## Running the scripts  
 
-Scripts should be run within the `WQ_SWMP_Synthesis.Rproj` project file. The `here` package is used to make file paths relative to the root directory.  
+Scripts are in the `R/Data_processing` folder of the `WQ_SWMP_Synthesis` directory. Scripts should be run within the `WQ_SWMP_Synthesis.Rproj` project file. The `here` package is used to make file paths relative to the root directory.  
 
-Each script should be run in a clean R session (e.g., if you were already using R via RStudio, go to the 'Session' menu and select 'Restart R').
+Each script should be run in a clean R session (e.g., if you were already using R via RStudio, go to the 'Session' menu and select 'Restart R'; or use your favorite keyboard shortcut).
 
 **Note:** these data files were processed on a computer with 12 cores. The `foreach` and `doParallel` packages were used to employ parallel processing. These scripts are set to detect the number of cores on a user's computer, and use that number minus 2 (leaving 2 for other processes) for parallel computing.  
 
