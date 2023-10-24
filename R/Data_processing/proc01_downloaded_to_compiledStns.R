@@ -3,6 +3,7 @@ library(foreach)
 library(SWMPr)
 
 path <- here::here("Data", "downloaded")
+outpath <- here::here("Data", "compiled_by_stn")
 
 # get all the stations with data files (files ending in yyyy.csv)
 data_files <- grep("\\d{4}.csv", dir(path), value = TRUE)
@@ -54,7 +55,8 @@ foreach(stat = stats, .packages = 'SWMPr') %dopar% {
 
   # assign tmp to object, save, clear memory
   assign(stat, tmp)
-  save(list = stat, file = paste0('Data/compiled_by_stn/', stat, '.RData'))
+  save(list = stat, file = here::here(outpath,
+                                      paste0(stat, '.RData')))
   rm(list = stat)
   rm('tmp')
   
