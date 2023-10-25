@@ -36,13 +36,13 @@ Each script should be run in a clean R session (e.g., if you were already using 
 These scripts employ several packages that may need to be installed. Versions used are included in parentheses. Generally none of them use the latest updates except for `SWMPr`.   
 
 -  for data compilation: `SWMPr` (2.4.3.9000), `purrr` (1.0.1)    
--  for data wrangling and selection: `dplyr` (1.1.0), `tidyr` (1.3.0), `stringr` (1.5.0), `lubridate` (1.9.0)  
+-  for data wrangling and selection: `dplyr` (1.1.0), `tidyr` (1.3.0), `stringr` (1.5.0), `lubridate` (1.9.0), `janitor` (2.1.0)    
 -  for overall running: `here` (1.0.1), `foreach` (1.5.2), `doParallel` (1.0.17), `beepr` (1.3)  
 
 All packages are available on CRAN and their latest versions can be installed with the following command:  
 
 ```{r}
-install.packages(c("SWMPr", "purrr", "dplyr", "tidyr", "stringr", "lubridate", "here", "foreach", "doParallel", "beepr"))
+install.packages(c("SWMPr", "purrr", "dplyr", "tidyr", "stringr", "lubridate", "janitor", "here", "foreach", "doParallel", "beepr"))
 ```
 
 ### Order to run scripts  
