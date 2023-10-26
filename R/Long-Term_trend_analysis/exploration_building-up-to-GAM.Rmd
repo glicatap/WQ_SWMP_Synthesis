@@ -171,6 +171,146 @@ acf(residuals(cbmip_gam_censseas))[1]
 Similar slope to all that came before with this station. 
 
 
+## bam  
+
+1. make sure all year-months are included  
+2. create a column that will be TRUE at the first row of independent sections of AR1 correlation (e.g. when time series has been broken)  
+
+```{r}
+cbmip$lognut_mat <- cbind(cbmip$lognut, cbmip$cens2)
+glimpse(cbmip)
+min(cbmip$year); max(cbmip$year)
+all_yearmonths <- expand.grid(year = min(cbmip$year):max(cbmip$year), 
+                              month = 1:12) |> 
+  arrange(year, month)
+cbmip2 <- left_join(all_yearmonths, cbmip) |> 
+  mutate(dec_date = decimal_date(ymd(paste(year, month, "15", sep = "-"))),
+         restart = case_when(is.na(lag(nut)) & !is.na(nut) ~ TRUE,
+                             .default = FALSE)
+         )
+# remove first months if necessary
+cbmip2 <- cbmip2[min(which(!is.na(cbmip2$nut))):nrow(cbmip2), ]
+
+
+```
+
+```{r}
+# more like the gam output - not discrete, not freml - just to verify bam generally
+cbmip_bam_censseas01 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip2,
+                  method = "REML")
+summary(cbmip_bam_censseas01)
+```
+
+
+```{r}
+# bam on the original data frame, which didn't have rows for missing months
+cbmip_bam_censseas001 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip,
+                  discrete = TRUE,
+                  method = "fREML")
+summary(cbmip_bam_censseas001)
+
+
+cbmip2$lognut_mat <- cbind(cbmip2$lognut, cbmip2$cens2)
+
+# now bam on the data frame that includes missing months
+# shouldn't change the output
+cbmip_bam_censseas <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip2,
+                  discrete = TRUE,
+                  method = "fREML")
+summary(cbmip_bam_censseas)
+# and, doesn't change the output, confirmed
+
+
+# now add in the AR-start thing, but not rho yet
+cbmip_bam_censseasARstart <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip2,
+                  discrete = TRUE,
+                  AR.start = restart,
+                  method = "fREML")
+summary(cbmip_bam_censseasARstart)
+# output looks the same, now look at residuals
+
+acf(residuals(cbmip_bam_censseasARstart))[1]
+# is that different from when I didn't specify AR start?
+acf(residuals(cbmip_bam_censseas))[1]
+# no
+# but it is the standardized residuals: std.rsd that should be better
+# ...and we don't have standardized residuals yet because we haven't provided rho
+
+# provide rho - it was 0.28 from the acfs above
+cbmip_bam_censseasAR_full <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                  family = cnorm(),
+                  data = cbmip2,
+                  discrete = TRUE,
+                  AR.start = restart,
+                  rho = 0.28,
+                  method = "fREML")
+summary(cbmip_bam_censseasAR_full)
+# estimate for dec_date went from -0.0835 to -0.0813 - pretty similar
+# se for dec_date went up from 0.0087 to 0.0113 - seems appropriate
+
+# did that rho give us what we needed?
+acf(cbmip_bam_censseasAR_full$std.rsd)[1]
+# YEEEEEEEEEESSSSSSS!!!!!!!
+
+```
+
+```{r}
+# run bam with an almost-0 rho, using AR.start
+# (in case missing/unevenly spaced data messed up the true ACF)
+# then get the lag-1 acf estimate
+# to use in what will be the "real" bam
+test <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+            family = cnorm(),
+            discrete = TRUE,
+            AR.start = restart,
+            rho = 0.0001,
+            data = cbmip2,
+            method = "fREML")
+summary(test)
+acf(residuals(test))[1]
+acf(test$std.rsd)[1]
+
+rho_test <- acf(test$std.rsd)
+use_this_rho <- rho_test$acf[2]  # 2nd position is lag 1
+
+# then this is the real model to use results from
+test2 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+             family = cnorm(),
+             discrete = TRUE,
+             AR.start = restart,
+             rho = use_this_rho,  # calculated from the first time
+             data = cbmip2,
+             method = "fREML")
+acf(test2$std.rsd)[1]
+summary(test2)
+```
+
+I'm still the tiniest bit concerned that the `acf` is still inaccurate, because the lag 1 value matched between models where I used `AR.start` and where I didn't. Maybe trying this on some other datasets will reassure me.  
+
+
+What results do we want to pull out of our final model?  
+
+-  slope and std error for dec_date - change/year
+-  p-value for dec_date  
+-  edf, ref.df, F, p for seasonal smooth  
+    -  I'm imagining some sort of "seasonality was significant for X of the Y stations" for each parameter summary - e.g., DO is almost always seasonal; turbidity maybe wouldn't be; nutrients up in the air....  
+    -  maybe a dumbbell plot, where each line is a parameter, and one side of the graph is the number of stations with significant seasonality, and the other side is without significant seasonality. Like this population pyramid, but with lollipops instead of bars: https://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html#Population%20Pyramid  or this lollipop plot, but centered on 0: https://r-graph-gallery.com/303-lollipop-plot-with-2-values.html  
+-  R^2 adj; deviance explained  
+-  what is the number in parentheses at the top of the summary: Family: cnorm(0.703) - maybe that number?  
+-  rho  
+
+Should we only supply rho if it's outside the blue lines in the 'test' model? If so, how do we figure that out? In `?plot.acf`, it looks like these are a 95% confidence interval, but the help file doesn't say how the CI is calculated. Just says: "The confidence interval plotted in plot.acf is based on an uncorrelated series and should be treated with appropriate caution. Using ci.type = "ma" may be less potentially misleading."   
+
+Can set `plot = FALSE` in the `acf()` call if we don't want to see it  
+
 ***  
 
 # CBVGINUT {.tabset}  
