@@ -296,7 +296,34 @@ summary(test2)
 I'm still the tiniest bit concerned that the `acf` is still inaccurate, because the lag 1 value matched between models where I used `AR.start` and where I didn't. Maybe trying this on some other datasets will reassure me.  
 
 
-What results do we want to pull out of our final model?  
+What results do we want to pull out of our final model?  `gtsummary::tidy_gam()` seems to pull out everything I want! At least for rate of change and info about seasonality.  
+
+```{r}
+library(gt)
+library(gtsummary)  # note this didn't work until I'd also installed broom.mixed
+
+tidy_gam(cbmip_bam_censseasAR_full,
+         conf.int = TRUE) 
+
+tidy_gam(cbmip_bam_censseasAR_full,
+         conf.int = TRUE) |> 
+  filter(term != "(Intercept)") |> 
+  select(-parametric) |> 
+  gt() |> 
+  fmt_number(c("estimate", "std.error", "p.value"),
+               decimals = 3) |> 
+  fmt_number(c("conf.low", "conf.high"),
+             decimals = 3) |> 
+  fmt_number(c("statistic", "edf"), 
+             decimals = 1) |> 
+  sub_missing(missing_text = "--")
+
+
+tbl_regression(cbmip_bam_censseasAR_full,
+               tidy_fun = tidy_gam) |> 
+  add_glance_source_note()
+```
+
 
 -  slope and std error for dec_date - change/year
 -  p-value for dec_date  
@@ -304,8 +331,9 @@ What results do we want to pull out of our final model?
     -  I'm imagining some sort of "seasonality was significant for X of the Y stations" for each parameter summary - e.g., DO is almost always seasonal; turbidity maybe wouldn't be; nutrients up in the air....  
     -  maybe a dumbbell plot, where each line is a parameter, and one side of the graph is the number of stations with significant seasonality, and the other side is without significant seasonality. Like this population pyramid, but with lollipops instead of bars: https://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html#Population%20Pyramid  or this lollipop plot, but centered on 0: https://r-graph-gallery.com/303-lollipop-plot-with-2-values.html  
 -  R^2 adj; deviance explained  
--  what is the number in parentheses at the top of the summary: Family: cnorm(0.703) - maybe that number?  
--  rho  
+-  what is the number in parentheses at the top of the summary: Family: cnorm(0.703) - maybe that number? Must be `theta` - from the help file: "theta -
+log standard deviation parameter. If supplied and positive then taken as a fixed value of standard deviation (not its log). If supplied and negative taken as negative of initial value for standard deviation (not its log)."
+-  rho?    
 
 Should we only supply rho if it's outside the blue lines in the 'test' model? If so, how do we figure that out? In `?plot.acf`, it looks like these are a 95% confidence interval, but the help file doesn't say how the CI is calculated. Just says: "The confidence interval plotted in plot.acf is based on an uncorrelated series and should be treated with appropriate caution. Using ci.type = "ma" may be less potentially misleading."   
 
