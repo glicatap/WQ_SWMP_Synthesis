@@ -291,6 +291,20 @@ test2 <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
              method = "fREML")
 acf(test2$std.rsd)[1]
 summary(test2)
+
+
+acf.out <- acf(test2$std.rsd, ci.type = "white")
+
+
+# cis in the plot:
+# qnorm((1 + ci)/2)/sqrt(x$n.used)
+# from https://stats.stackexchange.com/questions/211628/how-is-the-confidence-interval-calculated-for-the-acf-function
+
+# would want to adjust rho when it is outside +/- the following:
+qnorm((1 + 0.95)/2)/sqrt(acf.out$n.used)
+
+# this stackexchange post has some info from Hyndman & Athanasopoulos about the theory/math:
+# https://stats.stackexchange.com/questions/49571/understanding-the-blue-dotted-lines-in-an-acf-from-r
 ```
 
 I'm still the tiniest bit concerned that the `acf` is still inaccurate, because the lag 1 value matched between models where I used `AR.start` and where I didn't. Maybe trying this on some other datasets will reassure me.  
@@ -308,7 +322,8 @@ tidy_gam(cbmip_bam_censseasAR_full,
 tidy_gam(cbmip_bam_censseasAR_full,
          conf.int = TRUE) |> 
   filter(term != "(Intercept)") |> 
-  select(-parametric) |> 
+  select(term, estimate, std.error, conf.low, conf.high,
+         statistic, p.value, edf, ref.df) |> 
   gt() |> 
   fmt_number(c("estimate", "std.error", "p.value"),
                decimals = 3) |> 
