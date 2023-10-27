@@ -117,4 +117,64 @@ df_summ <- df1 %>%
             across(any_of(c("po4f_cens", "chla_n_cens")),
                    cens_fun))
 #' test it
-expect_identical(df_summ, df2)
+expect_equal(df_summ, df2, check.attributes = FALSE)
+
+
+# Analysis Helper fns ----
+
+#' data frame subsetting  
+#' what I start with
+df1 <- data.frame(
+  station = c(rep("abcdenut", 8),
+              rep("abcdewq", 8)),
+  year = c(rep(2011, 4), rep(2012, 4),
+           rep(2011, 4), rep(2012, 4)),
+  month = c(9:12, 1:4,
+            9:12, 1:4),
+  nh4f = c(rep(1, 5), NA, rep(1, 2), rep(NA, 8)),
+  nh4f_cens = c(0, 0, 1, 1, 1, NA, 0, 0, rep(NA, 8)),
+  spcond = c(rep(NA, 8),
+             rep(20, 5), NA, rep(20, 2))
+)
+
+dec.date <- lubridate::decimal_date(
+  lubridate::ymd(
+    paste(df1$year, df1$month, "15", sep = "-")))[1:8]
+
+#' what I expect: nut
+df2 <- data.frame(
+  station = "abcdenut",
+  year = c(rep(2011, 4), rep(2012, 4)),
+  month = c(9:12, 1:4),
+  dec_date = dec.date,
+  focal_param = "nh4f",
+  value = c(rep(1, 5), NA, rep(1, 2)),
+  cens = c(0, 0, 1, 1, 1, NA, 0, 0),
+  lognut = c(rep(0, 5), NA, rep(0, 2)),
+  cens_lognut = c(0, 0, -Inf, -Inf, -Inf, NA, 0, 0))
+df2$lognut_mat <- cbind(df2$lognut, df2$cens_lognut)
+df2$ARrestart = c(TRUE, rep(FALSE, 5), TRUE, FALSE)
+
+#' test it
+df_test <- subset_df("nut", df1, "abcdenut", "nh4f")
+expect_equal(df_test, df2, check.attributes = FALSE)
+
+
+#' what I expect: wq
+dec.date <- lubridate::decimal_date(
+  lubridate::ymd(
+    paste(df1$year, df1$month, "15", sep = "-")))[9:16]
+df3 <- data.frame(
+  station = "abcdewq",
+  year = c(rep(2011, 4), rep(2012, 4)),
+  month = c(9:12, 1:4),
+  dec_date = dec.date,
+  focal_param = "spcond",
+  value = c(rep(20, 5), NA, rep(20, 2)),
+  ARrestart = c(TRUE, rep(FALSE, 5), TRUE, FALSE)
+)
+
+
+#' test it
+df_test <- subset_df("wq", df1, "abcdewq", "spcond")
+expect_equal(df_test, df3, check.attributes = FALSE)

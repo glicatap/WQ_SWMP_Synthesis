@@ -264,3 +264,57 @@ plot_mdl_dotinterval <- function(data, param, ylim = c(0, 1), ...){
     theme_bw() +
     theme(legend.position = "none")
 }
+
+
+# Analysis Helpers ----
+
+# subset data frame to single station and parameter, and set up for GAM
+subset_df <- function(type, main_df, station, parameter){
+  # type, station, parameter should be passed as character strings
+  # main_df should not
+  # example: cbmip_po4f <- subset_df("nut", nut, "cbmip", "po4f")
+  
+  # wq/met - just grab stn, year, month, and parameter
+  if(type %in% c("wq", "met")){
+    sub_df <- main_df |> 
+      filter(station == {{station}}) |> 
+      select(station, year, month,
+             "value" = {{parameter}})
+  }
+  # nut - grab stn, year, month, parameter, and censored column
+  # then log10-transform nutrient, and create a censored column for lognut 
+  # will work with mgcv's gam functions
+  if(type == "nut"){
+    cens_col <- paste0(parameter, "_cens")
+    sub_df <- main_df |> 
+      filter(station == {{station}}) |> 
+      select(station, year, month,
+             "value" = {{parameter}},
+             "cens" = {{cens_col}}) |> 
+      mutate(lognut = log10(value),
+             cens_lognut = case_when(cens == 0 ~ lognut,    # extra censoring column for gam
+                                     cens == 1 ~ -Inf))
+    # also create response matrix column for mgcv gam functions
+    sub_df$lognut_mat <- cbind(sub_df$lognut, sub_df$cens_lognut)
+  }
+  
+  # for all: make sure all year-month combinations are represented,
+  # even if blank
+  # and create a decimal year column
+  # also add which parameter we're looking at
+  all_yearmonths <- expand.grid(year = min(sub_df$year):max(sub_df$year), 
+                                month = 1:12) |> 
+    arrange(year, month) |> 
+    mutate(station = station)
+  sub_df <- left_join(all_yearmonths, sub_df) |> 
+    mutate(dec_date = decimal_date(ymd(paste(year, month, "15", sep = "-"))),
+           ARrestart = case_when(is.na(lag(value)) & !is.na(value) ~ TRUE,
+                                 .default = FALSE),
+           focal_param = parameter) |> 
+    select(station, year, month, dec_date, focal_param, everything())
+  # remove first and last months if necessary
+  sub_df <- sub_df[min(which(!is.na(sub_df$value))):nrow(sub_df), ]
+  sub_df <- sub_df[1:max(which(!is.na(sub_df$value))), ]
+  
+  return(sub_df)
+}
