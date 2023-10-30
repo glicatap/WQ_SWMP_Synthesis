@@ -343,9 +343,11 @@ subset_df <- function(type, main_df, station, parameter){
   return(sub_df)
 }
 
-run_bam_nut <- function(){
-  # no inputs - just running code based on pre-defined data frames
-  # and I don't want to repeat the code every time
+run_bam_nut <- function(data){
+  # input is a data frame
+  # returns the bam object
+  
+  dat <- data
   
   # run bam with an almost-0 rho, using AR.start
   # (in case missing/unevenly spaced data messed up the true ACF)
@@ -375,19 +377,20 @@ run_bam_nut <- function(){
                    method = "fREML")
   }
   
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
   print(paste("Original autocorrelation lag 1 coefficient was:", round(use_this_rho, 3)))
   print(paste("Threshold to re-run bam was:",
               round(rho_threshold, 3)))
-  print("Final autocorrelation lag 1 coefficient is:")
-  print(acf(dat_bam$std.rsd, plot = FALSE)[1])
-  print("-----------------")
-  print(summary(dat_bam))
+  print(paste("Final autocorrelation lag 1 coefficient is:", 
+              final_AR))
+  
+  return(dat_bam)
+
 }
 
-print_bam_table <- function(){
-  # no inputs - just running code based on pre-defined model output
-
-  tidy_gam(dat_bam,
+print_bam_table <- function(bam.obj){
+  tidy_gam(bam.obj,
            conf.int = TRUE) |> 
     filter(term != "(Intercept)") |> 
     select(term, estimate, std.error, conf.low, conf.high,
@@ -401,3 +404,4 @@ print_bam_table <- function(){
                decimals = 1) |> 
     sub_missing(missing_text = "--")
 }
+

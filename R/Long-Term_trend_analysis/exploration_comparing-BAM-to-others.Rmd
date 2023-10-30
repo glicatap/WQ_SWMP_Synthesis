@@ -95,13 +95,16 @@ plot_nuts(dat)
 2.  Determine whether there is significant autocorrelation in the residuals.  
 3.  If so, re-run model, setting `rho` to what was found in step 2.  
 
-```{r, results = "asis"}
-run_bam_nut()
+```{r}
+dat_bam <- run_bam_nut(dat)
 ```
 
 ```{r}
-print_bam_table()
+summary(dat_bam)
+print_bam_table(dat_bam) |> 
+  tab_header(title = plt_titles)
 ```
+
 
 ```{r}
 # cis in the plot:
@@ -211,13 +214,14 @@ plot_nuts(dat)
 
 ## bam  
 
-```{r, results = "asis"}
-run_bam_nut()
+```{r}
+dat_bam <- run_bam_nut(dat)
 ```
 
-
 ```{r}
-print_bam_table()
+summary(dat_bam)
+print_bam_table(dat_bam) |> 
+  tab_caption(plt_titles)
 ```
 
 
@@ -301,12 +305,15 @@ plot_nuts(dat)
 Identifies significant decreasing trend of -0.036. R^2 0.21. Seasonal term not significant. Autocorrelation of residuals was not significant, so model was not re-run.  
 
 ```{r}
-run_bam_nut()
+dat_bam <- run_bam_nut(dat)
 ```
 
 ```{r}
-print_bam_table()
+summary(dat_bam)
+print_bam_table(dat_bam) |> 
+  tab_caption(plt_titles)
 ```
+
 
 ## Simple Regression  
 
