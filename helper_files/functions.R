@@ -289,6 +289,22 @@ plot_nuts <- function(dat){
     theme(legend.position='bottom')
 }
 
+plot_wq <- function(dat){
+  # this is very specific to a current script
+  # in which a single wq param from a single station has been
+  # pulled out of a data frame, using subset_df() function
+  # 
+  p1 <- ggplot(dat, aes(x = dec_date, y = value, col = year)) +
+    geom_line(col = "gray") +
+    geom_point() +
+    theme_bw() +
+    labs(title = plt_titles,
+         x = "Date",
+         y = "value",
+         col = "Year")
+  print(p1)
+}
+
 
 # Analysis Helpers ----
 
@@ -388,6 +404,56 @@ run_bam_nut <- function(data){
   return(dat_bam)
 
 }
+
+
+run_bam_wq <- function(data){
+  # input is a data frame
+  # returns the bam object
+  
+  dat <- data
+  
+  # run bam with an almost-0 rho, using AR.start
+  # (in case missing/unevenly spaced data messed up the true ACF)
+  # then get the lag-1 acf estimate
+  # to use in what will be the "real" bam
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                 family = gaussian(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+  # summary(dat_bam)
+  # acf(dat_bam$std.rsd, plot = FALSE)[1]
+  
+  rhos <- acf(dat_bam$std.rsd, plot = FALSE)
+  use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
+  rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  
+  if(abs(use_this_rho) > rho_threshold){
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                   family = gaussian(),
+                   discrete = TRUE,
+                   AR.start = ARrestart,
+                   rho = use_this_rho,
+                   data = dat,
+                   method = "fREML")
+  }
+  
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
+  print(paste("Original autocorrelation lag 1 coefficient was:", round(use_this_rho, 3)))
+  print(paste("Threshold to re-run bam was:",
+              round(rho_threshold, 3)))
+  print(paste("Final autocorrelation lag 1 coefficient is:", 
+              final_AR))
+  
+  return(dat_bam)
+  
+}
+
+
+
 
 print_bam_table <- function(bam.obj){
   tidy_gam(bam.obj,
