@@ -125,6 +125,8 @@ print_bam_table(dat_bam) |>
 I'm still the tiniest bit concerned that the `acf` is still inaccurate, because the lag 1 value matched between models where I used `AR.start` and where I didn't. Maybe trying this on some other datasets will reassure me.  
 
 
+Even with `bam` using `discrete = TRUE` and the `AR.start` stuff, we're getting the same AR1 coefficient as in the other `gam` models. This makes me worry a bit that the missing data isn't being handled the way I think it should be. Only `gamm` comes out different. Hm, it's the `Phi1` that comes out different in `gamm`; `acf(resid(dat_gam_ar$lme, type = "response"))[1]` matches everything else (0.281).    
+
 What results do we want to pull out of our final model?  `gtsummary::tidy_gam()` seems to pull out everything I want! At least for rate of change and info about seasonality.  
 
 -  slope and std error for dec_date - change/year
@@ -140,6 +142,31 @@ log standard deviation parameter. If supplied and positive then taken as a fixed
 Should we only supply rho if it's outside the blue lines in the 'test' model? If so, how do we figure that out? In `?plot.acf`, it looks like these are a 95% confidence interval, but the help file doesn't say how the CI is calculated. Just says: "The confidence interval plotted in plot.acf is based on an uncorrelated series and should be treated with appropriate caution. Using ci.type = "ma" may be less potentially misleading."   
 
 Can set `plot = FALSE` in the `acf()` call if we don't want to see it  
+
+
+## gamm (no censoring)  
+
+Rho from bam was 0.28. Here, it's 0.31. 
+
+Slope estimate from bam was -0.0353, SE 0.0049  
+From gamm:  -0.03596, SE 0.0051  
+
+Virtually indistinguishable. Seasonal terms are extremely similar too.  
+
+```{r}
+dat_gam_ar <- gamm(lognut ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = dat,
+                     correlation = corAR1(form = ~ month|year),
+                     method = "REML")
+summary(dat_gam_ar$gam)
+summary(dat_gam_ar$lme)
+summary(dat_gam_ar$lme$modelStruct$corStruct)
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+acf(resid(dat_gam_ar$lme, type = "response"))[1]
+tbl_regression(dat_gam_ar)
+```
+
+
 
 
 ## Simple Regression  
@@ -163,6 +190,17 @@ Censored regression using the `NADA2` package doesn't work with this station bec
 
 This slope should be the same as that from censored regression - which in this case should be the same as from simple linear regression.  
 
+Yep, slope similar to everything else: -0.036. St. error 0.005. High residual autocorrelation, 0.493.    
+
+```{r}
+dat_gam_cens <- gam(lognut_mat ~ dec_date,
+                    family = cnorm(),
+                    data = dat,
+                    method = "REML")
+summary(dat_gam_cens)
+acf(residuals(dat_gam_cens), plot = FALSE)[1]
+```
+
 
 
 ## GAM w/seasonality only  
@@ -171,7 +209,7 @@ This slope will be most comparable to the simple regression model.
 
 Seasonal term is highly significant. Linear trend slope looks the same as before, though standard error is a bit smaller.  R^2 went up from about 0.2 (linear model) to about 0.5.  
 
-Even after accounting for seasonality, there's autocorrelation in the residuals; much less though.  
+Even after accounting for seasonality, there's autocorrelation in the residuals; much less though (0.28).  
 
 ```{r}
 dat_gam_seas <- gam(lognut ~ dec_date + s(month, bs = "cc", k = 12),
@@ -192,7 +230,7 @@ summary(dat_gam_censseas)
 acf(residuals(dat_gam_censseas), plot = FALSE)[1]
 ```
 
-Similar slope to all that came before with this station. Again, accounting for seasonality has reduced the residual autocorrelation.  
+Similar slope to all that came before with this station, -0.036. SE 0.004. Again, accounting for seasonality has reduced the residual autocorrelation to 0.28 (still high, and bam reduces it).    
 
 
 ***  
@@ -405,28 +443,66 @@ print_bam_table(dat_bam) |>
 ```
 
 
-## GAM w/AR + seasonality  
+## gamm: AR + seasonality  
 
-The ultimate model.  
+The ultimate model. 
+
+I'm less comfortable with `gamm` than `bam` because it's not as clear what's the appropriate way to set up the autocorrelation structure.  
+
+From `?corAR1`, `form` argument: a one sided formula of the form `~ t`, or `~ t | g`, specifying a time covariate `t` and, optionally, a grouping factor `g`. A covariate for this correlation structure must be integer valued. When a grouping factor is present in form, the correlation structure is assumed to apply only to observations within the same grouping level; observations with different grouping levels are assumed to be uncorrelated.  
+
+The default, with no arguments, doesn't account for unevenly spaced or missing data. But it gets somewhat close to the rho given by bam.  
 
 ```{r}
 dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
                      data = dat,
-                     correlation = corAR1(form = ~1|month),
+                     correlation = corAR1(),
+                     method = "REML")
+summary(dat_gam_ar$gam)
+summary(dat_gam_ar$lme)  # Phi = 0.5457
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+acf(resid(dat_gam_ar$lme, type = "response"))[1]  # 0.524
+```
+
+
+Now using `~1|year`, to allow grouping within year:  
+
+```{r}
+dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = dat,
+                     correlation = corAR1(form = ~ 1|year),
                      method = "REML")
 summary(dat_gam_ar$gam)
 summary(dat_gam_ar$lme)
-acf(dat_gam_ar$lme$residuals)
-acf(resid(dat_gam_ar$lme, type = "normalized"))
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+acf(resid(dat_gam_ar$lme, type = "response"))[1]
+```
+
+
+And `~ month | year`, because month is the time step. This seems like it's probably the most appropriate of the `gamm` options.   
+
+Slope output is -0.4355, SE 0.1346.  
+
+```{r}
+dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = dat,
+                     correlation = corAR1(form = ~ month|year),
+                     method = "REML")
+summary(dat_gam_ar$gam)
+summary(dat_gam_ar$lme)
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+acf(resid(dat_gam_ar$lme, type = "response"))[1]
 ```
 
 
 ## Simple Regression  
 
+Slope -0.4787, SE 0.1093  
+
 ```{r}
-gndpc_lm <- lm(value ~ dec_date, data = gndpc)
-summary(gndpc_lm)
-acf(residuals(gndpc_lm), plot = FALSE)[1]
+dat_lm <- lm(value ~ dec_date, data = dat)
+summary(dat_lm)
+acf(residuals(dat_lm), plot = FALSE)[1]
 ```
 
 Can see some seasonality in the residuals.  
@@ -444,13 +520,13 @@ Hopefully we get the same slope, but are accounting for seasonality.
 Seasonal term significant. Slope -0.45, st. error 0.081. R^2 0.50.  
 From linear model, slope was -0.479, st. error 0.109, R^2 0.093. Seasonal GAM improved R^2 and standard error; didn't really change slope.  
 
-Substantial autocorrelation (though it seems that accounting for seasonality took care of some of that).  
+Substantial autocorrelation.   
 
 ```{r}
-gndpc_gam_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = gndpc)
-summary(gndpc_gam_seas)
-acf(residuals(gndpc_gam_seas), plot = FALSE)[1]
+dat_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                  data = dat)
+summary(dat_seas)
+acf(residuals(dat_seas), plot = FALSE)[1]
 # pacf(residuals(gndpc_gam_seas))
 ```
 
