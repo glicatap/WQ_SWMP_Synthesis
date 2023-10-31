@@ -413,20 +413,20 @@ acf(residuals(dat_gam_censseas), plot = FALSE)[1]
 
 # GNDPCWQ {.tabset}  
 
-spcond_median seems to be decreasing (?)  
+spcond_median seems to be decreasing (?)   
+
+No need for censoring + autocorrelation together, so could use either `bam` or `gamm`.  
 
 ```{r}
 dat <- gndpc
 plt_titles <- paste(unique(dat$station), unique(dat$focal_param))
 ```
 
-```{r, fig.height = 6, fig.width = 6}
+```{r, fig.height = 3, fig.width = 6}
 plot_wq(dat)
 ```
 
 ## bam  
-
-No need for censoring + autocorrelation together, so could use either `bam` or `gamm`.  
 
 Significant decrease, slope -0.45. SE for slope is 0.132.  
 
@@ -445,43 +445,13 @@ print_bam_table(dat_bam) |>
 
 ## gamm: AR + seasonality  
 
-The ultimate model. 
-
 I'm less comfortable with `gamm` than `bam` because it's not as clear what's the appropriate way to set up the autocorrelation structure.  
 
 From `?corAR1`, `form` argument: a one sided formula of the form `~ t`, or `~ t | g`, specifying a time covariate `t` and, optionally, a grouping factor `g`. A covariate for this correlation structure must be integer valued. When a grouping factor is present in form, the correlation structure is assumed to apply only to observations within the same grouping level; observations with different grouping levels are assumed to be uncorrelated.  
 
-The default, with no arguments, doesn't account for unevenly spaced or missing data. But it gets somewhat close to the rho given by bam.  
+Going with `~ month | year`, because month is the time step. This seems like it's probably the most appropriate of the `gamm` options.   
 
-```{r}
-dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
-                     data = dat,
-                     correlation = corAR1(),
-                     method = "REML")
-summary(dat_gam_ar$gam)
-summary(dat_gam_ar$lme)  # Phi = 0.5457
-acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
-acf(resid(dat_gam_ar$lme, type = "response"))[1]  # 0.524
-```
-
-
-Now using `~1|year`, to allow grouping within year:  
-
-```{r}
-dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
-                     data = dat,
-                     correlation = corAR1(form = ~ 1|year),
-                     method = "REML")
-summary(dat_gam_ar$gam)
-summary(dat_gam_ar$lme)
-acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
-acf(resid(dat_gam_ar$lme, type = "response"))[1]
-```
-
-
-And `~ month | year`, because month is the time step. This seems like it's probably the most appropriate of the `gamm` options.   
-
-Slope output is -0.4355, SE 0.1346.  
+Slope output is -0.4355, SE 0.1346. Similar SE to `bam`, slightly different slope, probably not worryingly so.  
 
 ```{r}
 dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
@@ -490,14 +460,18 @@ dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
                      method = "REML")
 summary(dat_gam_ar$gam)
 summary(dat_gam_ar$lme)
-acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+
+# original autocorrelation (not accounting for it in model)
 acf(resid(dat_gam_ar$lme, type = "response"))[1]
+
+# the normalized ones are what we want to be low
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
 ```
 
 
 ## Simple Regression  
 
-Slope -0.4787, SE 0.1093  
+Slope -0.4787, SE 0.1093, R^2 0.093; high autocorrelation in residuals (and can see seasonality when plotted).    
 
 ```{r}
 dat_lm <- lm(value ~ dec_date, data = dat)
@@ -505,36 +479,37 @@ summary(dat_lm)
 acf(residuals(dat_lm), plot = FALSE)[1]
 ```
 
-Can see some seasonality in the residuals.  
-
 
 ## Simple GAM  
 
-Should see same results as simple linear regression.  
+Slope -0.4787 (same as simple regression), SE 0.1093 (same as regression), R^2 0.088; high autocorrelation of residuals.  
+
+```{r}
+dat_gam_simple <- gam(value ~ dec_date,
+                data = dat,
+                method = "REML")
+summary(dat_gam_simple)
+acf(residuals(dat_gam_simple), plot = FALSE)[1]
+```
+ 
 
 
 ## GAM w/seasonality  
 
-Hopefully we get the same slope, but are accounting for seasonality.  
-
 Seasonal term significant. Slope -0.45, st. error 0.081. R^2 0.50.  
+
 From linear model, slope was -0.479, st. error 0.109, R^2 0.093. Seasonal GAM improved R^2 and standard error; didn't really change slope.  
 
 Substantial autocorrelation.   
 
 ```{r}
-dat_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = dat)
-summary(dat_seas)
-acf(residuals(dat_seas), plot = FALSE)[1]
+dat_gam_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                data = dat,
+                method = "REML")
+summary(dat_gam_seas)
+acf(residuals(dat_gam_seas), plot = FALSE)[1]
 # pacf(residuals(gndpc_gam_seas))
 ```
-
-
-## GAM w/AR  
-
-Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
-
 
 
 
@@ -543,95 +518,204 @@ Autocorrelation only. Should again get same slope; probably wider confidence int
 
 cdepth_median seems to be increasing  
 
-## Simple Regression  
 
 ```{r}
-gndbc_lm <- lm(param ~ dec_date, data = gndbc)
-summary(gndbc_lm)
-acf(residuals(gndbc_lm))[1]
-pacf(residuals(gndbc_lm))
+dat <- gndbc
+plt_titles <- paste(unique(dat$station), unique(dat$focal_param))
 ```
+
+```{r, fig.height = 3, fig.width = 6}
+plot_wq(dat)
+```
+
+## bam  
+
+Significant increase, slope 0.032, SE 0.0025, R^2 0.761, final AR 0.022  
+
+```{r}
+dat_bam <- run_bam_wq(dat)
+```
+
+```{r}
+summary(dat_bam)
+print_bam_table(dat_bam) |> 
+  tab_header(title = plt_titles)
+```
+
+```{r, eval = FALSE}
+# response residuals (uncorrected for autocorrelation)
+acf(residuals(dat_bam))[1]
+
+# standardized residuals (corrected for autocorrelation)
+acf(dat_bam$std.rsd)[1]
+```
+
+
+## gamm: AR + seasonality  
+
+Significant increase, slope 0.032, SE 0.0028, R^2 0.759, AR -0.07 (from original 0.218)  
+
+Very, very similar to `bam` output.  
+
+```{r}
+dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = dat,
+                     correlation = corAR1(form = ~ month|year),
+                     method = "REML")
+summary(dat_gam_ar$gam)
+summary(dat_gam_ar$lme)
+
+# original autocorrelation (not accounting for it in model)
+acf(resid(dat_gam_ar$lme, type = "response"))[1]
+
+# the normalized ones are what we want to be low
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+```
+
+
+## Simple Regression  
+
+Slope 0.033, SE 0.003, R^2 0.50; AR 0.51  (didn't account for seasonality or AR in model)     
+
+```{r}
+dat_lm <- lm(value ~ dec_date, data = dat)
+summary(dat_lm)
+acf(residuals(dat_lm), plot = FALSE)[1]
+```
+
 
 ## Simple GAM  
 
-Should see same results as simple linear regression.  
+All same as simple regression  
+
+```{r}
+dat_gam_simple <- gam(value ~ dec_date,
+                data = dat,
+                method = "REML")
+summary(dat_gam_simple)
+acf(residuals(dat_gam_simple), plot = FALSE)[1]
+```
+ 
 
 
 ## GAM w/seasonality  
 
-Hopefully we get the same slope, but are accounting for seasonality. 
-
-Seasonal term significant. Slope 0.032, st. error 0.002. R^2 0.76.  
-From linear model, slope was 0.033, st. error 0.003, R^2 0.50. Seasonal GAM improved R^2 greatly and (slightly) standard error; didn't really change slope. 
-
-Some autocorrelation in the residuals but not as much as I'd thought.  
+Slope 0.032, SE 0.002, R^2 0.76, significant seasonal term, AR of residuals 0.195 - pretty similar to bam or gamm before adjusting for AR    
 
 ```{r}
-gndbc_gam_seas <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = gndbc)
-summary(gndbc_gam_seas)
-acf(residuals(gndbc_gam_seas))[1]
+dat_gam_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                data = dat,
+                method = "REML")
+summary(dat_gam_seas)
+acf(residuals(dat_gam_seas), plot = FALSE)[1]
+# pacf(residuals(gndpc_gam_seas))
 ```
 
- 
-## GAM w/AR  
-
-Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
 
 
-## GAM w/AR + seasonality  
-
-The ultimate model.  
-
+***  
 
 
 
 # NIWOLWQ {.tabset}  
 
-do-pct - doesn't seem to be changing (visually) 
+do-pct - doesn't seem to be changing (visually)  
+
+```{r}
+dat <- niwol
+plt_titles <- paste(unique(dat$station), unique(dat$focal_param))
+```
+
+```{r, fig.height = 3, fig.width = 6}
+plot_wq(dat)
+```
+
+## bam  
+
+Significant decrease (p = 0.016), slope -0.128, SE 0.053, R^2 0.898, Seasonal term significant, final AR -0.003 (from 0.272)    
+
+```{r}
+dat_bam <- run_bam_wq(dat)
+```
+
+```{r}
+summary(dat_bam)
+print_bam_table(dat_bam) |> 
+  tab_header(title = plt_titles)
+```
+
+
+## gamm: AR + seasonality  
+
+Significant decrease (p = 0.012), slope -0.137, SE 0.054, R^2 0.898, Seasonal term significant, AR -0.019 (from original 0.287)  
+
+Very, very similar to `bam` output.  
+
+```{r}
+dat_gam_ar <- gamm(value ~ dec_date + s(month, bs = "cc", k = 12),
+                     data = dat,
+                     correlation = corAR1(form = ~ month|year),
+                     method = "REML")
+summary(dat_gam_ar$gam)
+summary(dat_gam_ar$lme)
+
+# original autocorrelation (not accounting for it in model)
+acf(resid(dat_gam_ar$lme, type = "response"))[1]
+
+# the normalized ones are what we want to be low
+acf(resid(dat_gam_ar$lme, type = "normalized"))[1] 
+```
+
 
 ## Simple Regression  
 
+Slope not significant (p = 0.215); slope -0.157, SE 0.126, R^2 0.006, VERY high AR 0.805       
+
 ```{r}
-niwol_lm <- lm(param ~ dec_date, data = niwol)
-summary(niwol_lm)
-plot(residuals(niwol_lm))
-acf(residuals(niwol_lm, type = "pearson"))
-acf(residuals(niwol_lm, type = "pearson"))[1]
+dat_lm <- lm(value ~ dec_date, data = dat)
+summary(dat_lm)
+acf(residuals(dat_lm), plot = FALSE)[1]
 ```
 
 
 ## Simple GAM  
 
-Should see same results as simple linear regression.  
+All same as simple regression  
+
+```{r}
+dat_gam_simple <- gam(value ~ dec_date,
+                data = dat,
+                method = "REML")
+summary(dat_gam_simple)
+acf(residuals(dat_gam_simple), plot = FALSE)[1]
+```
+ 
 
 
 ## GAM w/seasonality  
 
-Hopefully we get the same slope, but are accounting for seasonality.  
-
-Seasonal term significant. Slope 0.0036, st. error 0.002, slope slightly significant now - p = 0.046. R^2 0.35.  
-From linear model, slope was 0.004, st. error 0.002, R^2 0.017. Seasonal GAM greatly improved R^2. Didn't change standard error but did move slope to significant (p from linear model was 0.117), interestingly. Wonder if that will change when autocorrelation comes into play.   
+Change significant (p = 0.002), slope -0.126, SE 0.04, R^2 0.899, Seasonal term significant, AR 0.272    
 
 ```{r}
-niwol_gam_seas <- gam(param ~ dec_date + s(month, bs = "cc", k = 12),
-                  data = niwol)
-summary(niwol_gam_seas)
-acf(residuals(niwol_gam_seas))[1]
+dat_gam_seas <- gam(value ~ dec_date + s(month, bs = "cc", k = 12),
+                data = dat,
+                method = "REML")
+summary(dat_gam_seas)
+acf(residuals(dat_gam_seas), plot = FALSE)[1]
+# pacf(residuals(gndpc_gam_seas))
 ```
 
 
+# Takeaways  
 
-## GAM w/AR  
-
-Autocorrelation only. Should again get same slope; probably wider confidence intervals by accounting for autocorrelation.  
-
-
-## GAM w/AR + seasonality  
-
-The ultimate model.  
-
-
-
-***  
-***  
+-  Residuals from the most basic models (response ~ time) have very cyclic patterns for most parameters - indicating seasonality.  
+-  Putting a seasonal term in the model, using any of the `gam` functions, accounts for a lot of residual correlation, but not all of it.  
+-  Accounting for autocorrelation through either `bam` or `gamm` takes care of the rest.  
+-  Accounting for seasonality GREATLY improves R^2 values.  
+-  Accounting for seasonality and autocorrelation typically widen confidence intervals (though in the case of NIWOLWQ, accounting for them caused a significant trend to appear that was not apparent in simple regressions).  
+-  In any case, accounting for seasonality and autocorrelation do seem to be the most appropriate methods, and give similar slopes to the simpler methods.  
+-  Accounting for censoring is VERY important when it is present, as ignoring it can lead to false trend detection (see CBVGINUT). When it is not present, results are the same as from other methods.    
+-  Outputs from `bam` and `gamm` are very similar.  
+-  `gamm` is nice because it takes care of `phi`/`rho` for you.  
+-  BUT `bam` is more *universally* useful because it can be used with censored data.  
+-  It may be a good idea to use the same function for all parameters, even those without censoring, for consistency in code and pulling out results. `gamm` provides indistinguishable results from `bam`, but capturing outputs involves very different code and syntax, and I'm worried things could go wrong if we switch between them.  
