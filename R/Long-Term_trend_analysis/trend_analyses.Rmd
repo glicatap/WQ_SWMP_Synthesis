@@ -1,0 +1,124 @@
+---
+title: "Trends Script Outline"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(lubridate)
+library(mgcv)
+library(gt)
+library(gtsummary)
+
+
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+```
+
+We will have 3 chunks of data: WQ, MET, NUT. For each type:  
+
+1.  Load data frame  
+2.  Create grid of station/parameter combinations.  
+3.  Do appropriate subsetting, based on length of dataset and depth.  
+    a.  in `definitions.R` file, an object named `stns_wq_nut_d10` is defined. This vector consists of 105 stations that are labelled "Active", have starting dates before January of 2013, and exist for both WQ and NUT data types.    
+4.  Loop through parameters:  
+    a.  for each parameter, loop through stations
+        i.  run appropriate bam model  
+        ii.  extract necessary model info    
+        iii.  add model info to type-parameter list
+    b.  bind the list to get one data frame per parameter
+    c.  make that data frame part of a 'type' output list  
+5.  At end of that loop, will have a 'type' list with separate data frames for each parameter. Bind them into one big data frame.  
+6.  Get seasonality info on same row as slope coefficient.  
+7.  Bind rows on WQ and NUT  
+8.  Substring the first 5 letters of station names, so WQ and NUT stations can be associated with each other for station-level reports  
+9.  Make sure it's clear that the slope for nutrients is the slope for log10(nut), not raw nut  
+10.  Write out the results!  
+
+
+# Setup  
+
+Subset wq and nut data frames; create param grids.  
+
+Prioritized parameters:
+Responses:  NO3/2, NH4, PO4, Chla, DO, DIN:DIP, proportion of DO data below 2 mg/L; proportion of DO data below 5 mg/L; proportion of chla data above ___
+Driver variables: Temp (water and air), Precipitation, Sal, Cond, Stratification, Turbidity, PAR  
+
+First join wq and nut, so only have to write one loop? No, I wrote separate bam functions for them, drat.    
+
+```{r}
+dat_wq <- wq |> 
+  filter(station %in% paste0(stns_wq_nut_d10, "wq")) |> 
+  mutate(do_proportion_below2 = round(doLessThan2_total / doLessThan2_nValid, 4),
+         do_proportion_below5 = round(doLessThan5_total / doLessThan5_nValid, 4)) |> 
+  select(station, year, month, 
+         do_pct_median, do_mgl_median,
+         temp_median, spcond_median, 
+         sal_median, turb_median,
+         do_proportion_below2,
+         do_proportion_below5)
+
+# may need to treat DO proportions differently from others - not gaussian, but beta
+
+dat_nut <- nut |> 
+  filter(station %in% paste0(stns_wq_nut_d10, "nut")) |> 
+  select(station, year, month, 
+         chla_n, po4f,
+         nh4f, no23f,
+         chla_n_cens, po4f_cens,
+         nh4f_cens, no23f_cens) |> 
+  mutate(DIN_to_DIP = (nh4f + no23f) / po4f,
+         DIN_to_DIP_cens = case_when(nh4f_cens + no23f_cens + po4f_cens == 0 ~ 0,
+                                     .default = 1))
+
+# DIN_to_DIP may also need to be treated in a non-gaussian way
+```
+
+```{r}
+# avoiding all proportion/ratio data at this point
+wq_grid <- expand.grid(station = unique(dat_wq$station), 
+                       param = names(dat_wq[4:9]))
+nut_grid <- expand.grid(station = unique(dat_nut$station), 
+                       param = names(dat_wq[4:11]))
+```
+
+```{r}
+test <- wq_grid[1:3, ]
+
+for(i in 1:nrow(wq_grid)){
+  tmp <- subset_df("wq", dat_wq, wq_grid$station[i], wq_grid$param[i])
+  # make sure there's enough data in the data frame; if not, move on
+  run_bam_wq(tmp)
+}
+```
+
+
+Present results  
+
+-  graphically:  
+    -  stations along x-axis, grouped and colored by region (need to make stn name a factor)  
+    -  y-axis will be rate of change. geom_point for slope estimate, geom_errorbar for CI.  
+    -  geom_hline for 0.  
+    -  facet_wrap by parameter. free_y scales.  
+-  tables for each station (Reserves will be interested in this):  
+    -  group df by station code, then table with params as rows and the rest as columns.  
+    -  no extra shaping, just subsetting.  
+    
+
+

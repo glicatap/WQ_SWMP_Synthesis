@@ -716,6 +716,47 @@ acf(residuals(dat_gam_seas), plot = FALSE)[1]
 -  In any case, accounting for seasonality and autocorrelation do seem to be the most appropriate methods, and give similar slopes to the simpler methods.  
 -  Accounting for censoring is VERY important when it is present, as ignoring it can lead to false trend detection (see CBVGINUT). When it is not present, results are the same as from other methods.    
 -  Outputs from `bam` and `gamm` are very similar.  
--  `gamm` is nice because it takes care of `phi`/`rho` for you.  
--  BUT `bam` is more *universally* useful because it can be used with censored data.  
+-  `gamm` is nice because it takes care of `phi`/`rho` for you. What it can't do is deal with censored data. Could be used for WQ/MET params, but not nutrients.    
+-  `bam` is more *universally* useful because it *can* be used with censored data.  
 -  It may be a good idea to use the same function for all parameters, even those without censoring, for consistency in code and pulling out results. `gamm` provides indistinguishable results from `bam`, but capturing outputs involves very different code and syntax, and I'm worried things could go wrong if we switch between them.  
+-  `gratia::appraise()` seems to work on both `gam` and `bam` objects, but NOT `gamm`. Nice way to visualize residuals.   
+
+```{r, eval = FALSE}
+library(gratia)
+# gratia functions
+appraise(dat_bam)
+draw(dat_bam, residuals = TRUE)
+```
+
+```{r, eval = FALSE}
+newdat <- dat[, c("dec_date", "year", "month", "value")]
+preds <- cbind(newdat, 
+               predicted = predict.bam(dat_bam, newdata = newdat))
+
+preds2 <- data.frame(predict.bam(dat_bam, 
+                                 type = "terms", 
+                                 newdata = newdat))
+names(preds2) <- c("linear_pred", "smooth_pred")
+preds2$linear_pred <- preds2$linear_pred + as.numeric(dat_bam$coefficients["(Intercept)"])
+
+preds <- cbind(preds, preds2)
+
+
+ggplot(preds, aes(x = dec_date)) +
+  geom_point(aes(y = value),
+             col = "blue",
+             alpha = 0.3,
+             size = 2) +
+  geom_line(aes(y = predicted),
+            col = "gray40",
+            linewidth = 0.7) +
+  geom_line(aes(y = linear_pred),
+            col = "blue",
+            linewidth = 0.7) +
+  theme_bw() +
+  labs(title = "GAM-predicted and actual values, with linear trend",
+       subtitle = plt_titles,
+       x = "Date",
+       y = "Value")
+```
+

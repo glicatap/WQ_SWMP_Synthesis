@@ -22,7 +22,26 @@ stns_nut_d <- str_sub(grep("nut$", mstns$station_code, value = TRUE),
 stns_wq_nut_d <- intersect(stns_wq_d, stns_nut_d)
 stns_in_regions <- mstns[grepl(paste(stns_wq_nut_d, collapse = "|"), mstns$station_code), c("station_code", "region")]
 # cleanup  
-rm(mstns, stns_nut_d, stns_wq_d)
+rm(stns_nut_d, stns_wq_d)
+
+
+#' active stations with >= 10 years of data
+mstns10 <- mstns |>    
+  tidyr::separate(active_dates, into = c("start_date", "first_ end_date"),
+                  sep = "-",
+                  fill = "right",
+                  extra = "drop") %>%  # only want the first date if there are multiples
+  filter(lubridate::decimal_date(lubridate::my(start_date)) <= 2013.0,
+         status == "Active")
+
+stns_wq_d10 <- str_sub(grep("wq$", mstns10$station_code, value = TRUE),
+                     end = -3)
+stns_nut_d10 <- str_sub(grep("nut$", mstns10$station_code, value = TRUE),
+                      end = -4)
+stns_wq_nut_d10 <- intersect(stns_wq_d10, stns_nut_d10)
+
+# cleanup
+rm(mstns, mstns10, stns_nut_d10, stns_wq_d10)
 
 
 # Parameters ----
