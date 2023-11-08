@@ -95,19 +95,279 @@ dat_nut <- nut |>
 wq_grid <- expand.grid(station = unique(dat_wq$station), 
                        param = names(dat_wq[4:9]))
 nut_grid <- expand.grid(station = unique(dat_nut$station), 
-                       param = names(dat_wq[4:11]))
+                       param = names(dat_nut[4:11]))
+```
+
+# WQ  
+
+```{r}
+# wq_grid <- wq_grid[1:3, ]
+
+# set up outputs
+trends_out <- list()
+
+
+# run the loop
+for(i in 1:nrow(wq_grid)){
+  stn <- as.character(wq_grid$station[i])
+  param <- as.character(wq_grid$param[i])
+  
+  # subset to that stn/param combo
+  tmp <- subset_df("wq", dat_wq, stn, param)
+  
+  # if the below statement is true, there was an error in the model
+  # and we need to do something, and move to the next item in the loop
+  # if it was false, we can move on
+  if(inherits(try(run_bam_wq(tmp), silent = TRUE), "try-error")){
+    out <- data.frame(station = stn,
+                      parameter = param,
+                      model_error = TRUE)  
+  } else {
+    # run model
+    bam_out <- run_bam_wq(tmp)
+    
+    # still need to capture autocorrelation parameters- that will require edits to the function
+    
+    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
+      select(-parametric) |> 
+      mutate(station = stn,
+             parameter = param,
+             term = case_match(term,
+                               "(Intercept)" ~ "Intercept",
+                               "dec_date" ~ "Trend (/yr)",
+                               "s(month)" ~ "Seasonality")) |> 
+      select(station, parameter, everything())
+    
+    bam_trend <- bam_seas <- bam_tidy |> 
+      filter(term == "Trend (/yr)") |> 
+      select(station,
+             parameter,
+             "Slope" = estimate,
+             std.error,
+             conf.low,
+             conf.high,
+             statistic,
+             p.value)
+    
+    bam_seas <- bam_tidy |> 
+      filter(term == "Seasonality") |> 
+      select(station,
+             parameter,
+             "Seas_edf" = edf,
+             "Seas_ref.df" = ref.df,
+             "Seas_stat" = statistic,
+             "Seas_p.val" = p.value)
+    
+    bam_r2 <- data.frame(
+      station = stn,
+      parameter = param,
+      R2_adj = summary(bam_out)$r.sq,
+      Dev_expl = summary(bam_out)$dev.expl
+    )
+    
+    out <- dplyr::left_join(bam_trend, bam_seas) |> 
+      dplyr::left_join(bam_r2) |> 
+      mutate(model_error = FALSE)
+    
+  }
+  
+  trends_out[[i]] <- out
+}
+
+trends_df <- dplyr::bind_rows(trends_out) |> 
+  mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
+                               .default = "no"),
+         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                                     .default = "no"))
+```
+
+
+It's going through do_pct_median first, and errors on grbgbwq, with this error: "more knots than unique data values is not allowed". This looks like a station with regular gaps in winter, so maybe can't use 12 knots because all 12 months don't exist in the dataset?? Wonder how to fix this?  
+
+```{r}
+# how to reorder stations by slope for each parameter?  
+ggplot(trends_df, aes(x = station, y = Slope)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high,
+                      col = sig_trend)) +
+  geom_hline(yintercept = 0) +
+  facet_wrap(~parameter, scales = "free_y") +
+  labs(title = "Slopes for all stations",
+       col = "Significant slope?")
 ```
 
 ```{r}
-test <- wq_grid[1:3, ]
-
-for(i in 1:nrow(wq_grid)){
-  tmp <- subset_df("wq", dat_wq, wq_grid$station[i], wq_grid$param[i])
-  # make sure there's enough data in the data frame; if not, move on
-  run_bam_wq(tmp)
-}
+ggplot(trends_df) +
+  geom_histogram(aes(x = Slope,
+                     fill = parameter),
+                 bins = 30,
+                 col = "gray20",
+                 alpha = 0.8) +
+  facet_wrap(~parameter, scales = "free") +
+  geom_vline(xintercept = 0,
+             linewidth = 1) +
+  theme(legend.position = "none") +
+  labs(title = "Histograms of slopes for each parameter")
 ```
 
+```{r}
+seas_df <- trends_df |> 
+  summarize(.by = c(parameter, sig_seasonality),
+            n()) |> 
+  pivot_wider(names_from = sig_seasonality,
+              values_from = `n()`) |> 
+  mutate(no = -1*no)
+
+ggplot(seas_df) +
+  geom_segment( aes(x=parameter, xend=parameter, y=no, yend=yes)) +
+  geom_point( aes(x=parameter, y=no, color="seasonal"), size=3 ) +
+  geom_point( aes(x=parameter, y=yes, color="not seasonal"), size=3 ) +
+  geom_hline(yintercept = 0) +
+  scale_color_brewer(palette = "Set1") +
+  coord_flip()+
+  theme(
+    legend.position = "none",
+  ) +
+  xlab("") +
+  ylab("# of stations displaying seasonality")
+```
+
+
+# NUTs  
+
+```{r}
+# set up outputs
+trends_out <- list()
+
+
+# run the loop
+for(i in 1:nrow(nut_grid)){
+  stn <- as.character(nut_grid$station[i])
+  param <- as.character(nut_grid$param[i])
+  
+  # subset to that stn/param combo
+  tmp <- subset_df("nut", dat_nut, stn, param)
+  
+  # if the below statement is true, there was an error in the model
+  # and we need to do something, and move to the next item in the loop
+  # if it was false, we can move on
+  if(inherits(try(run_bam_nut(tmp), silent = TRUE), "try-error")){
+    out <- data.frame(station = stn,
+                      parameter = param,
+                      model_error = TRUE)  
+  } else {
+    # run model
+    bam_out <- run_bam_nut(tmp)
+    
+    # still need to capture autocorrelation parameters- that will require edits to the function
+    
+    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
+      select(-parametric) |> 
+      mutate(station = stn,
+             parameter = param,
+             term = case_match(term,
+                               "(Intercept)" ~ "Intercept",
+                               "dec_date" ~ "Trend (/yr)",
+                               "s(month)" ~ "Seasonality")) |> 
+      select(station, parameter, everything())
+    
+    bam_trend <- bam_seas <- bam_tidy |> 
+      filter(term == "Trend (/yr)") |> 
+      select(station,
+             parameter,
+             "Slope" = estimate,
+             std.error,
+             conf.low,
+             conf.high,
+             statistic,
+             p.value)
+    
+    bam_seas <- bam_tidy |> 
+      filter(term == "Seasonality") |> 
+      select(station,
+             parameter,
+             "Seas_edf" = edf,
+             "Seas_ref.df" = ref.df,
+             "Seas_stat" = statistic,
+             "Seas_p.val" = p.value)
+    
+    bam_r2 <- data.frame(
+      station = stn,
+      parameter = param,
+      R2_adj = summary(bam_out)$r.sq,
+      Dev_expl = summary(bam_out)$dev.expl
+    )
+    
+    out <- dplyr::left_join(bam_trend, bam_seas) |> 
+      dplyr::left_join(bam_r2) |> 
+      mutate(model_error = FALSE)
+    
+  }
+  
+  trends_out[[i]] <- out
+}
+
+trends_nut <- dplyr::bind_rows(trends_out) |> 
+  mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
+                               .default = "no"),
+         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                                     .default = "no"))
+```
+
+
+It's going through do_pct_median first, and errors on grbgbwq, with this error: "more knots than unique data values is not allowed". This looks like a station with regular gaps in winter, so maybe can't use 12 knots because all 12 months don't exist in the dataset?? Wonder how to fix this?  
+
+```{r}
+# how to reorder stations by slope for each parameter?  
+ggplot(trends_nut, aes(x = station, y = Slope)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high,
+                      col = sig_trend)) +
+  geom_hline(yintercept = 0) +
+  facet_wrap(~parameter, scales = "free_y") +
+  labs(title = "Slopes for all stations",
+       col = "Significant slope?")
+```
+
+```{r}
+ggplot(trends_nut) +
+  geom_histogram(aes(x = Slope,
+                     fill = parameter),
+                 bins = 30,
+                 col = "gray20",
+                 alpha = 0.8) +
+  facet_wrap(~parameter, scales = "free") +
+  geom_vline(xintercept = 0,
+             linewidth = 1) +
+  theme(legend.position = "none") +
+  labs(title = "Histograms of slopes for each parameter")
+```
+
+```{r}
+seas_nut <- trends_nut |> 
+  summarize(.by = c(parameter, sig_seasonality),
+            n()) |> 
+  pivot_wider(names_from = sig_seasonality,
+              values_from = `n()`) |> 
+  mutate(no = -1*no)
+
+ggplot(seas_nut) +
+  geom_segment( aes(x=parameter, xend=parameter, y=no, yend=yes)) +
+  geom_point( aes(x=parameter, y=no, color="seasonal"), size=3 ) +
+  geom_point( aes(x=parameter, y=yes, color="not seasonal"), size=3 ) +
+  geom_hline(yintercept = 0) +
+  scale_color_brewer(palette = "Set1") +
+  coord_flip()+
+  theme(
+    legend.position = "none",
+  ) +
+  xlab("") +
+  ylab("# of stations displaying seasonality")
+```
+
+
+
+
+
+# Other thoughts  
 
 Present results  
 
