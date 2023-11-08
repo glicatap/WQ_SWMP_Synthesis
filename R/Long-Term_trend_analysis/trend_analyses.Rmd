@@ -184,6 +184,17 @@ trends_df <- dplyr::bind_rows(trends_out) |>
 
 It's going through do_pct_median first, and errors on grbgbwq, with this error: "more knots than unique data values is not allowed". This looks like a station with regular gaps in winter, so maybe can't use 12 knots because all 12 months don't exist in the dataset?? Wonder how to fix this?  
 
+
+Managed to skip this, and all seem to be ice stations.  
+
+```{r}
+trends_df |> 
+  filter(model_error == TRUE) |> 
+  select(station) |> 
+  unique()
+```
+
+
 ```{r}
 # how to reorder stations by slope for each parameter?  
 ggplot(trends_df, aes(x = station, y = Slope)) +
@@ -314,7 +325,19 @@ trends_nut <- dplyr::bind_rows(trends_out) |>
 ```
 
 
-It's going through do_pct_median first, and errors on grbgbwq, with this error: "more knots than unique data values is not allowed". This looks like a station with regular gaps in winter, so maybe can't use 12 knots because all 12 months don't exist in the dataset?? Wonder how to fix this?  
+Again skipped station/param combinations that didn't work. There are more than just ice stations.  
+
+
+```{r}
+trends_nut |> 
+  filter(model_error == TRUE) |> 
+  select(station, parameter) |> 
+  summarize(.by = station,
+            parameters = paste(unique(parameter), collapse = "; ")) |> 
+  arrange(station) |> 
+  gt(caption = "Nutrient stations where the model did not run")
+```
+
 
 ```{r}
 # how to reorder stations by slope for each parameter?  
