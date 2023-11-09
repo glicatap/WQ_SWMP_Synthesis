@@ -196,13 +196,16 @@ trends_df |>
 
 
 ```{r}
-# how to reorder stations by slope for each parameter?  
-ggplot(trends_df, aes(x = station, y = Slope)) +
+trends_df |> 
+  arrange(parameter, Slope, station) |> 
+  mutate(stparm = paste0(station, parameter)) |> 
+  ggplot(aes(x = forcats::fct_inorder(stparm), y = Slope)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high,
                       col = sig_trend)) +
   geom_hline(yintercept = 0) +
-  facet_wrap(~parameter, scales = "free_y") +
+  facet_wrap(~parameter, scales = "free") +
   labs(title = "Slopes for all stations",
+       x = "Station",
        col = "Significant slope?")
 ```
 
@@ -340,13 +343,17 @@ trends_nut |>
 
 
 ```{r}
-# how to reorder stations by slope for each parameter?  
-ggplot(trends_nut, aes(x = station, y = Slope)) +
+# how to reorder stations by slope for each parameter?
+trends_nut |> 
+  arrange(parameter, Slope, station) |> 
+  mutate(stparm = paste0(station, parameter)) |> 
+  ggplot(aes(x = forcats::fct_inorder(stparm), y = Slope)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high,
                       col = sig_trend)) +
   geom_hline(yintercept = 0) +
-  facet_wrap(~parameter, scales = "free_y") +
+  facet_wrap(~parameter, scales = "free") +
   labs(title = "Slopes for all stations",
+       x = "Station",
        col = "Significant slope?")
 ```
 
