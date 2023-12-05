@@ -131,11 +131,16 @@ for(i in 1:nrow(wq_grid)){
     out <- data.frame(station = stn,
                       parameter = param,
                       model_error = TRUE)  
+    
+    # alternately, run it without specifying k, and collect all the same outputs
+    
   } else {
     # run model
     bam_out <- run_bam_wq(tmp)
     
     # still need to capture autocorrelation parameters- that will require edits to the function
+    
+    # save out the bam output in case we need it in the future
     
     bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
       select(-parametric) |> 
@@ -147,7 +152,7 @@ for(i in 1:nrow(wq_grid)){
                                "s(month)" ~ "Seasonality")) |> 
       select(station, parameter, everything())
     
-    bam_trend <- bam_seas <- bam_tidy |> 
+    bam_trend <- bam_tidy |> 
       filter(term == "Trend (/yr)") |> 
       select(station,
              parameter,
@@ -188,6 +193,9 @@ trends_df <- dplyr::bind_rows(trends_out) |>
                                .default = "no"),
          sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
                                      .default = "no"))
+
+# save out this data frame so we don't have to run everything every time
+# probably want to deal with stations that errored first, and add them in
 ```
 
 
