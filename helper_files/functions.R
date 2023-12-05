@@ -319,7 +319,7 @@ subset_df <- function(type, main_df, station, parameter){
     sub_df <- main_df |> 
       filter(station == {{station}}) |> 
       select(station, year, month,
-             "value" = {{parameter}})
+             "value" = all_of({{parameter}}))
   }
   # nut - grab stn, year, month, parameter, and censored column
   # then log10-transform nutrient, and create a censored column for lognut 
@@ -329,8 +329,8 @@ subset_df <- function(type, main_df, station, parameter){
     sub_df <- main_df |> 
       filter(station == {{station}}) |> 
       select(station, year, month,
-             "value" = {{parameter}},
-             "cens" = {{cens_col}}) |> 
+             "value" = all_of({{parameter}}),
+             "cens" = all_of({{cens_col}})) |> 
       mutate(lognut = log10(value),
              cens_lognut = case_when(cens == 0 ~ lognut,    # extra censoring column for gam
                                      cens == 1 ~ -Inf))
