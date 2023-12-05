@@ -151,6 +151,9 @@ for(i in 1:nrow(wq_grid)){
   
   # do all the things to whichever bam_out we got
   
+  rho_info <- bam_out$rho_info  
+  bam_out <- bam_out$dat_bam
+  
   bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
     select(-parametric) |> 
     mutate(station = stn,
@@ -192,6 +195,8 @@ for(i in 1:nrow(wq_grid)){
     dplyr::left_join(bam_r2) |> 
     mutate(model_error = FALSE)
   
+  out <- cbind(out, rho_info)
+  
   trends_out[[i]] <- out
 }
 
@@ -199,7 +204,9 @@ trends_df <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                .default = "no"),
          sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     .default = "no"))
+                                     .default = "no"),
+         sig_autocorr = case_when(model_refit == TRUE ~ "yes",
+                                  .default = "no"))
 
 # save out this data frame so we don't have to run everything every time
 # probably want to deal with stations that errored first, and add them in
@@ -286,6 +293,9 @@ ggplot(seas_df) +
 Attempting to use 12 knots for a seasonal smooth. This not possible at all stations (many are not sampled during winter) so at the ones where 12 knots causes a model error, I am allowing the model to choose the number of knots for me by setting it back to the default of k = -1. (This is all happening in the functions `run_bam_wq()` and `run_bam_nut()`).  
 
 ```{r}
+# for testing
+# nut_grid <- nut_grid[1:3, ]
+
 # set up outputs
 trends_out <- list()
 
@@ -327,7 +337,8 @@ for(i in 1:nrow(nut_grid)){
   
   # do all the things to whichever bam_out we got
 
-    # still need to capture autocorrelation parameters- that will require edits to the function
+rho_info <- bam_out$rho_info  
+bam_out <- bam_out$dat_bam
     
     bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
       select(-parametric) |> 
@@ -369,6 +380,8 @@ for(i in 1:nrow(nut_grid)){
     out <- dplyr::left_join(bam_trend, bam_seas) |> 
       dplyr::left_join(bam_r2) |> 
       mutate(model_error = FALSE)
+    
+    out <- cbind(out, rho_info)
 
   
   trends_out[[i]] <- out
@@ -378,11 +391,13 @@ trends_nut <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                .default = "no"),
          sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     .default = "no"))
+                                     .default = "no"),
+         sig_autocorr = case_when(model_refit == TRUE ~ "yes",
+                                  .default = "no"))
 ```
 
 
-Again skipped station/param combinations that didn't work. There are more than just ice stations.  
+Any stations that didn't work?  
 
 
 ```{r}
@@ -399,7 +414,6 @@ trends_nut |>
 ## plots  
 
 ```{r}
-# how to reorder stations by slope for each parameter?
 trends_nut |> 
   arrange(parameter, Slope, station) |> 
   mutate(stparm = paste0(station, parameter)) |> 

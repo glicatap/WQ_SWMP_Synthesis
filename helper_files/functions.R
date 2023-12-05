@@ -360,8 +360,9 @@ subset_df <- function(type, main_df, station, parameter){
 }
 
 run_bam_nut <- function(data, k){
-  # input is a data frame
-  # returns the bam object
+  # input is a data frame and number of knots
+  # returns a list with the bam object and information about
+  # whether the model needed to be re-fit for autocorrelation
   
   dat <- data
   
@@ -382,8 +383,10 @@ run_bam_nut <- function(data, k){
   rhos <- acf(dat_bam$std.rsd, plot = FALSE)
   use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
   rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
   
   if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
     dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = k),
                    family = cnorm(),
                    discrete = TRUE,
@@ -395,20 +398,23 @@ run_bam_nut <- function(data, k){
   
   final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
   final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
-  print(paste("Original autocorrelation lag 1 coefficient was:", round(use_this_rho, 3)))
-  print(paste("Threshold to re-run bam was:",
-              round(rho_threshold, 3)))
-  print(paste("Final autocorrelation lag 1 coefficient is:", 
-              final_AR))
+
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
   
-  return(dat_bam)
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+  return(bam_out)
 
 }
 
 
 run_bam_wq <- function(data, k){
-  # input is a data frame
-  # returns the bam object
+  # input is a data frame and number of knots
+  # returns a list with the bam object and information about
+  # whether the model needed to be re-fit for autocorrelation
   
   dat <- data
   
@@ -429,8 +435,10 @@ run_bam_wq <- function(data, k){
   rhos <- acf(dat_bam$std.rsd, plot = FALSE)
   use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
   rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
   
   if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
     dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
                    family = gaussian(),
                    discrete = TRUE,
@@ -442,13 +450,15 @@ run_bam_wq <- function(data, k){
   
   final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
   final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
-  print(paste("Original autocorrelation lag 1 coefficient was:", round(use_this_rho, 3)))
-  print(paste("Threshold to re-run bam was:",
-              round(rho_threshold, 3)))
-  print(paste("Final autocorrelation lag 1 coefficient is:", 
-              final_AR))
   
-  return(dat_bam)
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
+  
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+  return(bam_out)
   
 }
 

@@ -140,7 +140,7 @@ dat <- tmp
   # (in case missing/unevenly spaced data messed up the true ACF)
   # then get the lag-1 acf estimate
   # to use in what will be the "real" bam
-  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc"),
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = -1),
                  family = gaussian(),
                  discrete = TRUE,
                  AR.start = ARrestart,
