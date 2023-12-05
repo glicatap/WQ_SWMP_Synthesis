@@ -132,15 +132,24 @@ for(i in 1:nrow(wq_grid)){
   # if it was false, we can move on
   if(inherits(try(run_bam_wq(tmp, k = 12), silent = TRUE), "try-error")){
     
-    # first try fixing it by letting the model choose 'k'
-    if(inherits(try(run_bam_wq(tmp, k = -1), silent = TRUE), "try-error")){
+    # pick our own k:
+    # make sure at least 2 values are present for each month from which we want a knot, in case anything was wonky
+    knew <- tmp |> 
+      summarize(.by = month,
+                nVals = sum(!is.na(value))) |> 
+      filter(nVals >= 2) |> 
+      nrow()
+    
+    if(inherits(try(run_bam_wq(tmp, k = knew), silent = TRUE), "try-error")){
+      
       # if that didn't work, make a blank row in the output:
       out <- data.frame(station = stn,
                         parameter = param,
                         model_error = TRUE)  
+      
       # if it did work:
     } else {
-      bam_out <- run_bam_wq(tmp, k = -1)
+      bam_out <- run_bam_wq(tmp, k = knew)
     }
     
     
@@ -150,80 +159,96 @@ for(i in 1:nrow(wq_grid)){
   }
   
   # do all the things to whichever bam_out we got
+  # assuming we got one
   
-  rho_info <- bam_out$rho_info  
-  bam_out <- bam_out$dat_bam
-  
-  bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
-    select(-parametric) |> 
-    mutate(station = stn,
-           parameter = param,
-           term = case_match(term,
-                             "(Intercept)" ~ "Intercept",
-                             "dec_date" ~ "Trend (/yr)",
-                             "s(month)" ~ "Seasonality")) |> 
-    select(station, parameter, everything())
-  
-  bam_trend <- bam_tidy |> 
-    filter(term == "Trend (/yr)") |> 
-    select(station,
-           parameter,
-           "Slope" = estimate,
-           std.error,
-           conf.low,
-           conf.high,
-           statistic,
-           p.value)
-  
-  bam_seas <- bam_tidy |> 
-    filter(term == "Seasonality") |> 
-    select(station,
-           parameter,
-           "Seas_edf" = edf,
-           "Seas_ref.df" = ref.df,
-           "Seas_stat" = statistic,
-           "Seas_p.val" = p.value)
-  
-  bam_r2 <- data.frame(
-    station = stn,
-    parameter = param,
-    R2_adj = summary(bam_out)$r.sq,
-    Dev_expl = summary(bam_out)$dev.expl
-  )
-  
-  out <- dplyr::left_join(bam_trend, bam_seas) |> 
-    dplyr::left_join(bam_r2) |> 
-    mutate(model_error = FALSE)
-  
-  out <- cbind(out, rho_info)
+  if(exists("bam_out")){
+    
+    # save the entire bam object, including autocorrelation info
+    file_out <- here::here("Outputs", "calculated_trends", "bam_outputs",
+                           paste0(stn, "_", param, "_bam.RData"))
+    save(bam_out, file = file_out)
+    
+    # split it up for further tidying
+    rho_info <- bam_out$rho_info  
+    bam_out <- bam_out$dat_bam
+    
+    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
+      select(-parametric) |> 
+      mutate(station = stn,
+             parameter = param,
+             term = case_match(term,
+                               "(Intercept)" ~ "Intercept",
+                               "dec_date" ~ "Trend (/yr)",
+                               "s(month)" ~ "Seasonality")) |> 
+      select(station, parameter, everything())
+    
+    bam_trend <- bam_tidy |> 
+      filter(term == "Trend (/yr)") |> 
+      select(station,
+             parameter,
+             "Slope" = estimate,
+             std.error,
+             conf.low,
+             conf.high,
+             statistic,
+             p.value)
+    
+    bam_seas <- bam_tidy |> 
+      filter(term == "Seasonality") |> 
+      select(station,
+             parameter,
+             "Seas_edf" = edf,
+             "Seas_ref.df" = ref.df,
+             "Seas_stat" = statistic,
+             "Seas_p.val" = p.value)
+    
+    bam_r2 <- data.frame(
+      station = stn,
+      parameter = param,
+      R2_adj = summary(bam_out)$r.sq,
+      Dev_expl = summary(bam_out)$dev.expl
+    )
+    
+    out <- dplyr::left_join(bam_trend, bam_seas) |> 
+      dplyr::left_join(bam_r2) |> 
+      mutate(model_error = FALSE)
+    
+    out <- cbind(out, rho_info)
+    
+    rm(bam_out)
+  }
   
   trends_out[[i]] <- out
 }
 
 trends_df <- dplyr::bind_rows(trends_out) |> 
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
+                               is.na(p.value) ~ NA_character_,
                                .default = "no"),
          sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                                     is.na(Seas_p.val) ~ NA_character_,
                                      .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
+                                  is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
-
-# save out this data frame so we don't have to run everything every time
-# probably want to deal with stations that errored first, and add them in
 ```
 
 
-It's going through do_pct_median first, and errors on grbgbwq, with this error: "more knots than unique data values is not allowed". This looks like a station with regular gaps in winter, so maybe can't use 12 knots because all 12 months don't exist in the dataset?? Wonder how to fix this?  
+Originally errored on grbgbwq, with this error: "more knots than unique data values is not allowed". This seems to have been due to lack of year-round sampling and has been fixed.  
 
 
-Managed to skip this, and all seem to be ice stations.  
+Anything that didn't run anyway?  
 
 ```{r}
 trends_df |> 
   filter(model_error == TRUE) |> 
-  select(station) |> 
-  unique()
+  select(station, parameter) |> 
+  summarize(.by = station,
+            parameters = paste(unique(parameter), collapse = "; ")) |> 
+  arrange(station) |> 
+  gt(caption = "WQ stations where the model did not run")
 ```
+
 
 ## plots  
 
@@ -237,6 +262,7 @@ trends_df |>
   geom_hline(yintercept = 0) +
   facet_wrap(~parameter, scales = "free") +
   labs(title = "Slopes for all stations",
+       subtitle = "slopes are in [parameter's measurement units] / year",
        x = "Station",
        col = "Significant slope?") +
   theme(axis.text.x = element_blank(), 
@@ -260,7 +286,8 @@ ggplot(trends_df) +
   geom_vline(xintercept = 0,
              linewidth = 1) +
   theme(legend.position = "none") +
-  labs(title = "Histograms of slopes for each parameter")
+  labs(title = "Histograms of slopes for each parameter",
+       subtitle = "slopes are in [parameter's measurement units] / year")
 ```
 
 ```{r, fig.width = 6, fig.height = 3.5}
@@ -318,15 +345,22 @@ for(i in 1:nrow(nut_grid)){
   # if it was false, we can move on
   if(inherits(try(run_bam_nut(tmp, k = 12), silent = TRUE), "try-error")){
     
-    # first try fixing it by letting the model choose 'k'
-    if(inherits(try(run_bam_nut(tmp, k = -1), silent = TRUE), "try-error")){
+    # pick our own k:
+    # make sure at least 2 values are present for each month from which we want a knot, in case anything was wonky
+    knew <- tmp |> 
+      summarize(.by = month,
+                nVals = sum(!is.na(value))) |> 
+      filter(nVals >= 2) |> 
+      nrow()
+
+    if(inherits(try(run_bam_nut(tmp, k = knew), silent = TRUE), "try-error")){
       # if that didn't work, make a blank row in the output:
       out <- data.frame(station = stn,
                         parameter = param,
                         model_error = TRUE)  
       # if it did work:
     } else {
-      bam_out <- run_bam_nut(tmp, k = -1)
+      bam_out <- run_bam_nut(tmp, k = knew)
     }
     
     
@@ -336,9 +370,19 @@ for(i in 1:nrow(nut_grid)){
   }
   
   # do all the things to whichever bam_out we got
-
-rho_info <- bam_out$rho_info  
-bam_out <- bam_out$dat_bam
+  # assuming we got one
+  
+  if(exists("bam_out")){
+    
+    # save the entire bam object, including autocorrelation info
+    file_out <- here::here("Outputs", "calculated_trends", "bam_outputs",
+                           paste0(stn, "_", param, "_bam.RData"))
+    save(bam_out, file = file_out)
+    
+    # split it up for further tidying
+    rho_info <- bam_out$rho_info  
+    bam_out <- bam_out$dat_bam
+    
     
     bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
       select(-parametric) |> 
@@ -382,17 +426,22 @@ bam_out <- bam_out$dat_bam
       mutate(model_error = FALSE)
     
     out <- cbind(out, rho_info)
-
+    
+    rm(bam_out)
+  }
   
   trends_out[[i]] <- out
 }
 
 trends_nut <- dplyr::bind_rows(trends_out) |> 
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
+                               is.na(p.value) ~ NA_character_,
                                .default = "no"),
          sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                                     is.na(Seas_p.val) ~ NA_character_,
                                      .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
+                                  is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
 ```
 
@@ -423,6 +472,7 @@ trends_nut |>
   geom_hline(yintercept = 0) +
   facet_wrap(~parameter, scales = "free") +
   labs(title = "Slopes for all stations",
+       subtitle = "slopes are in (log-10 [nutrient units]) / year",
        x = "Station",
        col = "Significant slope?") +
   theme(axis.text.x = element_blank(), 
@@ -444,7 +494,8 @@ ggplot(trends_nut) +
   geom_vline(xintercept = 0,
              linewidth = 1) +
   theme(legend.position = "none") +
-  labs(title = "Histograms of slopes for each parameter")
+  labs(title = "Histograms of slopes for each parameter",
+       subtitle = "slopes are in (log-10 [nutrient units]) / year")
 ```
 
 ```{r, fig.width = 6, fig.height = 3.5}
@@ -470,6 +521,18 @@ ggplot(seas_nut) +
 ```
 
 
+# Save trend tables  
+
+```{r}
+save(trends_df, trends_nut, file = here::here("Outputs", 
+                                              "calculated_trends",
+                                              "long-term-trends.RData"))
+
+trends_all <- bind_rows(trends_df, trends_nut)
+write.csv(trends_all, file = here::here("Outputs",
+                                        "calculated_trends",
+                                        "long-term-trends.csv"))
+```
 
 
 
