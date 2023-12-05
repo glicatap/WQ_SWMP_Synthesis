@@ -23,6 +23,7 @@ library(stringr)
 library(ggplot2)
 library(lubridate)
 library(mgcv)
+library(gratia)
 library(gt)
 library(gtsummary)
 
@@ -105,6 +106,8 @@ nut_grid <- expand.grid(station = unique(dat_nut$station),
 
 ## trend calcs  
 
+Attempting to use 12 knots for a seasonal smooth. This not possible at all stations (many are not sampled during winter) so at the ones where 12 knots causes a model error, I am allowing the model to choose the number of knots for me by setting it back to the default of k = -1. (This is all happening in the functions `run_bam_wq()` and `run_bam_nut()`).  
+
 ```{r}
 # wq_grid <- wq_grid[1:3, ]
 
@@ -127,63 +130,67 @@ for(i in 1:nrow(wq_grid)){
   # if the below statement is true, there was an error in the model
   # and we need to do something, and move to the next item in the loop
   # if it was false, we can move on
-  if(inherits(try(run_bam_wq(tmp), silent = TRUE), "try-error")){
-    out <- data.frame(station = stn,
-                      parameter = param,
-                      model_error = TRUE)  
+  if(inherits(try(run_bam_wq(tmp, k = 12), silent = TRUE), "try-error")){
     
-    # alternately, run it without specifying k, and collect all the same outputs
+    # first try fixing it by letting the model choose 'k'
+    if(inherits(try(run_bam_wq(tmp, k = -1), silent = TRUE), "try-error")){
+      # if that didn't work, make a blank row in the output:
+      out <- data.frame(station = stn,
+                        parameter = param,
+                        model_error = TRUE)  
+      # if it did work:
+    } else {
+      bam_out <- run_bam_wq(tmp, k = -1)
+    }
+    
     
   } else {
     # run model
-    bam_out <- run_bam_wq(tmp)
-    
-    # still need to capture autocorrelation parameters- that will require edits to the function
-    
-    # save out the bam output in case we need it in the future
-    
-    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
-      select(-parametric) |> 
-      mutate(station = stn,
-             parameter = param,
-             term = case_match(term,
-                               "(Intercept)" ~ "Intercept",
-                               "dec_date" ~ "Trend (/yr)",
-                               "s(month)" ~ "Seasonality")) |> 
-      select(station, parameter, everything())
-    
-    bam_trend <- bam_tidy |> 
-      filter(term == "Trend (/yr)") |> 
-      select(station,
-             parameter,
-             "Slope" = estimate,
-             std.error,
-             conf.low,
-             conf.high,
-             statistic,
-             p.value)
-    
-    bam_seas <- bam_tidy |> 
-      filter(term == "Seasonality") |> 
-      select(station,
-             parameter,
-             "Seas_edf" = edf,
-             "Seas_ref.df" = ref.df,
-             "Seas_stat" = statistic,
-             "Seas_p.val" = p.value)
-    
-    bam_r2 <- data.frame(
-      station = stn,
-      parameter = param,
-      R2_adj = summary(bam_out)$r.sq,
-      Dev_expl = summary(bam_out)$dev.expl
-    )
-    
-    out <- dplyr::left_join(bam_trend, bam_seas) |> 
-      dplyr::left_join(bam_r2) |> 
-      mutate(model_error = FALSE)
-    
+    bam_out <- run_bam_wq(tmp, k = 12)
   }
+  
+  # do all the things to whichever bam_out we got
+  
+  bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
+    select(-parametric) |> 
+    mutate(station = stn,
+           parameter = param,
+           term = case_match(term,
+                             "(Intercept)" ~ "Intercept",
+                             "dec_date" ~ "Trend (/yr)",
+                             "s(month)" ~ "Seasonality")) |> 
+    select(station, parameter, everything())
+  
+  bam_trend <- bam_tidy |> 
+    filter(term == "Trend (/yr)") |> 
+    select(station,
+           parameter,
+           "Slope" = estimate,
+           std.error,
+           conf.low,
+           conf.high,
+           statistic,
+           p.value)
+  
+  bam_seas <- bam_tidy |> 
+    filter(term == "Seasonality") |> 
+    select(station,
+           parameter,
+           "Seas_edf" = edf,
+           "Seas_ref.df" = ref.df,
+           "Seas_stat" = statistic,
+           "Seas_p.val" = p.value)
+  
+  bam_r2 <- data.frame(
+    station = stn,
+    parameter = param,
+    R2_adj = summary(bam_out)$r.sq,
+    Dev_expl = summary(bam_out)$dev.expl
+  )
+  
+  out <- dplyr::left_join(bam_trend, bam_seas) |> 
+    dplyr::left_join(bam_r2) |> 
+    mutate(model_error = FALSE)
   
   trends_out[[i]] <- out
 }
@@ -276,6 +283,8 @@ ggplot(seas_df) +
 
 ## trend calcs  
 
+Attempting to use 12 knots for a seasonal smooth. This not possible at all stations (many are not sampled during winter) so at the ones where 12 knots causes a model error, I am allowing the model to choose the number of knots for me by setting it back to the default of k = -1. (This is all happening in the functions `run_bam_wq()` and `run_bam_nut()`).  
+
 ```{r}
 # set up outputs
 trends_out <- list()
@@ -292,18 +301,32 @@ for(i in 1:nrow(nut_grid)){
     # capture some info about the station and time series:
   # long-term median
   # length of time series
+
   
   # if the below statement is true, there was an error in the model
   # and we need to do something, and move to the next item in the loop
   # if it was false, we can move on
-  if(inherits(try(run_bam_nut(tmp), silent = TRUE), "try-error")){
-    out <- data.frame(station = stn,
-                      parameter = param,
-                      model_error = TRUE)  
+  if(inherits(try(run_bam_nut(tmp, k = 12), silent = TRUE), "try-error")){
+    
+    # first try fixing it by letting the model choose 'k'
+    if(inherits(try(run_bam_nut(tmp, k = -1), silent = TRUE), "try-error")){
+      # if that didn't work, make a blank row in the output:
+      out <- data.frame(station = stn,
+                        parameter = param,
+                        model_error = TRUE)  
+      # if it did work:
+    } else {
+      bam_out <- run_bam_nut(tmp, k = -1)
+    }
+    
+    
   } else {
     # run model
-    bam_out <- run_bam_nut(tmp)
-    
+    bam_out <- run_bam_nut(tmp, k = 12)
+  }
+  
+  # do all the things to whichever bam_out we got
+
     # still need to capture autocorrelation parameters- that will require edits to the function
     
     bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
@@ -346,8 +369,7 @@ for(i in 1:nrow(nut_grid)){
     out <- dplyr::left_join(bam_trend, bam_seas) |> 
       dplyr::left_join(bam_r2) |> 
       mutate(model_error = FALSE)
-    
-  }
+
   
   trends_out[[i]] <- out
 }

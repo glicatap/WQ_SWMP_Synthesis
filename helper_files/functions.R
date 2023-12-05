@@ -359,7 +359,7 @@ subset_df <- function(type, main_df, station, parameter){
   return(sub_df)
 }
 
-run_bam_nut <- function(data){
+run_bam_nut <- function(data, k){
   # input is a data frame
   # returns the bam object
   
@@ -369,7 +369,7 @@ run_bam_nut <- function(data){
   # (in case missing/unevenly spaced data messed up the true ACF)
   # then get the lag-1 acf estimate
   # to use in what will be the "real" bam
-  dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+  dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = k),
                  family = cnorm(),
                  discrete = TRUE,
                  AR.start = ARrestart,
@@ -384,7 +384,7 @@ run_bam_nut <- function(data){
   rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
   
   if(abs(use_this_rho) > rho_threshold){
-    dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+    dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = k),
                    family = cnorm(),
                    discrete = TRUE,
                    AR.start = ARrestart,
@@ -406,7 +406,7 @@ run_bam_nut <- function(data){
 }
 
 
-run_bam_wq <- function(data){
+run_bam_wq <- function(data, k){
   # input is a data frame
   # returns the bam object
   
@@ -416,7 +416,7 @@ run_bam_wq <- function(data){
   # (in case missing/unevenly spaced data messed up the true ACF)
   # then get the lag-1 acf estimate
   # to use in what will be the "real" bam
-  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = 12),
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
                  family = gaussian(),
                  discrete = TRUE,
                  AR.start = ARrestart,
@@ -431,7 +431,7 @@ run_bam_wq <- function(data){
   rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
   
   if(abs(use_this_rho) > rho_threshold){
-    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = 12),
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
                    family = gaussian(),
                    discrete = TRUE,
                    AR.start = ARrestart,
