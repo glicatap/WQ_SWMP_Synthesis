@@ -1,0 +1,414 @@
+---
+title: "Non-standard parameters"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+Dealing with DIN:DIP and DO proportions. These first few code chunks were copied from `R/Long-Term_trend_analysis/trend_analyses.Rmd`.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(lubridate)
+library(mgcv)
+library(gratia)
+library(gt)
+library(gtsummary)
+
+
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+```
+
+
+```{r}
+dat_wq <- wq |> 
+  filter(station %in% paste0(stns_wq_nut_d10, "wq")) |> 
+  mutate(do_proportion_below2 = round(doLessThan2_total / doLessThan2_nValid, 4),
+         do_proportion_below5 = round(doLessThan5_total / doLessThan5_nValid, 4)) |> 
+  select(station, year, month, 
+         do_pct_median, do_mgl_median,
+         temp_median, spcond_median, 
+         sal_median, turb_median,
+         do_proportion_below2,
+         do_proportion_below5)
+
+
+dat_nut <- nut |> 
+  filter(station %in% paste0(stns_wq_nut_d10, "nut")) |> 
+  select(station, year, month, 
+         chla_n, po4f,
+         nh4f, no23f,
+         chla_n_cens, po4f_cens,
+         nh4f_cens, no23f_cens) |> 
+  mutate(DIN_to_DIP = (nh4f + no23f) / po4f,
+         DIN_to_DIP_cens = case_when(nh4f_cens + no23f_cens + po4f_cens == 0 ~ 0,
+                                     .default = 1),
+         DIN_to_DIP_censNum = case_when(nh4f_cens + no23f_cens > 0 ~ 1,
+                                        .default = 0),
+         DIN_to_DIP_censDenom = case_when(po4f_cens == 1 ~ 1,
+                                          .default = 0),
+         DIN_to_DIP_censBoth = case_when(DIN_to_DIP_censNum + DIN_to_DIP_censDenom == 2 ~ 1,
+                                         .default = 0))
+```
+
+End of code chunk copying; below is new to this script.  
+
+```{r}
+dat_nut <- dat_nut |> 
+  mutate(date = lubridate::ymd(paste(year, month, "15")))
+
+dat_wq <- dat_wq |> 
+  mutate(date = lubridate::ymd(paste(year, month, "15")))
+```
+
+
+# DIN:DIP  
+
+The columns related to censoring are:  
+
+-  `DIN_to_DIP_cens`: 1 if *any* values are left-censored, 0 otherwise  
+-  `DIN_to_DIP_censNum`: 1 if any values going into the *numerator* (nh4f, no23f) are left-censored, 0 otherwise  
+-  `DIN_to_DIP_censDenom`: 1 if the *denominator* (po4f) is left-censored, 0 otherwise  
+
+Seems important to know which portion is left-censored. If the denominator is left-censored and the numerator is not, then the ratio is right-censored. (at what value??) If the numerator is left-censored and the denominator is not, then the ratio is left-censored. If both numerator and denominator are censored, we just don't know anything about the ratio, period.  
+
+## Exploration  
+
+```{r}
+summary(dat_nut$DIN_to_DIP)
+
+dat_nut |> 
+  select(station, year, month, starts_with("DIN_to_DIP")) |> 
+  arrange(desc(DIN_to_DIP)) |> 
+  head(30)
+```
+
+There are 0s in the dataset, and they're not always flagged as censored :-O
+
+Okay then, I'll filter out anything with 0s, and anything that's censored, and see what that distribution of values is. I can use that for my right-censoring limit.....
+
+```{r}
+non_cens <- dat_nut |> 
+  filter(DIN_to_DIP != "Inf",
+         DIN_to_DIP_cens == 0,
+         !is.na(DIN_to_DIP))
+
+non_cens |> 
+  arrange(desc(DIN_to_DIP)) |> 
+  head(20)
+
+summary(non_cens$DIN_to_DIP)
+hist(non_cens$DIN_to_DIP)
+hist(log10(non_cens$DIN_to_DIP), breaks = 20)
+```
+
+Log10 transformation on non-censored values seems to work pretty well and we can probably use a gaussian distribution on it. What to do with the censored ones though, because ignoring them really biases what we're able to look at. 
+
+If only the numerator is left-censored, then the ratio itself is also left-censored *at the calculated value* (because the numerator can only get smaller, and the denominator won't change).  
+
+If only the denominator is left-censored, then the ratio itself is right-censored *at the calculated value*, because the denominator can only get smaller which makes the ratio bigger.  
+
+If both are censored, we don't really have any information, except that nutrients are low. What might be informative would be whether the amount of time that both are censored is changing through the years, but I don't think that's our research question, necessarily. I suspect this will affect some stations more than others, so we're sort of biasing the sample of stations a little bit. But there's nothing I know of to do about that, except be upfront and acknowledge it, and interpret trends in light of them only including "stations where at least one of the values was NOT censored".   
+
+# DO Proportions  
+
+```{r}
+summary(dat_wq$do_proportion_below2)
+summary(dat_wq$do_proportion_below5)
+
+hist(dat_wq$do_proportion_below2, breaks = 50)
+hist(dat_wq$do_proportion_below5, breaks = 50)
+
+hist(log10(dat_wq$do_proportion_below2), breaks = 50)
+hist(log10(dat_wq$do_proportion_below5), breaks = 50)
+```
+
+Zero-inflated beta distributions? Beta because they're bounded by 0 and 1, and zero-inflated because mostly we're looking at 0s in the first place.  
+
+Looks like there are several packages for both Poisson and zero-inflated Poisson. The help file for `ziP` specifically says "simply having many zero response observations is not an indication of zero inflation: the question is whether you have too many zeroes given the specified model" - so maybe I should try Poisson first. Technically these proportions are derived from counts, and Poisson and ziP are both implemented for bam. So that may be how I should start.  
+
+```{r}
+ggplot(dat_wq, aes(x = date, group = station)) +
+  geom_line(aes(y = do_proportion_below2), col = "gray50") +
+  theme_bw() +
+  labs(title = "Proportion of DO readings <2 mg/L, by month",
+       subtitle = "one line per station",
+       x = "Date",
+       y = "proportion")
+
+ggplot(dat_wq, aes(x = date, group = station)) +
+  geom_line(aes(y = do_proportion_below5), col = "gray60") +
+  theme_bw() +
+  labs(title = "Proportion of DO readings <5 mg/L, by month",
+       subtitle = "one line per station",
+       x = "Date",
+       y = "proportion")
+```
+
+
+Can I just use a beta distribution???
+
+```{r}
+hist(rbeta(1000, 0.2, 2), breaks = 30)
+```
+
+Might work.  
+
+## Proportion < 2  
+
+```{r}
+gnd <- subset_df("wq", dat_wq, "gndbhwq", "do_proportion_below2")
+hist(gnd$value)
+plot(value ~ dec_date, gnd, type = "l")
+
+dat <- gnd
+k <- 12
+
+gnd_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+appraise(gnd_bam)
+```
+
+I don't completely hate it.  
+
+Got the following warnings:
+
+```
+Warning messages:
+1: In family$saturated.ll(y, prior.weights, theta) :
+  saturated likelihood may be inaccurate
+2: In object$family$saturated.ll(y, wts, object$family$getTheta(TRUE)) :
+  saturated likelihood may be inaccurate
+```
+
+```{r}
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+  # summary(dat_bam)
+  # acf(dat_bam$std.rsd, plot = FALSE)[1]
+  
+  rhos <- acf(dat_bam$std.rsd, plot = FALSE)
+  use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
+  rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
+  
+  if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                   family = betar(),
+                   discrete = TRUE,
+                   AR.start = ARrestart,
+                   rho = use_this_rho,
+                   data = dat,
+                   method = "fREML")
+  }
+  
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
+  
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
+  
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+```
+
+
+
+```{r}
+gnd_bam_ar <- bam_out$dat_bam
+appraise(gnd_bam_ar)
+summary(gnd_bam_ar)
+knitr::kable(bam_out$rho_info)
+```
+
+Make predictions and plot.  
+
+```{r}
+predictions <- data.frame(fitted = gnd_bam_ar$fitted.values,
+                          dec_date = gnd_bam_ar$model$dec_date
+)
+ggplot() +
+  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = predictions, aes(x = dec_date, y = fitted, col = "predicted"))
+```
+
+That's not really doing very well with the higher probabilities.
+
+What if I do just use the gaussian model? How bad would that look?  
+
+```{r}
+gnd_bam2 <- run_bam_wq(gnd, k = 12)
+rhos <- gnd_bam2$rho_info
+gnd_bam2 <- gnd_bam2$dat_bam
+appraise(gnd_bam2)
+```
+
+I don't like the residuals vs. predictor plot. The others look really good actually.  
+
+```{r}
+summary(gnd_bam2)
+```
+
+Pretty different slope estimate, though it wasn't significant in either model. Similar R^2.  
+
+```{r}
+predictions2 <- data.frame(fitted = gnd_bam2$fitted.values,
+                          dec_date = gnd_bam2$model$dec_date
+)
+ggplot() +
+  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = predictions2, aes(x = dec_date, y = fitted, col = "predicted"))
+```
+
+Really doesn't do any better with the high points.  
+
+
+## Proportion < 5  
+
+Only thing changed from above is the subset_df argument, changed to "do_proportion_below5".  
+
+
+```{r}
+gnd <- subset_df("wq", dat_wq, "gndbhwq", "do_proportion_below5")
+hist(gnd$value)
+plot(value ~ dec_date, gnd, type = "l")
+
+dat <- gnd
+k <- 12
+
+gnd_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+appraise(gnd_bam)
+```
+
+This seems a little better than the proportion < 2. Maybe a bit of a trend in the residuals vs. predictor plot though, which I'm not crazy about.    
+
+Same warnings as above:
+
+```
+Warning messages:
+1: In family$saturated.ll(y, prior.weights, theta) :
+  saturated likelihood may be inaccurate
+2: In object$family$saturated.ll(y, wts, object$family$getTheta(TRUE)) :
+  saturated likelihood may be inaccurate
+```
+
+```{r}
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+  # summary(dat_bam)
+  # acf(dat_bam$std.rsd, plot = FALSE)[1]
+  
+  rhos <- acf(dat_bam$std.rsd, plot = FALSE)
+  use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
+  rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
+  
+  if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                   family = betar(),
+                   discrete = TRUE,
+                   AR.start = ARrestart,
+                   rho = use_this_rho,
+                   data = dat,
+                   method = "fREML")
+  }
+  
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
+  
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
+  
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+```
+
+
+
+```{r}
+gnd_bam_ar <- bam_out$dat_bam
+appraise(gnd_bam_ar)
+summary(gnd_bam_ar)
+knitr::kable(bam_out$rho_info)
+```
+
+Residuals seem high at the left end.  
+
+Make predictions and plot.  
+
+```{r}
+predictions <- data.frame(fitted = gnd_bam_ar$fitted.values,
+                          dec_date = gnd_bam_ar$model$dec_date
+)
+ggplot() +
+  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = predictions, aes(x = dec_date, y = fitted, col = "predicted"))
+```
+
+Now it's the lower probabilities that aren't captured so well (makes sense given the histograms).  
+
+What if I do just use the gaussian model? How bad would that look?  
+
+```{r}
+gnd_bam2 <- run_bam_wq(gnd, k = 12)
+rhos <- gnd_bam2$rho_info
+gnd_bam2 <- gnd_bam2$dat_bam
+appraise(gnd_bam2)
+```
+
+I don't like the residuals vs. predictor plot, or observed vs. fitted.   
+
+```{r}
+summary(gnd_bam2)
+```
+
+Pretty different slope estimate, though it wasn't significant in either model. Similar R^2.  
+
+```{r}
+predictions2 <- data.frame(fitted = gnd_bam2$fitted.values,
+                          dec_date = gnd_bam2$model$dec_date
+)
+ggplot() +
+  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = predictions2, aes(x = dec_date, y = fitted, col = "predicted"))
+```
+
+This seems to generally be worse. So I'm sold now on at least the `betar` distribution, rather than `gaussian`, though I still wonder if there's a better one.  

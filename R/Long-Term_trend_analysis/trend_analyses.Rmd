@@ -1,5 +1,5 @@
 ---
-title: "Trends Script Outline"
+title: "Long-term trend calculations"
 output: 
   html_document:
     toc: true
@@ -35,7 +35,7 @@ load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
 load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
 ```
 
-We will have 3 chunks of data: WQ, MET, NUT. For each type:  
+We have 3 chunks of data: WQ, MET, NUT. For each type:  
 
 1.  Load data frame  
 2.  Create grid of station/parameter combinations.  
@@ -51,7 +51,6 @@ We will have 3 chunks of data: WQ, MET, NUT. For each type:
 5.  At end of that loop, will have a 'type' list with separate data frames for each parameter. Bind them into one big data frame.  
 6.  Get seasonality info on same row as slope coefficient.  
 7.  Bind rows on WQ and NUT  
-8.  Substring the first 5 letters of station names, so WQ and NUT stations can be associated with each other for station-level reports  
 9.  Make sure it's clear that the slope for nutrients is the slope for log10(nut), not raw nut  
 10.  Write out the results!  
 
@@ -60,11 +59,10 @@ We will have 3 chunks of data: WQ, MET, NUT. For each type:
 
 Subset wq and nut data frames; create param grids.  
 
-Prioritized parameters:
-Responses:  NO3/2, NH4, PO4, Chla, DO, DIN:DIP, proportion of DO data below 2 mg/L; proportion of DO data below 5 mg/L; proportion of chla data above ___
-Driver variables: Temp (water and air), Precipitation, Sal, Cond, Stratification, Turbidity, PAR  
+**Prioritized parameters**:
+*Responses*:  NO3/2, NH4, PO4, Chla, DO, DIN:DIP, proportion of DO data below 2 mg/L; proportion of DO data below 5 mg/L
+*Driver variables*: Temp (water and air), Precipitation, Sal, Cond, Stratification, Turbidity, PAR  
 
-First join wq and nut, so only have to write one loop? No, I wrote separate bam functions for them, drat.    
 
 ```{r}
 dat_wq <- wq |> 
@@ -89,9 +87,16 @@ dat_nut <- nut |>
          nh4f_cens, no23f_cens) |> 
   mutate(DIN_to_DIP = (nh4f + no23f) / po4f,
          DIN_to_DIP_cens = case_when(nh4f_cens + no23f_cens + po4f_cens == 0 ~ 0,
-                                     .default = 1))
+                                     .default = 1),
+         DIN_to_DIP_censNum = case_when(nh4f_cens + no23f_cens > 0 ~ 1,
+                                        .default = 0),
+         DIN_to_DIP_censDenom = case_when(po4f_cens == 1 ~ 1,
+                                          .default = 0),
+         DIN_to_DIP_censBoth = case_when(DIN_to_DIP_censNum + DIN_to_DIP_censDenom == 2 ~ 1,
+                                         .default = 0))
 
 # DIN_to_DIP may also need to be treated in a non-gaussian way
+
 ```
 
 ```{r}
