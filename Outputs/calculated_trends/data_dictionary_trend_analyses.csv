@@ -1,0 +1,40 @@
+Column Name,Type,Description
+station,character,seven- or eight-letter SWMP station code. First three letters represent individual Reserve; next two letters identify the station within the Reserve; last 2-3 letters are data type (wq/nut/met)
+parameter,character,which parameter the trends on this row describe
+Slope,numeric,"parameter trend per year, as the overall linear trend from a GAM"
+std.error,numeric,standard error of the slope estimate
+conf.low,numeric,low end of 95% confidence interval of slope estimate
+conf.high,numeric,high end of 95% confidence interval of slope estimate
+statistic,numeric,"test statistic used to calculate p-value, for slope estimate"
+p.value,numeric,unadjusted p-value for slope estimate
+Seas_edf,numeric,estimated degrees of freedom for seasonal term of the GAM
+Seas_ref.df,integer,"reference degrees of freedom for seasonal term of the GAM. 10 if all 12 knots could be used; if lower, then k had to be adjusted."
+Seas_stat,numeric,"test statistic used to calculate p-value, for seasonal term of GAM"
+Seas_p.val,numeric,unadjusted p-value for seasonal term of GAM
+R2_adj,numeric,adjusted R^2 for the GAM overall
+Dev_expl,numeric,deviance explained by the GAM
+model_error,logical,FALSE if model ran okay; TRUE if model produced an error and estimates are not available
+ar1_start,numeric,estimated lag-1 autocorrelation coefficient of GAM residuals after initial GAM run (no adjustment for autocorrelation yet)
+threshold,numeric,"threshold of 95% confidence interval for the null hypothesis of no autocorrelation of residuals, as calculated in custom bam functions"
+model_refit,logical,"TRUE if ar1_start exceeded the threshold and identified significant autocorrelation in the GAM residuals, leading to an adjustment of the AR term in the GAM and the model being re-run to account for the autocorrelation. FALSE if ar1_start did not exceed the threshold and the model did not need to be re-run to account for autocorrelation of the residuals."
+ar1_end,numeric,"estimated lag-1 autocorrelation coefficient of GAM residuals after adjusting (if necessary) for autocorrelation. If model_refit was TRUE, this number should be much closer to 0 than ar1_start."
+ts_start,numeric,time series start: decimal date of the first valid reading in the time series
+ts_end,numeric,time series end: decimal date of last valid reading in the time series
+ts_length,numeric,"time series length: length of the time series, in years"
+n_points,integer,number of valid points in the time series
+overall_median,numeric,median of all valid points in the time series
+Fall_estimate,numeric,"slope estimate of simple linear trend in the Fall months, per year"
+Winter_estimate,numeric,"slope estimate of simple linear trend in the Winter months, per year"
+Spring_estimate,numeric,"slope estimate of simple linear trend in the Spring months, per year"
+Summer_estimate,numeric,"slope estimate of simple linear trend in the Summer months, per year"
+Fall_std.error,numeric,standard error of the Fall slope estimate
+Winter_std.error,numeric,standard error of the Winter slope estimate
+Spring_std.error,numeric,standard error of the Spring slope estimate
+Summer_std.error,numeric,standard error of the Summer slope estimate
+Fall_p.value,numeric,unadjusted p-value for the Fall slope estimate
+Winter_p.value,numeric,unadjusted p-value for the Winter slope estimate
+Spring_p.value,numeric,unadjusted p-value for the Spring slope estimate
+Summer_p.value,numeric,unadjusted p-value for the Summer slope estimate
+sig_trend,yes/no,significant trend: yes if p < 0.05 for the overall Slope parameter; no otherwise
+sig_seasonality,yes/no,significant seasonality: yes if p < 0.05 for the seasonal term in the GAM; no otherwise
+sig_autocorr,yes/no,significant autocorrelation: yes if model_refit = TRUE (ar1_start exceeded the threshold); no otherwise
