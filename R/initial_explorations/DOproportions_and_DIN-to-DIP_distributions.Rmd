@@ -295,38 +295,78 @@ predictions <- data.frame(fitted = gnd_bam_ar$fitted.values,
 )
 ggplot() +
   geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = gnd, aes(x = dec_date, y = value, col = "observed"),
+            alpha = 0.7) +
   geom_line(data = predictions, aes(x = dec_date, y = fitted, col = "predicted"))
 ```
 
-That's not really doing very well with the higher probabilities.
+That's not really doing very well with the higher probabilities. It's sort of mirroring the pattern, just not getting the peaks really.  
 
-What if I do just use the gaussian model? How bad would that look?  
+What if I don't start the data frame until 2008? Looks like there weren't peaks before then, and I wonder if that impacted the seasonal component. (How sensitive are these trends to a choice like this???)  
 
 ```{r}
-gnd_bam2 <- run_bam_wq(gnd, k = 12)
-rhos <- gnd_bam2$rho_info
-gnd_bam2 <- gnd_bam2$dat_bam
-appraise(gnd_bam2)
+gnd2 <- gnd |> 
+  filter(year >= 2008)
 ```
 
-I don't like the residuals vs. predictor plot. The others look really good actually.  
-
 ```{r}
-summary(gnd_bam2)
-```
+dat <- gnd2
+k <- 12
 
-Pretty different slope estimate, though it wasn't significant in either model. Similar R^2.  
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+  # summary(dat_bam)
+  # acf(dat_bam$std.rsd, plot = FALSE)[1]
+  
+  rhos <- acf(dat_bam$std.rsd, plot = FALSE)
+  use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
+  rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
+  
+  if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                   family = betar(),
+                   discrete = TRUE,
+                   AR.start = ARrestart,
+                   rho = use_this_rho,
+                   data = dat,
+                   method = "fREML")
+  }
+  
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
+  
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
+  
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+  
+  gnd2_bam_ar <- bam_out$dat_bam
+appraise(gnd2_bam_ar)
+summary(gnd2_bam_ar)
+knitr::kable(bam_out$rho_info)
 
-```{r}
-predictions2 <- data.frame(fitted = gnd_bam2$fitted.values,
-                          dec_date = gnd_bam2$model$dec_date
+predictions2 <- data.frame(fitted = gnd2_bam_ar$fitted.values,
+                          dec_date = gnd2_bam_ar$model$dec_date
 )
 ggplot() +
-  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
+  geom_point(data = gnd2, aes(x = dec_date, y = value, col = "observed")) +
+  geom_line(data = gnd2, aes(x = dec_date, y = value, col = "observed"),
+            alpha = 0.7) +
   geom_line(data = predictions2, aes(x = dec_date, y = fitted, col = "predicted"))
 ```
 
-Really doesn't do any better with the high points.  
+
+Doesn't actually capture the peaks any better, and now slope is negative (neither was significant).  Hm.
 
 
 ## Proportion < 5  
@@ -427,34 +467,6 @@ ggplot() +
 
 Now it's the lower probabilities that aren't captured so well (makes sense given the histograms).  
 
-What if I do just use the gaussian model? How bad would that look?  
-
-```{r}
-gnd_bam2 <- run_bam_wq(gnd, k = 12)
-rhos <- gnd_bam2$rho_info
-gnd_bam2 <- gnd_bam2$dat_bam
-appraise(gnd_bam2)
-```
-
-I don't like the residuals vs. predictor plot, or observed vs. fitted.   
-
-```{r}
-summary(gnd_bam2)
-```
-
-Pretty different slope estimate, though it wasn't significant in either model. Similar R^2.  
-
-```{r}
-predictions2 <- data.frame(fitted = gnd_bam2$fitted.values,
-                          dec_date = gnd_bam2$model$dec_date
-)
-ggplot() +
-  geom_point(data = gnd, aes(x = dec_date, y = value, col = "observed")) +
-  geom_line(data = predictions2, aes(x = dec_date, y = fitted, col = "predicted"))
-```
-
-This seems to generally be worse. So I'm sold now on at least the `betar` distribution, rather than `gaussian`, though I still wonder if there's a better one.  
-
 
 ## "regular" parameters  
 
@@ -497,6 +509,8 @@ for(i in seq_along(wqs)){
   
   p <- ggplot() +
     geom_point(data = dat, aes(x = dec_date, y = value, col = "observed")) +
+    geom_line(data = dat, aes(x = dec_date, y = value, col = "observed"),
+              alpha = 0.7) +
     geom_line(data = preds, aes(x = dec_date, y = predicted, col = "predicted")) +
     labs(title = paste(unique(dat$station), unique(dat$focal_param)))
   print(p)
@@ -519,6 +533,8 @@ for(i in seq_along(nuts)){
   
   p2 <- ggplot() +
     geom_point(data = dat, aes(x = dec_date, y = lognut, col = "observed")) +
+    geom_line(data = dat, aes(x = dec_date, y = lognut, col = "observed"),
+              alpha = 0.7) +
     geom_line(data = preds, aes(x = dec_date, y = predicted, col = "predicted")) +
     labs(title = paste(unique(dat$station), unique(dat$focal_param)),
          subtitle = "log scale")
@@ -526,6 +542,8 @@ for(i in seq_along(nuts)){
   
   p <- ggplot() +
     geom_point(data = dat, aes(x = dec_date, y = value, col = "observed")) +
+    geom_line(data = dat, aes(x = dec_date, y = value, col = "observed"),
+              alpha = 0.7) +
     geom_line(data = preds, aes(x = dec_date, y = orig_units, col = "predicted")) +
     labs(title = paste(unique(dat$station), unique(dat$focal_param)),
          subtitle = "original scale")
