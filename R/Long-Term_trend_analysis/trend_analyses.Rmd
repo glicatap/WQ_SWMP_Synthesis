@@ -138,11 +138,10 @@ for(i in 1:nrow(wq_grid)){
   if(inherits(try(run_bam_wq(tmp, k = 12), silent = TRUE), "try-error")){
     
     # pick our own k:
-    # make sure at least 2 values are present for each month from which we want a knot, in case anything was wonky
     knew <- tmp |> 
       summarize(.by = month,
                 nVals = sum(!is.na(value))) |> 
-      filter(nVals >= 2) |> 
+      filter(nVals >= 1) |> 
       nrow()
     
     if(inherits(try(run_bam_wq(tmp, k = knew), silent = TRUE), "try-error")){
@@ -173,59 +172,17 @@ for(i in 1:nrow(wq_grid)){
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
-    # split it up for further tidying
-    rho_info <- bam_out$rho_info  
-    bam_out <- bam_out$dat_bam
-    
-    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
-      select(-parametric) |> 
-      mutate(station = stn,
-             parameter = param,
-             term = case_match(term,
-                               "(Intercept)" ~ "Intercept",
-                               "dec_date" ~ "Trend (/yr)",
-                               "s(month)" ~ "Seasonality")) |> 
-      select(station, parameter, everything())
-    
-    bam_trend <- bam_tidy |> 
-      filter(term == "Trend (/yr)") |> 
-      select(station,
-             parameter,
-             "Slope" = estimate,
-             std.error,
-             conf.low,
-             conf.high,
-             statistic,
-             p.value)
-    
-    bam_seas <- bam_tidy |> 
-      filter(term == "Seasonality") |> 
-      select(station,
-             parameter,
-             "Seas_edf" = edf,
-             "Seas_ref.df" = ref.df,
-             "Seas_stat" = statistic,
-             "Seas_p.val" = p.value)
-    
-    bam_r2 <- data.frame(
-      station = stn,
-      parameter = param,
-      R2_adj = summary(bam_out)$r.sq,
-      Dev_expl = summary(bam_out)$dev.expl
-    )
-    
-    out <- dplyr::left_join(bam_trend, bam_seas) |> 
-      dplyr::left_join(bam_r2) |> 
-      mutate(model_error = FALSE)
-    
-    out <- cbind(out, rho_info)
-    
+    out <- tidy_bam_output(bam_obj = bam_out)
     rm(bam_out)
-  }
+    }
   
   trends_out[[i]] <- out
+  rm(out)
 }
 
+```
+
+```{r}
 trends_df <- dplyr::bind_rows(trends_out) |> 
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                is.na(p.value) ~ NA_character_,
@@ -252,6 +209,15 @@ trends_df |>
             parameters = paste(unique(parameter), collapse = "; ")) |> 
   arrange(station) |> 
   gt(caption = "WQ stations where the model did not run")
+```
+
+
+## DO proportion trends  
+
+Using a beta distribution for this. Otherwise same process as above.  
+
+```{r}
+
 ```
 
 
@@ -288,13 +254,12 @@ for(i in 1:nrow(nut_grid)){
   if(inherits(try(run_bam_nut(tmp, k = 12), silent = TRUE), "try-error")){
     
     # pick our own k:
-    # make sure at least 2 values are present for each month from which we want a knot, in case anything was wonky
     knew <- tmp |> 
       summarize(.by = month,
                 nVals = sum(!is.na(value))) |> 
-      filter(nVals >= 2) |> 
+      filter(nVals >= 1) |> 
       nrow()
-
+    
     if(inherits(try(run_bam_nut(tmp, k = knew), silent = TRUE), "try-error")){
       # if that didn't work, make a blank row in the output:
       out <- data.frame(station = stn,
@@ -321,58 +286,12 @@ for(i in 1:nrow(nut_grid)){
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
-    # split it up for further tidying
-    rho_info <- bam_out$rho_info  
-    bam_out <- bam_out$dat_bam
-    
-    
-    bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
-      select(-parametric) |> 
-      mutate(station = stn,
-             parameter = param,
-             term = case_match(term,
-                               "(Intercept)" ~ "Intercept",
-                               "dec_date" ~ "Trend (/yr)",
-                               "s(month)" ~ "Seasonality")) |> 
-      select(station, parameter, everything())
-    
-    bam_trend <- bam_seas <- bam_tidy |> 
-      filter(term == "Trend (/yr)") |> 
-      select(station,
-             parameter,
-             "Slope" = estimate,
-             std.error,
-             conf.low,
-             conf.high,
-             statistic,
-             p.value)
-    
-    bam_seas <- bam_tidy |> 
-      filter(term == "Seasonality") |> 
-      select(station,
-             parameter,
-             "Seas_edf" = edf,
-             "Seas_ref.df" = ref.df,
-             "Seas_stat" = statistic,
-             "Seas_p.val" = p.value)
-    
-    bam_r2 <- data.frame(
-      station = stn,
-      parameter = param,
-      R2_adj = summary(bam_out)$r.sq,
-      Dev_expl = summary(bam_out)$dev.expl
-    )
-    
-    out <- dplyr::left_join(bam_trend, bam_seas) |> 
-      dplyr::left_join(bam_r2) |> 
-      mutate(model_error = FALSE)
-    
-    out <- cbind(out, rho_info)
-    
+    out <- tidy_bam_output(bam_obj = bam_out)
     rm(bam_out)
-  }
+    }
   
   trends_out[[i]] <- out
+  rm(out)
 }
 ```
 
@@ -419,18 +338,7 @@ write.csv(trends_all, file = here::here("Outputs",
 
 
 
-# Other thoughts  
 
-Present results  
-
--  graphically:  
-    -  stations along x-axis, grouped and colored by region (need to make stn name a factor)  
-    -  y-axis will be rate of change. geom_point for slope estimate, geom_errorbar for CI.  
-    -  geom_hline for 0.  
-    -  facet_wrap by parameter. free_y scales.  
--  tables for each station (Reserves will be interested in this):  
-    -  group df by station code, then table with params as rows and the rest as columns.  
-    -  no extra shaping, just subsetting.  
     
 
 

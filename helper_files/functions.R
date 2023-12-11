@@ -463,6 +463,115 @@ run_bam_wq <- function(data, k){
 }
 
 
+run_bam_wqBeta <- function(data, k){
+  # input is a data frame and number of knots
+  # this function uses the beta distribution in the bam
+  # returns a list with the bam object and information about
+  # whether the model needed to be re-fit for autocorrelation
+  
+  dat <- data
+  
+  # run bam with an almost-0 rho, using AR.start
+  # (in case missing/unevenly spaced data messed up the true ACF)
+  # then get the lag-1 acf estimate
+  # to use in what will be the "real" bam
+  dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                 family = betar(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = dat,
+                 method = "fREML")
+  # summary(dat_bam)
+  # acf(dat_bam$std.rsd, plot = FALSE)[1]
+  
+  rhos <- acf(dat_bam$std.rsd, plot = FALSE)
+  use_this_rho <- round(rhos$acf[2], 4)  # 2nd position is lag 1
+  rho_threshold <- qnorm((1 + 0.95)/2)/sqrt(rhos$n.used)
+  model_refit <- FALSE
+  
+  if(abs(use_this_rho) > rho_threshold){
+    model_refit <- TRUE
+    dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
+                   family = betar(),
+                   discrete = TRUE,
+                   AR.start = ARrestart,
+                   rho = use_this_rho,
+                   data = dat,
+                   method = "fREML")
+  }
+  
+  final_AR <- acf(dat_bam$std.rsd, plot = FALSE)
+  final_AR <- round(final_AR$acf[2], 4)  # 2nd position is lag 1
+  
+  rho_info <- data.frame("ar1_start" = use_this_rho,
+                         "threshold" = rho_threshold,
+                         "model_refit" = model_refit,
+                         "ar1_end" = final_AR)
+  
+  bam_out <- list(dat_bam = dat_bam, 
+                  rho_info = rho_info)
+  return(bam_out)
+  
+}
+
+
+tidy_bam_output <- function(bam_obj){
+  # bam_obj is the output from the above functions,
+  # a list with bam_output itself and information about the rhos
+  
+  bam_out <- bam_obj
+  
+  # split it up for further tidying
+  rho_info <- bam_out$rho_info  
+  bam_out <- bam_out$dat_bam
+  
+  bam_tidy <- gtsummary::tidy_gam(bam_out, conf.int = TRUE) |> 
+    select(-parametric) |> 
+    mutate(station = stn,
+           parameter = param,
+           term = case_match(term,
+                             "(Intercept)" ~ "Intercept",
+                             "dec_date" ~ "Trend (/yr)",
+                             "s(month)" ~ "Seasonality")) |> 
+    select(station, parameter, everything())
+  
+  bam_trend <- bam_tidy |> 
+    filter(term == "Trend (/yr)") |> 
+    select(station,
+           parameter,
+           "Slope" = estimate,
+           std.error,
+           conf.low,
+           conf.high,
+           statistic,
+           p.value)
+  
+  bam_seas <- bam_tidy |> 
+    filter(term == "Seasonality") |> 
+    select(station,
+           parameter,
+           "Seas_edf" = edf,
+           "Seas_ref.df" = ref.df,
+           "Seas_stat" = statistic,
+           "Seas_p.val" = p.value)
+  
+  bam_r2 <- data.frame(
+    station = stn,
+    parameter = param,
+    R2_adj = summary(bam_out)$r.sq,
+    Dev_expl = summary(bam_out)$dev.expl
+  )
+  
+  out <- dplyr::left_join(bam_trend, bam_seas) |> 
+    dplyr::left_join(bam_r2) |> 
+    mutate(model_error = FALSE)
+  
+  out <- cbind(out, rho_info)
+
+}
+
+
 
 
 print_bam_table <- function(bam.obj){
