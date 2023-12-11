@@ -515,6 +515,43 @@ run_bam_wqBeta <- function(data, k){
   
 }
 
+# argh, this doesn't work right because of how I'm trying to use outputs
+run_bam_x <- function(which_bam){
+  # attempt to run the bam with 12 knots
+  # if it doesn't work, pick a better number based on the data
+  # if that still doesn't work, spit out the model error
+
+  if(inherits(try(which_bam(tmp, k = 12), silent = TRUE), "try-error")){
+    # pick our own k:
+    knew <- tmp |> 
+      summarize(.by = month,
+                nVals = sum(!is.na(value))) |> 
+      filter(nVals >= 1) |> 
+      nrow()
+    
+    if(inherits(try(which_bam(tmp, k = knew), silent = TRUE), "try-error")){
+      # if that didn't work, make a blank row in the output:
+      out <- data.frame(station = stn,
+                        parameter = param,
+                        model_error = TRUE) 
+      
+      return(out)
+      # if it did work:
+    } else {
+      bam_out <- which_bam(tmp, k = knew)
+      return(bam_out)
+    }
+    
+  } else {
+    # run model
+    bam_out <- which_bam(tmp, k = 12)
+    return(bam_out)
+  }
+  
+}
+
+
+
 
 tidy_bam_output <- function(bam_obj){
   # bam_obj is the output from the above functions,
