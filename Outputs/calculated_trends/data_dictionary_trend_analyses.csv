@@ -1,6 +1,6 @@
 Column Name,Type,Description
 station,character,seven- or eight-letter SWMP station code. First three letters represent individual Reserve; next two letters identify the station within the Reserve; last 2-3 letters are data type (wq/nut/met)
-parameter,character,which parameter the trends on this row describe
+parameter,character,which parameter the trends on this row describe. See `data_dictionary_trend_parameters.csv` for more detail.
 Slope,numeric,"parameter trend per year, as the overall linear trend from a GAM"
 std.error,numeric,standard error of the slope estimate
 conf.low,numeric,low end of 95% confidence interval of slope estimate

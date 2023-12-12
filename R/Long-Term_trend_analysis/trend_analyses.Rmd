@@ -49,7 +49,7 @@ See the data processing README files for explanations on data point inclusion/ex
 
 ## Monthly aggregation  
 
-Again, see the data processing README files. For WQ, we are generally working with monthly median values. For NUTs, we are working with averaged replicates for each month.  
+Again, see the data processing README files. Additionally, see the `Outputs/calculated_trends/data_dictionary_trend_parameters.csv` file for parameters analyzed and transformations made. For WQ and MET, we are generally working with monthly median values. For NUTs, we are working with averaged replicates for each month.  
 
 ## Trend calculation  
 
@@ -58,9 +58,10 @@ We have generally used GAMs (generalized additive models) to calculate trends. A
 For NUT parameters: values were log10 transformed, and marked as censored (e.g. below the minimum detection limit, or MDL) or uncensored. This created a response matrix that was used in `mgcv::bam` with `family = cnorm()` to account for censoring.  
 
 For WQ monthly medians, we also used `mgcv::bam` for consistency in outputs. There is no censoring in these parameters, so we used `family = gaussian()`.  
+
 For WQ proportion of DO below 2 and 5: These calculations were made before monthly aggregation - each valid 15-minute data point was marked TRUE/FALSE for below 2 and 5, respectively (in separate columns). During monthly aggregation, the total TRUE for each month was divided by the total number of valid DO points for the month, leading to a proportion per month. Trends were again calculated in `mgcv::bam()` with a seasonal term and an autocorrelation term if necessary. Because this response is a proportion, we used `family = betar()`. The `eps` option, which adjusts exact 0s and 1s, was set to 1/10th of the minimum number of readings per month (1/27900).     
 
-For MET parameters, used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Note that gaussian may not be ideal for total monthly precipitation - may need to log-transform it to get appropriate errors.  
+For MET parameters, we again used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Monthly precipitation was square-root transformed before analysis (this produced the best residual diagnostics on 5 stations explored).    
 
 
 ## Seasonal trends  
@@ -70,27 +71,6 @@ This part is simpler and rougher: we have not accounted for autocorrelation or a
 
 p-values have NOT been adjusted from any of these analyses, so be wary about declaring any individual trend significant based on its reported p-value. Be especially wary about seasonal p-values, as autocorrelation is not accounted for.  
 
-
-# Processing  
-
-We have 3 chunks of data: WQ, MET, NUT. For each type:  
-
-1.  Load data frame  
-2.  Create grid of station/parameter combinations.  
-3.  Do appropriate subsetting, based on length of dataset and depth.  
-    a.  in `definitions.R` file, an object named `stns_wq_nut_d10` is defined. This vector consists of 105 stations that are labelled "Active", have starting dates before January of 2013, and exist for both WQ and NUT data types.    
-4.  Loop through parameters:  
-    a.  for each parameter, loop through stations
-        i.  run appropriate bam model  
-        ii.  extract necessary model info    
-        iii.  add model info to type-parameter list
-    b.  bind the list to get one data frame per parameter
-    c.  make that data frame part of a 'type' output list  
-5.  At end of that loop, will have a 'type' list with separate data frames for each parameter. Bind them into one big data frame.  
-6.  Get seasonality info on same row as slope coefficient.  
-7.  Bind rows on WQ and NUT  
-9.  Make sure it's clear that the slope for nutrients is the slope for log10(nut), not raw nut  
-10.  Write out the results!  
 
 
 # Setup  
@@ -121,7 +101,8 @@ dat_met <- met |>
   select(station, year, month, 
          atemp_median,
          totprcp_total,
-         dailyPAR_median)
+         dailyPAR_median) |> 
+  mutate(sqrt_precp_total = sqrt(totprcp_total))  # SQUARE-ROOT TRANSFORM
 
 dat_nut <- nut |> 
   filter(station %in% paste0(stns_wq_nut_d10, "nut")) |> 
@@ -149,9 +130,9 @@ dat_nut <- nut |>
 wq_grid <- expand.grid(station = unique(dat_wq$station), 
                        param = names(dat_wq[4:9]))
 nut_grid <- expand.grid(station = unique(dat_nut$station), 
-                       param = names(dat_nut[4:11]))
+                       param = names(dat_nut[4:7]))
 met_grid <- expand.grid(station = unique(dat_met$station), 
-                       param = names(dat_met[4:6]))
+                       param = names(dat_met[c(4, 6, 7)]))
 
 # proportions
 do_grid <- expand.grid(station = unique(dat_wq$station), 
