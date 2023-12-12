@@ -33,6 +33,7 @@ source(here::here("helper_files", "functions.R"))
 
 load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
 load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyMET.RData"))
 ```
 
 
@@ -57,7 +58,9 @@ We have generally used GAMs (generalized additive models) to calculate trends. A
 For NUT parameters: values were log10 transformed, and marked as censored (e.g. below the minimum detection limit, or MDL) or uncensored. This created a response matrix that was used in `mgcv::bam` with `family = cnorm()` to account for censoring.  
 
 For WQ monthly medians, we also used `mgcv::bam` for consistency in outputs. There is no censoring in these parameters, so we used `family = gaussian()`.  
-For WQ proportion of DO below 2 and 5: These calculations were made before monthly aggregation - each valid 15-minute data point was marked TRUE/FALSE for below 2 and 5, respectively (in separate columns). During monthly aggregation, the total TRUE for each month was divided by the total number of valid DO points for the month, leading to a proportion per month. Trends were again calculated in `mgcv::bam()` with a seasonal term and an autocorrelation term if necessary. Because this response is a proportion, we used `family = betar()`. This model is much more computationally intensive (read: slower) than the other models.  
+For WQ proportion of DO below 2 and 5: These calculations were made before monthly aggregation - each valid 15-minute data point was marked TRUE/FALSE for below 2 and 5, respectively (in separate columns). During monthly aggregation, the total TRUE for each month was divided by the total number of valid DO points for the month, leading to a proportion per month. Trends were again calculated in `mgcv::bam()` with a seasonal term and an autocorrelation term if necessary. Because this response is a proportion, we used `family = betar()`. The `eps` option, which adjusts exact 0s and 1s, was set to 1/10th of the minimum number of readings per month (1/27900).     
+
+For MET parameters, used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Note that gaussian may not be ideal for total monthly precipitation - may need to log-transform it to get appropriate errors.  
 
 
 ## Seasonal trends  
@@ -113,6 +116,13 @@ dat_wq <- wq |>
 
 # may need to treat DO proportions differently from others - not gaussian, but beta
 
+dat_met <- met |> 
+  filter(station %in% paste0(stns_met_d10, "met")) |> 
+  select(station, year, month, 
+         atemp_median,
+         totprcp_total,
+         dailyPAR_median)
+
 dat_nut <- nut |> 
   filter(station %in% paste0(stns_wq_nut_d10, "nut")) |> 
   select(station, year, month, 
@@ -140,6 +150,8 @@ wq_grid <- expand.grid(station = unique(dat_wq$station),
                        param = names(dat_wq[4:9]))
 nut_grid <- expand.grid(station = unique(dat_nut$station), 
                        param = names(dat_nut[4:11]))
+met_grid <- expand.grid(station = unique(dat_met$station), 
+                       param = names(dat_met[4:6]))
 
 # proportions
 do_grid <- expand.grid(station = unique(dat_wq$station), 
@@ -458,7 +470,158 @@ trends_df_do |>
 trends_df <- bind_rows(trends_df, trends_df_do)
 ```
 
+***
+***
 
+# MET  
+
+Should use all the same syntax as WQ.  
+
+## trend calcs  
+
+Attempting to use 12 knots for a seasonal smooth. This not possible at all stations (many are not sampled during winter) so at the ones where 12 knots causes a model error, I am allowing the model to choose the number of knots for me by setting it back to the default of k = -1. (This is all happening in the functions `run_bam_wq()` and `run_bam_nut()`).  
+
+```{r}
+# set up outputs
+trends_out <- list()
+
+
+# run the loop
+for(i in 1:nrow(met_grid)){
+  stn <- as.character(met_grid$station[i])
+  param <- as.character(met_grid$param[i])
+  
+  # subset to that stn/param combo
+  tmp <- subset_df("wq", dat_met, stn, param)
+  
+  # capture some info about the station and time series:
+  ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
+                         ts_end = max(tmp$dec_date, na.rm = TRUE),
+                         ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
+                         n_points = sum(!is.na(tmp$value)),
+                         overall_median = median(tmp$value, na.rm = TRUE))
+  
+  
+  # run the model
+  #########
+  
+  # if the below statement is true, there was an error in the model
+  # and we need to do something, and move to the next item in the loop
+  # if it was false, we can move on
+  if(inherits(try(run_bam_wq(tmp, k = 12), silent = TRUE), "try-error")){
+    # pick our own k:
+    knew <- tmp |>
+      summarize(.by = month,
+                nVals = sum(!is.na(value))) |>
+      filter(nVals >= 1) |>
+      nrow()
+
+    if(inherits(try(run_bam_wq(tmp, k = knew), silent = TRUE), "try-error")){
+      # if that didn't work, make a blank row in the output:
+      out <- data.frame(station = stn,
+                        parameter = param,
+                        model_error = TRUE)
+     # if it did work:
+    } else {
+      bam_out <- run_bam_wq(tmp, k = knew)
+    }
+
+  } else {
+    # run model
+    bam_out <- run_bam_wq(tmp, k = 12)
+  }
+  
+  # save and tidy the output
+  #####
+  if(exists("bam_out")){
+    
+    # save the entire bam object, including autocorrelation info
+    file_out <- here::here("Outputs", "calculated_trends", "bam_outputs",
+                           paste0(stn, "_", param, "_bam.RData"))
+    save(bam_out, file = file_out)
+    
+    out <- tidy_bam_output(bam_obj = bam_out)
+    rm(bam_out)
+  }
+  
+  # bind to output list
+  out <- bind_cols(out, ts_chars)
+  
+  
+  # break out trends by season
+  tmp <- left_join(tmp, seas_defs)
+  season_vec <- unique(tmp$season)
+  seasonals <- list()
+  for(j in seq_along(season_vec)){
+    tmp_seas <- filter(tmp, season == season_vec[j])
+    
+    # if you can run an lm for a season, do it
+    if(!inherits(try(lm(value ~ dec_date, data = tmp_seas), 
+                     silent = TRUE), "try-error")){
+      mod <- lm(value ~ dec_date, 
+                data = tmp_seas)
+      seas_tbl <- broom::tidy(mod) |> 
+        filter(term == "dec_date") |> 
+        mutate(station = stn,
+               parameter= param,
+               season = season_vec[j]) |> 
+        select(-term, -statistic) |> 
+        relocate(station, parameter, season)
+      
+      seasonals[[j]] <- seas_tbl
+    } else {
+      seasonals[[j]] <- data.frame(station = stn,
+                                   parameter = param,
+                                   season = season_vec[j],
+                                   estimate = NA_real_,
+                                   p.value = NA_real_)
+    }
+    
+
+  }
+  seasonal_trends <- bind_rows(seasonals) |> 
+    pivot_wider(names_from = season,
+                values_from = estimate:p.value,
+                names_glue = "{season}_{.value}")
+    
+  out <- left_join(out, seasonal_trends)
+  
+  trends_out[[i]] <- out
+  rm(out)
+}
+
+```
+
+```{r}
+trends_met <- dplyr::bind_rows(trends_out) |> 
+  mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
+                               is.na(p.value) ~ NA_character_,
+                               .default = "no"),
+         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                                     is.na(Seas_p.val) ~ NA_character_,
+                                     .default = "no"),
+         sig_autocorr = case_when(model_refit == TRUE ~ "yes",
+                                  is.na(model_refit) ~ NA_character_,
+                                  .default = "no"))
+```
+
+
+Anything that didn't run?  
+
+```{r}
+trends_met |> 
+  filter(model_error == TRUE) |> 
+  select(station, parameter) |> 
+  summarize(.by = station,
+            parameters = paste(unique(parameter), collapse = "; ")) |> 
+  arrange(station) |> 
+  gt(caption = "MET stations where the model did not run")
+```
+
+
+
+***
+***
 
 # NUTs  
 
@@ -614,11 +777,11 @@ trends_nut |>
 # Save trend tables  
 
 ```{r}
-save(trends_df, trends_nut, file = here::here("Outputs", 
+save(trends_df, trends_met, trends_nut, file = here::here("Outputs", 
                                               "calculated_trends",
                                               "long-term-trends.RData"))
 
-trends_all <- bind_rows(trends_df, trends_nut)
+trends_all <- bind_rows(trends_df, trends_met, trends_nut)
 write.csv(trends_all, file = here::here("Outputs",
                                         "calculated_trends",
                                         "long-term-trends.csv"))

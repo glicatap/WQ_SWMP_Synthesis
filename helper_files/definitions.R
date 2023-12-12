@@ -39,6 +39,8 @@ stns_wq_d10 <- str_sub(grep("wq$", mstns10$station_code, value = TRUE),
 stns_nut_d10 <- str_sub(grep("nut$", mstns10$station_code, value = TRUE),
                       end = -4)
 stns_wq_nut_d10 <- intersect(stns_wq_d10, stns_nut_d10)
+stns_met_d10 <- str_sub(grep("met$", mstns10$station_code, value = TRUE),
+                        end = -4)
 
 # cleanup
 rm(mstns, mstns10, stns_nut_d10, stns_wq_d10)
