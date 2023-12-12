@@ -303,13 +303,14 @@ trends_df |>
 
 Using a beta distribution for this. Otherwise same process as above.  
 
-This is much slower than gaussian, and gives a lot of warnings:
+This originally was much slower than gaussian, and gave a lot of warnings:
 
 ```
 In object$family$saturated.ll(y, wts, object$family$getTheta(TRUE)) :
   saturated likelihood may be inaccurate
 ```
 
+After googling, I found this warning can be caused by a lot of 0s and/or 1s. One or the other can be handled pretty well by increasing the `eps`, which affects how 0s and 1s are handled (beta family cannot handle exact 0s or 1s). My computer's default, `.Machine$double.eps*100` is on the order of 10^-14. Because the highest number of readings we might have in a month would be 4/hr * 24 h/day * 31 days/month = 2976, one reading different from the others would be a proportion of 1/2976 = 0.000336. So we can set the eps to be lower than this, but still much higher than 10^-14. I will choose 10% of that proportion, 1/29760 (so 0 will be adjusted to 0.0000336 and 1 will be adjusted to 0.9999664). This is indeed much faster, though it doesn't get rid of all the warnings. I have adjusted it in the `run_bam_wqBeta()` function.  
 
 ```{r}
 # set up outputs

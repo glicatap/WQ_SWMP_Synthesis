@@ -469,6 +469,10 @@ run_bam_wqBeta <- function(data, k){
   # returns a list with the bam object and information about
   # whether the model needed to be re-fit for autocorrelation
   
+  # up to 2976 readings in a month so the most extreme proportions 
+  # would be 1/2976. Set eps to 1/10th of that.
+  # This is used to adjust exact 0s and 1s.
+  
   dat <- data
   
   # run bam with an almost-0 rho, using AR.start
@@ -476,7 +480,7 @@ run_bam_wqBeta <- function(data, k){
   # then get the lag-1 acf estimate
   # to use in what will be the "real" bam
   dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
-                 family = betar(),
+                 family = betar(eps = 1/29760),
                  discrete = TRUE,
                  AR.start = ARrestart,
                  rho = 0.0001,
@@ -493,7 +497,7 @@ run_bam_wqBeta <- function(data, k){
   if(abs(use_this_rho) > rho_threshold){
     model_refit <- TRUE
     dat_bam <- bam(value ~ dec_date + s(month, bs = "cc", k = k),
-                   family = betar(),
+                   family = betar(eps = 1/29760),
                    discrete = TRUE,
                    AR.start = ARrestart,
                    rho = use_this_rho,
