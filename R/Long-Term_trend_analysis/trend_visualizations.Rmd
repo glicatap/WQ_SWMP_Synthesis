@@ -12,25 +12,55 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(dplyr)
 library(tidyr)
+library(stringr)
 library(ggplot2)
 ```
 
+```{r}
+region_dictionary <- read.csv(here::here("helper_files",
+                                         "region_dictionary.csv"))
+```
 
-# Read in tables of trend results  
 
 ```{r}
 load(here::here("Outputs", 
                 "calculated_trends",
                 "long-term-trends.RData"))
+
+trends_all <- bind_rows(trends_df, trends_met, trends_nut) |> 
+  mutate(reserve = str_sub(station, start = 1, end = 3),
+         type = case_when(str_ends(station, "wq") ~ "wq",
+                          str_ends(station, "met") ~ "met",
+                          str_ends(station, "nut") ~ "nut",
+                          .default = "something's wrong")) |> 
+  filter(ts_length >= 9) |>  # get rid of any where the time series wasn't as long as the station
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+
+trends_seasonal <- trends_all |> 
+  select(station, parameter, reserve, type, Region,
+         Fall_estimate:Summer_p.value) |> 
+  pivot_longer(Fall_estimate:Summer_p.value,
+               names_to = c("Season", "parm"),
+               names_sep = "_",
+               values_to = "value") |> 
+  pivot_wider(names_from = parm,
+              values_from = value)
 ```
 
-# Graphs  
+```{r}
+rm(trends_df, trends_met, trends_nut, region_dictionary)
+```
+
+
+# Long-Term Overall  
 
 ## WQ  
 
 
 ```{r}
-trends_df |> 
+trends_all |>
+  filter(type == "wq") |> 
   arrange(parameter, Slope, station) |> 
   mutate(stparm = paste0(station, parameter)) |> 
   ggplot(aes(x = forcats::fct_inorder(stparm), y = Slope)) +
@@ -50,10 +80,8 @@ trends_df |>
         legend.direction = "horizontal")
 ```
 
-
-
 ```{r}
-ggplot(trends_df) +
+ggplot(filter(trends_all, type == "wq")) +
   geom_histogram(aes(x = Slope,
                      fill = parameter),
                  bins = 30,
@@ -67,15 +95,36 @@ ggplot(trends_df) +
        subtitle = "slopes are in [parameter's measurement units] / year")
 ```
 
+```{r}
+ggplot(filter(trends_all, type == "wq")) +
+  geom_point(aes(x = ts_length,
+                 y = Slope,
+                 col = parameter),
+             alpha = 0.7) +
+  geom_smooth(method = "loess", se = FALSE,
+              aes(x = ts_length,
+                  y = Slope,
+                  col = parameter),
+              alpha = 0.6) +
+  facet_wrap(~parameter, scales = "free") +
+  geom_hline(yintercept = 0,
+             linewidth = 0.7) +
+  theme(legend.position = "none") +
+  labs(title = "Slopes as a function of time series length for each parameter",
+       x = "Time Series length (years)",
+       subtitle = "slopes are in [parameter's measurement units] / year")
+```
+
 ```{r, fig.width = 6, fig.height = 3.5}
-seas_df <- trends_df |> 
+seas_wq <- trends_all |>
+  filter(type == "wq") |> 
   summarize(.by = c(parameter, sig_seasonality),
             n()) |> 
   pivot_wider(names_from = sig_seasonality,
               values_from = `n()`) |> 
   mutate(no = -1*no)
 
-ggplot(seas_df) +
+ggplot(seas_wq) +
   geom_segment( aes(x=parameter, xend=parameter, y=no, yend=yes)) +
   geom_point( aes(x=parameter, y=no, color="seasonal"), size=3 ) +
   geom_point( aes(x=parameter, y=yes, color="not seasonal"), size=3 ) +
@@ -90,28 +139,12 @@ ggplot(seas_df) +
 ```
 
 
-```{r}
-ggplot(trends_df) +
-  geom_point(aes(x = ts_length,
-                 y = Slope,
-                 col = parameter),
-             alpha = 0.7) +
-  facet_wrap(~parameter, scales = "free") +
-  geom_hline(yintercept = 0,
-             linewidth = 0.7) +
-  theme(legend.position = "none") +
-  labs(title = "Slopes as a function of time series length for each parameter",
-       x = "Time Series length (years)",
-       subtitle = "slopes are in [parameter's measurement units] / year")
-```
-
-
-
 ## MET  
 
 
 ```{r}
-trends_met |> 
+trends_all |>
+  filter(type == "met") |> 
   arrange(parameter, Slope, station) |> 
   mutate(stparm = paste0(station, parameter)) |> 
   ggplot(aes(x = forcats::fct_inorder(stparm), y = Slope)) +
@@ -131,10 +164,8 @@ trends_met |>
         legend.direction = "horizontal")
 ```
 
-
-
 ```{r}
-ggplot(trends_met) +
+ggplot(filter(trends_all, type == "met")) +
   geom_histogram(aes(x = Slope,
                      fill = parameter),
                  bins = 20,
@@ -151,11 +182,16 @@ ggplot(trends_met) +
 
 
 ```{r}
-ggplot(trends_met) +
+ggplot(filter(trends_all, type == "met")) +
   geom_point(aes(x = ts_length,
                  y = Slope,
                  col = parameter),
              alpha = 0.7) +
+  geom_smooth(method = "loess", se = FALSE,
+              aes(x = ts_length,
+                  y = Slope,
+                  col = parameter),
+              alpha = 0.6) +
   facet_wrap(~parameter, scales = "free") +
   geom_hline(yintercept = 0,
              linewidth = 0.7) +
@@ -167,14 +203,15 @@ ggplot(trends_met) +
 
 
 ```{r, fig.width = 6, fig.height = 3.5}
-seas_df <- trends_met |> 
+seas_met <- trends_all |>
+  filter(type == "met") |> 
   summarize(.by = c(parameter, sig_seasonality),
             n()) |> 
   pivot_wider(names_from = sig_seasonality,
               values_from = `n()`) |> 
   mutate(no = -1*no)
 
-ggplot(seas_df) +
+ggplot(seas_met) +
   geom_segment( aes(x=parameter, xend=parameter, y=no, yend=yes)) +
   geom_point( aes(x=parameter, y=no, color="seasonal"), size=3 ) +
   geom_point( aes(x=parameter, y=yes, color="not seasonal"), size=3 ) +
@@ -189,11 +226,11 @@ ggplot(seas_df) +
 ```
 
 
-
 ## NUT  
 
 ```{r}
-trends_nut |> 
+trends_all |>
+  filter(type == "nut") |> 
   arrange(parameter, Slope, station) |> 
   mutate(stparm = paste0(station, parameter)) |> 
   ggplot(aes(x = forcats::fct_inorder(stparm), y = Slope)) +
@@ -214,7 +251,7 @@ trends_nut |>
 ```
 
 ```{r}
-ggplot(trends_nut) +
+ggplot(filter(trends_all, type == "nut")) +
   geom_histogram(aes(x = Slope,
                      fill = parameter),
                  bins = 30,
@@ -228,14 +265,17 @@ ggplot(trends_nut) +
        subtitle = "slopes are in (log-10 [nutrient units]) / year")
 ```
 
-
-
 ```{r}
-ggplot(trends_nut) +
+ggplot(filter(trends_all, type == "nut")) +
   geom_point(aes(x = ts_length,
                  y = Slope,
                  col = parameter),
              alpha = 0.7) +
+  geom_smooth(method = "loess", se = FALSE,
+              aes(x = ts_length,
+                  y = Slope,
+                  col = parameter),
+              alpha = 0.6) +
   facet_wrap(~parameter, scales = "free") +
   geom_hline(yintercept = 0,
              linewidth = 0.7) +
@@ -247,7 +287,8 @@ ggplot(trends_nut) +
 
 
 ```{r, fig.width = 6, fig.height = 3.5}
-seas_nut <- trends_nut |> 
+seas_nut <- trends_all |> 
+  filter(type == "nut") |> 
   summarize(.by = c(parameter, sig_seasonality),
             n()) |> 
   pivot_wider(names_from = sig_seasonality,
@@ -268,7 +309,27 @@ ggplot(seas_nut) +
   ylab("# of stations displaying seasonality")
 ```
 
-```{r}
+# Long-term by season  
 
+```{r}
+parms <- unique(trends_all$parameter)
+for(i in seq_along(parms)){
+  
+  tmp <- filter(trends_all, parameter == parms[i])
+  
+  ggplot(tmp) +
+    geom_histogram(aes(x = Slope)) +
+    facet_wrap(~sea)
+}
 ```
+
+
+
+
+# Long-term by region  
+
+
+
+# Long-term by season x region
+
 
