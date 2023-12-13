@@ -414,7 +414,7 @@ for(i in 1:nrow(do_grid)){
     
     out <- tidy_bam_output(bam_obj = bam_out)
     rm(bam_out)
-    }
+  }
   
   out <- bind_cols(out, ts_chars)
   
@@ -427,35 +427,52 @@ for(i in 1:nrow(do_grid)){
     season_vec <- unique(tmp$season)
     seasonals <- list()
     
+    # there also needs to be enough data within each season
     for(j in seq_along(season_vec)){
       tmp_seas <- filter(tmp, season == season_vec[j])
       
-      # if plain gam for a season works, run it
-      if(!inherits(try(gam(value ~ dec_date, family = betar(), data = tmp_seas),
-                       silent = TRUE), "try-error")){
+      nYears <- tmp_seas |> 
+        summarize(.by = year,
+                  values = sum(!is.na(value))) |> 
+        filter(values >= 1) |> 
+        nrow()
+      
+      
+      if(nYears >= 7){
         
-        mod <- gam(value ~ dec_date,
-                   family = betar(),
-                   data = tmp_seas)
-        seas_tbl <- gtsummary::tidy_gam(mod) |> 
-          filter(term == "dec_date") |> 
-          mutate(station = stn,
-                 parameter= param,
-                 season = season_vec[j]) |> 
-          select(-term, -statistic, -parametric) |> 
-          relocate(station, parameter, season)
-        
-        seasonals[[j]] <- seas_tbl
-        
+        # if plain gam for a season works, run it
+        if(!inherits(try(gam(value ~ dec_date, family = betar(), data = tmp_seas),
+                         silent = TRUE), "try-error")){
+          
+          mod <- gam(value ~ dec_date,
+                     family = betar(),
+                     data = tmp_seas)
+          seas_tbl <- gtsummary::tidy_gam(mod) |> 
+            filter(term == "dec_date") |> 
+            mutate(station = stn,
+                   parameter= param,
+                   season = season_vec[j]) |> 
+            select(-term, -statistic, -parametric) |> 
+            relocate(station, parameter, season)
+          
+          seasonals[[j]] <- seas_tbl
+          
+        } else {
+          
+          seasonals[[j]] <- data.frame(station = stn,
+                                       parameter = param,
+                                       season = season_vec[j],
+                                       estimate = NA_real_,
+                                       p.value = NA_real_)
+        }
+        # if there aren't at least 7 years 
       } else {
-        
         seasonals[[j]] <- data.frame(station = stn,
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
                                      p.value = NA_real_)
       }
-      
       
     }
     seasonal_trends <- bind_rows(seasonals) |> 
@@ -600,23 +617,40 @@ for(i in 1:nrow(met_grid)){
     season_vec <- unique(tmp$season)
     seasonals <- list()
     
+    
+    # there also needs to be enough data within each season
     for(j in seq_along(season_vec)){
       tmp_seas <- filter(tmp, season == season_vec[j])
       
-      # if you can run an lm for a season, do it
-      if(!inherits(try(lm(value ~ dec_date, data = tmp_seas), 
-                       silent = TRUE), "try-error")){
-        mod <- lm(value ~ dec_date, 
-                  data = tmp_seas)
-        seas_tbl <- broom::tidy(mod) |> 
-          filter(term == "dec_date") |> 
-          mutate(station = stn,
-                 parameter= param,
-                 season = season_vec[j]) |> 
-          select(-term, -statistic) |> 
-          relocate(station, parameter, season)
-        
-        seasonals[[j]] <- seas_tbl
+      nYears <- tmp_seas |> 
+        summarize(.by = year,
+                  values = sum(!is.na(value))) |> 
+        filter(values >= 1) |> 
+        nrow()
+      
+      if(nYears >= 7){
+        # if you can run an lm for a season, do it
+        if(!inherits(try(lm(value ~ dec_date, data = tmp_seas), 
+                         silent = TRUE), "try-error")){
+          mod <- lm(value ~ dec_date, 
+                    data = tmp_seas)
+          seas_tbl <- broom::tidy(mod) |> 
+            filter(term == "dec_date") |> 
+            mutate(station = stn,
+                   parameter= param,
+                   season = season_vec[j]) |> 
+            select(-term, -statistic) |> 
+            relocate(station, parameter, season)
+          
+          seasonals[[j]] <- seas_tbl
+        } else {
+          seasonals[[j]] <- data.frame(station = stn,
+                                       parameter = param,
+                                       season = season_vec[j],
+                                       estimate = NA_real_,
+                                       p.value = NA_real_)
+        }
+        # if there aren't at least 7 years 
       } else {
         seasonals[[j]] <- data.frame(station = stn,
                                      parameter = param,
@@ -624,7 +658,6 @@ for(i in 1:nrow(met_grid)){
                                      estimate = NA_real_,
                                      p.value = NA_real_)
       }
-      
     }
     seasonal_trends <- bind_rows(seasonals) |> 
       pivot_wider(names_from = season,
@@ -747,7 +780,7 @@ for(i in 1:nrow(nut_grid)){
       rm(bam_out)
     }
   }
-
+  
   # do all the things to whichever bam_out we got
   # assuming we got one
   
@@ -773,37 +806,51 @@ for(i in 1:nrow(nut_grid)){
     season_vec <- unique(tmp$season)
     seasonals <- list()
     
-    # for each season, make sure there are at least 7 distinct years
-    # (this is somewhat arbitrary but there could be valid reasons a couple years get missed)
+    # there also needs to be enough data within each season
     for(j in seq_along(season_vec)){
       tmp_seas <- filter(tmp, season == season_vec[j])
       
-      # if plain gam for a season works, run it
-      if(!inherits(try(gam(lognut_mat ~ dec_date, family = cnorm(), data = tmp_seas),
-                       silent = TRUE), "try-error")){
+      nYears <- tmp_seas |> 
+        summarize(.by = year,
+                  values = sum(!is.na(value))) |> 
+        filter(values >= 1) |> 
+        nrow()
+      
+      if(nYears >= 7){
         
-        mod <- gam(lognut_mat ~ dec_date,
-                   family = cnorm(),
-                   data = tmp_seas)
-        seas_tbl <- gtsummary::tidy_gam(mod) |> 
-          filter(term == "dec_date") |> 
-          mutate(station = stn,
-                 parameter= param,
-                 season = season_vec[j]) |> 
-          select(-term, -statistic, -parametric) |> 
-          relocate(station, parameter, season)
-        
-        seasonals[[j]] <- seas_tbl
-        
+        # if plain gam for a season works, run it
+        if(!inherits(try(gam(lognut_mat ~ dec_date, family = cnorm(), data = tmp_seas),
+                         silent = TRUE), "try-error")){
+          
+          mod <- gam(lognut_mat ~ dec_date,
+                     family = cnorm(),
+                     data = tmp_seas)
+          seas_tbl <- gtsummary::tidy_gam(mod) |> 
+            filter(term == "dec_date") |> 
+            mutate(station = stn,
+                   parameter= param,
+                   season = season_vec[j]) |> 
+            select(-term, -statistic, -parametric) |> 
+            relocate(station, parameter, season)
+          
+          seasonals[[j]] <- seas_tbl
+          
+        } else {
+          
+          seasonals[[j]] <- data.frame(station = stn,
+                                       parameter = param,
+                                       season = season_vec[j],
+                                       estimate = NA_real_,
+                                       p.value = NA_real_)
+        }
+        # if there aren't at least 7 years 
       } else {
-        
         seasonals[[j]] <- data.frame(station = stn,
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
                                      p.value = NA_real_)
       }
-      
       
     }
     seasonal_trends <- bind_rows(seasonals) |> 
