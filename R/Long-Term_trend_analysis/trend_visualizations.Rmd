@@ -33,7 +33,6 @@ trends_all <- bind_rows(trends_df, trends_met, trends_nut) |>
                           str_ends(station, "met") ~ "met",
                           str_ends(station, "nut") ~ "nut",
                           .default = "something's wrong")) |> 
-  filter(ts_length >= 9) |>  # get rid of any where the time series wasn't as long as the station
   left_join(region_dictionary, by = c("reserve" = "Reserve"))
 
 
@@ -45,7 +44,8 @@ trends_seasonal <- trends_all |>
                names_sep = "_",
                values_to = "value") |> 
   pivot_wider(names_from = parm,
-              values_from = value)
+              values_from = value,
+              values_fn = mean)  # remove this values_fn line when we know dupes should be gone
 ```
 
 ```{r}
@@ -94,6 +94,28 @@ ggplot(filter(trends_all, type == "wq")) +
   labs(title = "Histograms of slopes for each parameter",
        subtitle = "slopes are in [parameter's measurement units] / year")
 ```
+
+
+```{r}
+trends_all |> 
+  filter(type == "wq") |> 
+  arrange(Region, reserve, station) |> 
+  ggplot() +
+    geom_pointrange(aes(x = Slope,
+                        y = forcats::fct_inorder(station),
+                        xmin = conf.low,
+                        xmax = conf.high,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    facet_wrap(~parameter, scales = "free") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    labs(title = "Slopes by region",
+         x = "slope estimate",
+         y = "station")
+```
+
 
 ```{r}
 ggplot(filter(trends_all, type == "wq")) +
@@ -179,7 +201,25 @@ ggplot(filter(trends_all, type == "met")) +
        subtitle = "slopes are in [parameter's measurement units] / year")
 ```
 
-
+```{r}
+trends_all |> 
+  filter(type == "met") |> 
+  arrange(Region, reserve, station) |> 
+  ggplot() +
+    geom_pointrange(aes(x = Slope,
+                        y = forcats::fct_inorder(station),
+                        xmin = conf.low,
+                        xmax = conf.high,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    facet_wrap(~parameter, scales = "free") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    labs(title = "Slopes by region",
+         x = "slope estimate",
+         y = "station")
+```
 
 ```{r}
 ggplot(filter(trends_all, type == "met")) +
@@ -266,6 +306,26 @@ ggplot(filter(trends_all, type == "nut")) +
 ```
 
 ```{r}
+trends_all |> 
+  filter(type == "nut") |> 
+  arrange(Region, reserve, station) |> 
+  ggplot() +
+    geom_pointrange(aes(x = Slope,
+                        y = forcats::fct_inorder(station),
+                        xmin = conf.low,
+                        xmax = conf.high,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    facet_wrap(~parameter, scales = "free") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    labs(title = "Slopes by region",
+         x = "slope estimate",
+         y = "station")
+```
+
+```{r}
 ggplot(filter(trends_all, type == "nut")) +
   geom_point(aes(x = ts_length,
                  y = Slope,
@@ -312,24 +372,46 @@ ggplot(seas_nut) +
 # Long-term by season  
 
 ```{r}
+trends_seasonal <- trends_seasonal |> 
+  arrange(Region, reserve, station) |> 
+  mutate(stn_factor = forcats::fct_inorder(station))
+
 parms <- unique(trends_all$parameter)
 for(i in seq_along(parms)){
   
-  tmp <- filter(trends_all, parameter == parms[i])
+  tmp <- filter(trends_seasonal, parameter == parms[i])
   
-  ggplot(tmp) +
-    geom_histogram(aes(x = Slope)) +
-    facet_wrap(~sea)
+  p1 <- ggplot(tmp) +
+    geom_histogram(aes(x = estimate, fill = Season),
+                   bins = 30,
+                   col = "gray20",
+                   alpha = 0.8) +
+    facet_wrap(~Season, scales = "free") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    theme(legend.position = "none") +
+    labs(title = paste0(parms[i], " slopes by season"))
+  
+  p2 <- ggplot(tmp) +
+    geom_pointrange(aes(x = estimate,
+                        y = forcats::fct_inorder(station),
+                        xmin = estimate - 2*std.error,
+                        xmax = estimate + 2*std.error,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    facet_wrap(~Season, scales = "free") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    labs(title = paste0(parms[i], " slopes by season"),
+         x = "slope estimate",
+         y = "station")
+  
+  print(p1)
+  print(p2)
 }
+
 ```
 
-
-
-
-# Long-term by region  
-
-
-
-# Long-term by season x region
 
 
