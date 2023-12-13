@@ -251,7 +251,7 @@ for(i in 1:nrow(wq_grid)){
   }
   seasonal_trends <- bind_rows(seasonals) |> 
     pivot_wider(names_from = season,
-                values_from = estimate:p.value,
+                values_from = c(estimate, p.value, std.error),
                 names_glue = "{season}_{.value}")
     
   out <- left_join(out, seasonal_trends)
@@ -409,7 +409,7 @@ for(i in 1:nrow(do_grid)){
   }
   seasonal_trends <- bind_rows(seasonals) |> 
     pivot_wider(names_from = season,
-                values_from = estimate:p.value,
+                values_from = c(estimate, p.value, std.error),
                 names_glue = "{season}_{.value}")
     
   out <- left_join(out, seasonal_trends)
@@ -562,7 +562,7 @@ for(i in 1:nrow(met_grid)){
   }
   seasonal_trends <- bind_rows(seasonals) |> 
     pivot_wider(names_from = season,
-                values_from = estimate:p.value,
+                values_from = c(estimate, p.value, std.error),
                 names_glue = "{season}_{.value}")
     
   out <- left_join(out, seasonal_trends)
@@ -617,6 +617,12 @@ Attempting to use 12 knots for a seasonal smooth. This not possible at all stati
 # set up outputs
 trends_out <- list()
 
+# narncnut no23 testing
+# i = 371
+
+# hudtnnut too short time series for no23
+# i = 350
+
 
 # run the loop
 for(i in 1:nrow(nut_grid)){
@@ -626,13 +632,13 @@ for(i in 1:nrow(nut_grid)){
   # subset to that stn/param combo
   tmp <- subset_df("nut", dat_nut, stn, param)
   
-    # capture some info about the station and time series:
+  # capture some info about the station and time series:
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
                          ts_end = max(tmp$dec_date, na.rm = TRUE),
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
                          n_points = sum(!is.na(tmp$value)),
                          overall_median = median(tmp$value, na.rm = TRUE))
-
+  
   
   # if the below statement is true, there was an error in the model
   # and we need to do something, and move to the next item in the loop
@@ -662,6 +668,19 @@ for(i in 1:nrow(nut_grid)){
     bam_out <- run_bam_nut(tmp, k = 12)
   }
   
+  
+  # even if it worked, if the time series is too short, remove it
+  if(ts_chars$ts_length < 9){
+    out <- data.frame(station = stn,
+                      parameter = param,
+                      model_error = TRUE)       
+    if(exists("bam_out")){
+      rm(bam_out)
+    }
+  }
+  
+  
+  
   # do all the things to whichever bam_out we got
   # assuming we got one
   
@@ -674,53 +693,58 @@ for(i in 1:nrow(nut_grid)){
     
     out <- tidy_bam_output(bam_obj = bam_out)
     rm(bam_out)
-    }
+  }
   
   out <- bind_cols(out, ts_chars)
   
   
-      # break out trends by season
-  tmp <- left_join(tmp, seas_defs)
-  season_vec <- unique(tmp$season)
-  seasonals <- list()
-  for(j in seq_along(season_vec)){
-    tmp_seas <- filter(tmp, season == season_vec[j])
+  # break out trends by season
+  # only if there's enough data
+  if(ts_chars$ts_length >= 9){
     
-    # if plain gam for a season works, run it
-    if(!inherits(try(gam(lognut_mat ~ dec_date, family = cnorm(), data = tmp_seas),
-                    silent = TRUE), "try-error")){
+    tmp <- left_join(tmp, seas_defs)
+    season_vec <- unique(tmp$season)
+    seasonals <- list()
+    
+    for(j in seq_along(season_vec)){
+      tmp_seas <- filter(tmp, season == season_vec[j])
       
-      mod <- gam(lognut_mat ~ dec_date,
-                 family = cnorm(),
-                 data = tmp_seas)
-      seas_tbl <- gtsummary::tidy_gam(mod) |> 
-        filter(term == "dec_date") |> 
-        mutate(station = stn,
-               parameter= param,
-               season = season_vec[j]) |> 
-        select(-term, -statistic, -parametric) |> 
-        relocate(station, parameter, season)
+      # if plain gam for a season works, run it
+      if(!inherits(try(gam(lognut_mat ~ dec_date, family = cnorm(), data = tmp_seas),
+                       silent = TRUE), "try-error")){
+        
+        mod <- gam(lognut_mat ~ dec_date,
+                   family = cnorm(),
+                   data = tmp_seas)
+        seas_tbl <- gtsummary::tidy_gam(mod) |> 
+          filter(term == "dec_date") |> 
+          mutate(station = stn,
+                 parameter= param,
+                 season = season_vec[j]) |> 
+          select(-term, -statistic, -parametric) |> 
+          relocate(station, parameter, season)
+        
+        seasonals[[j]] <- seas_tbl
+        
+      } else {
+        
+        seasonals[[j]] <- data.frame(station = stn,
+                                     parameter = param,
+                                     season = season_vec[j],
+                                     estimate = NA_real_,
+                                     p.value = NA_real_)
+      }
       
-      seasonals[[j]] <- seas_tbl
       
-    } else {
-      
-      seasonals[[j]] <- data.frame(station = stn,
-                                   parameter = param,
-                                   season = season_vec[j],
-                                   estimate = NA_real_,
-                                   p.value = NA_real_)
     }
+    seasonal_trends <- bind_rows(seasonals) |> 
+      pivot_wider(names_from = season,
+                  values_from = c(estimate, p.value, std.error),
+                  names_glue = "{season}_{.value}")
     
-
+    out <- left_join(out, seasonal_trends)
+    
   }
-  seasonal_trends <- bind_rows(seasonals) |> 
-    pivot_wider(names_from = season,
-                values_from = estimate:p.value,
-                names_glue = "{season}_{.value}")
-    
-  out <- left_join(out, seasonal_trends)
-  
   
   trends_out[[i]] <- out
   rm(out)
