@@ -152,6 +152,9 @@ Attempting to use 12 knots for a seasonal smooth. This not possible at all stati
 ```{r}
 # wq_grid <- wq_grid[1:3, ]
 
+# lksolwq too short time series for winter trends
+# i = 50
+
 # set up outputs
 trends_out <- list()
 
@@ -185,24 +188,24 @@ for(i in 1:nrow(wq_grid)){
                 nVals = sum(!is.na(value))) |>
       filter(nVals >= 1) |>
       nrow()
-
+    
     if(inherits(try(run_bam_wq(tmp, k = knew), silent = TRUE), "try-error")){
       # if that didn't work, make a blank row in the output:
       out <- data.frame(station = stn,
                         parameter = param,
                         model_error = TRUE)
-     # if it did work:
+      # if it did work:
     } else {
       bam_out <- run_bam_wq(tmp, k = knew)
     }
-
+    
   } else {
     # run model
     bam_out <- run_bam_wq(tmp, k = 12)
   }
   
   
-    # even if it worked, if the time series is too short, remove it
+  # even if it worked, if the time series is too short, remove it
   if(ts_chars$ts_length < 9){
     out <- data.frame(station = stn,
                       parameter = param,
@@ -237,23 +240,41 @@ for(i in 1:nrow(wq_grid)){
     season_vec <- unique(tmp$season)
     seasonals <- list()
     
+    
+    # there also needs to be enough data within each season
     for(j in seq_along(season_vec)){
       tmp_seas <- filter(tmp, season == season_vec[j])
       
-      # if you can run an lm for a season, do it
-      if(!inherits(try(lm(value ~ dec_date, data = tmp_seas), 
-                       silent = TRUE), "try-error")){
-        mod <- lm(value ~ dec_date, 
-                  data = tmp_seas)
-        seas_tbl <- broom::tidy(mod) |> 
-          filter(term == "dec_date") |> 
-          mutate(station = stn,
-                 parameter= param,
-                 season = season_vec[j]) |> 
-          select(-term, -statistic) |> 
-          relocate(station, parameter, season)
+      nYears <- tmp_seas |> 
+        summarize(.by = year,
+                  values = sum(!is.na(value))) |> 
+        filter(values >= 1) |> 
+        nrow()
+      
+      if(nYears >= 7){
+        # if you can run an lm for a season, do it
+        if(!inherits(try(lm(value ~ dec_date, data = tmp_seas), 
+                         silent = TRUE), "try-error")){
+          mod <- lm(value ~ dec_date, 
+                    data = tmp_seas)
+          seas_tbl <- broom::tidy(mod) |> 
+            filter(term == "dec_date") |> 
+            mutate(station = stn,
+                   parameter= param,
+                   season = season_vec[j]) |> 
+            select(-term, -statistic) |> 
+            relocate(station, parameter, season)
+          
+          seasonals[[j]] <- seas_tbl
+        } else {
+          seasonals[[j]] <- data.frame(station = stn,
+                                       parameter = param,
+                                       season = season_vec[j],
+                                       estimate = NA_real_,
+                                       p.value = NA_real_)
+        }
         
-        seasonals[[j]] <- seas_tbl
+        # if there aren't at least 7 years 
       } else {
         seasonals[[j]] <- data.frame(station = stn,
                                      parameter = param,
@@ -669,6 +690,8 @@ trends_out <- list()
 # hudtnnut too short time series for no23
 # i = 350
 
+# lksolwq too short time series for winter trends
+
 
 # run the loop
 for(i in 1:nrow(nut_grid)){
@@ -743,13 +766,15 @@ for(i in 1:nrow(nut_grid)){
   
   
   # break out trends by season
-  # only if there's enough data
+  # only if there's enough data overall
   if(ts_chars$ts_length >= 9){
     
     tmp <- left_join(tmp, seas_defs)
     season_vec <- unique(tmp$season)
     seasonals <- list()
     
+    # for each season, make sure there are at least 7 distinct years
+    # (this is somewhat arbitrary but there could be valid reasons a couple years get missed)
     for(j in seq_along(season_vec)){
       tmp_seas <- filter(tmp, season == season_vec[j])
       
