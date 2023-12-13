@@ -271,7 +271,8 @@ for(i in 1:nrow(wq_grid)){
                                        parameter = param,
                                        season = season_vec[j],
                                        estimate = NA_real_,
-                                       p.value = NA_real_)
+                                       p.value = NA_real_,
+                                       std.error = NA_real_)
         }
         
         # if there aren't at least 7 years 
@@ -280,7 +281,8 @@ for(i in 1:nrow(wq_grid)){
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
-                                     p.value = NA_real_)
+                                     p.value = NA_real_,
+                                     std.error = NA_real_)
       }
       
       
@@ -463,7 +465,8 @@ for(i in 1:nrow(do_grid)){
                                        parameter = param,
                                        season = season_vec[j],
                                        estimate = NA_real_,
-                                       p.value = NA_real_)
+                                       p.value = NA_real_,
+                                       std.error = NA_real_)
         }
         # if there aren't at least 7 years 
       } else {
@@ -471,7 +474,8 @@ for(i in 1:nrow(do_grid)){
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
-                                     p.value = NA_real_)
+                                     p.value = NA_real_,
+                                     std.error = NA_real_)
       }
       
     }
@@ -648,7 +652,8 @@ for(i in 1:nrow(met_grid)){
                                        parameter = param,
                                        season = season_vec[j],
                                        estimate = NA_real_,
-                                       p.value = NA_real_)
+                                       p.value = NA_real_,
+                                       std.error = NA_real_)
         }
         # if there aren't at least 7 years 
       } else {
@@ -656,7 +661,8 @@ for(i in 1:nrow(met_grid)){
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
-                                     p.value = NA_real_)
+                                     p.value = NA_real_,
+                                     std.error = NA_real_)
       }
     }
     seasonal_trends <- bind_rows(seasonals) |> 
@@ -841,7 +847,8 @@ for(i in 1:nrow(nut_grid)){
                                        parameter = param,
                                        season = season_vec[j],
                                        estimate = NA_real_,
-                                       p.value = NA_real_)
+                                       p.value = NA_real_,
+                                       std.error = NA_real_)
         }
         # if there aren't at least 7 years 
       } else {
@@ -849,7 +856,8 @@ for(i in 1:nrow(nut_grid)){
                                      parameter = param,
                                      season = season_vec[j],
                                      estimate = NA_real_,
-                                     p.value = NA_real_)
+                                     p.value = NA_real_,
+                                     std.error = NA_real_)
       }
       
     }

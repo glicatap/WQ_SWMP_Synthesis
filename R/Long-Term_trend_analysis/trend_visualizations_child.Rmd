@@ -1,0 +1,110 @@
+---
+title: ''
+output: html_document
+---
+
+### Across all stations  
+
+```{r}
+ggplot(tmp_overall) +
+    geom_histogram(aes(x = Slope),
+                   bins = 30,
+                   col = "gray20",
+                   fill = "royalblue",
+                   alpha = 0.7) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    theme(legend.position = "none") +
+    labs(title = paste(prm, "overall slopes"))
+```
+
+```{r}
+ggplot(tmp_seas) +
+    geom_histogram(aes(x = estimate, fill = Season),
+                   bins = 30,
+                   col = "gray20",
+                   alpha = 0.8) +
+    facet_wrap(~Season) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    theme(legend.position = "none") +
+    labs(title = paste(prm, "slopes by season"))
+```
+
+```{r}
+ggplot(tmp_overall) +
+    geom_histogram(aes(x = Slope, fill = Region),
+                   bins = 20,
+                   col = "gray20",
+                   alpha = 0.8) +
+    facet_wrap(~Region, scales = "free_y") +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    theme(legend.position = "none") +
+    labs(title = paste(prm, "slopes by region"),
+         fill = "Region")
+```
+
+### Estimates + CIs  
+
+```{r, fig.height = 7, fig.width = 5}
+ggplot(tmp_overall) +
+    geom_pointrange(aes(x = Slope,
+                        y = forcats::fct_inorder(station),
+                        xmin = conf.low,
+                        xmax = conf.high,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+  theme(axis.text.y = element_text(size = rel(0.7))) +
+    labs(title = paste(prm, "slopes for all stations"),
+         subtitle = "sorted by region",
+         x = "slope estimate",
+         y = "station")
+```
+
+
+```{r, fig.height = 7, fig.width = 5}
+tmp_overall |>
+  arrange(parameter, Slope, station) |> 
+  mutate(stparm = paste0(station, parameter)) |> 
+  ggplot(aes(y = forcats::fct_inorder(station), x = Slope)) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high,
+                      col = Region)) +
+  geom_vline(xintercept = 0) +
+  labs(title = paste(prm, "slopes for all stations"),
+       subtitle = "sorted from lowest to highest",
+       x = "slope estimate",
+       y = "station",
+       col = "Region") +
+  theme(axis.text.y = element_text(size = rel(0.7)))
+```
+
+
+```{r, fig.height = 7, fig.width = 7}
+ggplot(tmp_seas) +
+    geom_pointrange(aes(x = estimate,
+                        y = forcats::fct_inorder(station),
+                        xmin = estimate - 2*std.error,
+                        xmax = estimate + 2*std.error,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    facet_wrap(~Season) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+  theme(axis.text.y = element_text(size = rel(0.7))) +
+    labs(title = paste(prm, "slopes by season"),
+         subtitle = "sorted by region",
+         x = "slope estimate",
+         y = "station")
+```
+
+***  
+***  
+***  
+
+  
+

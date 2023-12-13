@@ -1,11 +1,16 @@
 ---
 title: "Trend visualizations"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
 ```
 
 
@@ -38,8 +43,14 @@ trends_all <- bind_rows(trends_df, trends_met, trends_nut) |>
 
 trends_seasonal <- trends_all |> 
   select(station, parameter, reserve, type, Region,
-         Fall_estimate:Summer_p.value) |> 
-  pivot_longer(Fall_estimate:Summer_p.value,
+         starts_with("Fall"),
+         starts_with("Spring"),
+         starts_with("Summer"),
+         starts_with("Winter")) |> 
+  pivot_longer(c(starts_with("Fall"),
+         starts_with("Spring"),
+         starts_with("Summer"),
+         starts_with("Winter")),
                names_to = c("Season", "parm"),
                names_sep = "_",
                values_to = "value") |> 
@@ -50,6 +61,22 @@ trends_seasonal <- trends_all |>
 
 ```{r}
 rm(trends_df, trends_met, trends_nut, region_dictionary)
+```
+
+
+```{r}
+trends_all <-  trends_all |> 
+  arrange(Region, reserve, station) 
+
+trends_seasonal <- trends_seasonal |> 
+  arrange(Region, reserve, station) |> 
+  mutate(stn_factor = forcats::fct_inorder(station))
+
+parms <- trends_all |> 
+  select(type, parameter) |> 
+  distinct() |> 
+  arrange(desc(type), parameter) |> 
+  pull(parameter)
 ```
 
 
@@ -309,72 +336,23 @@ ggplot(seas_nut) +
   ylab("# of stations displaying seasonality")
 ```
 
-# Long-term by region and season  
+# By parameter, including seasonal breakdowns  
 
 
-```{r, results = "asis", fig.width = 5, fig.height = 8}
-trends_all <-  trends_all |> 
-  arrange(Region, reserve, station) 
-trends_seasonal <- trends_seasonal |> 
-  arrange(Region, reserve, station) |> 
-  mutate(stn_factor = forcats::fct_inorder(station))
-
-parms <- unique(trends_all$parameter)
+```{r, results = "asis"}
 for(i in seq_along(parms)){
-  
-  cat("\n")
-  cat("##", parms[i], "\n")
-  
-  tmp_overall <- filter(trends_all, parameter == parms[i])
-  tmp_seas <- filter(trends_seasonal, parameter == parms[i])
-  
-  
-  p <- ggplot(tmp_overall) +
-    geom_pointrange(aes(x = Slope,
-                        y = forcats::fct_inorder(station),
-                        xmin = conf.low,
-                        xmax = conf.high,
-                        fill = Region,
-                        color = Region),
-                    alpha = 0.6) +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    labs(title = "Slopes by region",
-         x = "slope estimate",
-         y = "station")
-  
-  p1 <- ggplot(tmp_seas) +
-    geom_histogram(aes(x = estimate, fill = Season),
-                   bins = 30,
-                   col = "gray20",
-                   alpha = 0.8) +
-    facet_wrap(~Season, scales = "free") +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    theme(legend.position = "none") +
-    labs(title = paste0(parms[i], " slopes by season"))
-  
-  p2 <- ggplot(tmp_seas) +
-    geom_pointrange(aes(x = estimate,
-                        y = forcats::fct_inorder(station),
-                        xmin = estimate - 2*std.error,
-                        xmax = estimate + 2*std.error,
-                        fill = Region,
-                        color = Region),
-                    alpha = 0.6) +
-    facet_wrap(~Season, scales = "free") +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    labs(title = paste0(parms[i], " slopes by season"),
-         x = "slope estimate",
-         y = "station")
-  
-  print(p)
-  print(p2)
-  print(p1)
+    prm <- parms[i]
+    cat("\n")
+    cat("##", prm, "\n")
+    tmp_overall <- filter(trends_all, parameter == parms[i])
+    tmp_seas <- filter(trends_seasonal, parameter == parms[i])
+    chld <- knitr::knit_child("trend_visualizations_child.Rmd", quiet = TRUE)
+    cat(chld, sep = "\n")
 }
-
 ```
+
+
+
 
 
 
