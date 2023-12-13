@@ -97,27 +97,6 @@ ggplot(filter(trends_all, type == "wq")) +
 
 
 ```{r}
-trends_all |> 
-  filter(type == "wq") |> 
-  arrange(Region, reserve, station) |> 
-  ggplot() +
-    geom_pointrange(aes(x = Slope,
-                        y = forcats::fct_inorder(station),
-                        xmin = conf.low,
-                        xmax = conf.high,
-                        fill = Region,
-                        color = Region),
-                    alpha = 0.6) +
-    facet_wrap(~parameter, scales = "free") +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    labs(title = "Slopes by region",
-         x = "slope estimate",
-         y = "station")
-```
-
-
-```{r}
 ggplot(filter(trends_all, type == "wq")) +
   geom_point(aes(x = ts_length,
                  y = Slope,
@@ -199,26 +178,6 @@ ggplot(filter(trends_all, type == "met")) +
   theme(legend.position = "none") +
   labs(title = "Histograms of slopes for each parameter",
        subtitle = "slopes are in [parameter's measurement units] / year")
-```
-
-```{r}
-trends_all |> 
-  filter(type == "met") |> 
-  arrange(Region, reserve, station) |> 
-  ggplot() +
-    geom_pointrange(aes(x = Slope,
-                        y = forcats::fct_inorder(station),
-                        xmin = conf.low,
-                        xmax = conf.high,
-                        fill = Region,
-                        color = Region),
-                    alpha = 0.6) +
-    facet_wrap(~parameter, scales = "free") +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    labs(title = "Slopes by region",
-         x = "slope estimate",
-         y = "station")
 ```
 
 ```{r}
@@ -305,25 +264,6 @@ ggplot(filter(trends_all, type == "nut")) +
        subtitle = "slopes are in (log-10 [nutrient units]) / year")
 ```
 
-```{r}
-trends_all |> 
-  filter(type == "nut") |> 
-  arrange(Region, reserve, station) |> 
-  ggplot() +
-    geom_pointrange(aes(x = Slope,
-                        y = forcats::fct_inorder(station),
-                        xmin = conf.low,
-                        xmax = conf.high,
-                        fill = Region,
-                        color = Region),
-                    alpha = 0.6) +
-    facet_wrap(~parameter, scales = "free") +
-    geom_vline(xintercept = 0,
-               linewidth = 1) +
-    labs(title = "Slopes by region",
-         x = "slope estimate",
-         y = "station")
-```
 
 ```{r}
 ggplot(filter(trends_all, type == "nut")) +
@@ -369,9 +309,12 @@ ggplot(seas_nut) +
   ylab("# of stations displaying seasonality")
 ```
 
-# Long-term by season  
+# Long-term by region and season  
 
-```{r}
+
+```{r, results = "asis", fig.width = 5, fig.height = 8}
+trends_all <-  trends_all |> 
+  arrange(Region, reserve, station) 
 trends_seasonal <- trends_seasonal |> 
   arrange(Region, reserve, station) |> 
   mutate(stn_factor = forcats::fct_inorder(station))
@@ -379,9 +322,28 @@ trends_seasonal <- trends_seasonal |>
 parms <- unique(trends_all$parameter)
 for(i in seq_along(parms)){
   
-  tmp <- filter(trends_seasonal, parameter == parms[i])
+  cat("\n")
+  cat("##", parms[i], "\n")
   
-  p1 <- ggplot(tmp) +
+  tmp_overall <- filter(trends_all, parameter == parms[i])
+  tmp_seas <- filter(trends_seasonal, parameter == parms[i])
+  
+  
+  p <- ggplot(tmp_overall) +
+    geom_pointrange(aes(x = Slope,
+                        y = forcats::fct_inorder(station),
+                        xmin = conf.low,
+                        xmax = conf.high,
+                        fill = Region,
+                        color = Region),
+                    alpha = 0.6) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    labs(title = "Slopes by region",
+         x = "slope estimate",
+         y = "station")
+  
+  p1 <- ggplot(tmp_seas) +
     geom_histogram(aes(x = estimate, fill = Season),
                    bins = 30,
                    col = "gray20",
@@ -392,7 +354,7 @@ for(i in seq_along(parms)){
     theme(legend.position = "none") +
     labs(title = paste0(parms[i], " slopes by season"))
   
-  p2 <- ggplot(tmp) +
+  p2 <- ggplot(tmp_seas) +
     geom_pointrange(aes(x = estimate,
                         y = forcats::fct_inorder(station),
                         xmin = estimate - 2*std.error,
@@ -407,8 +369,9 @@ for(i in seq_along(parms)){
          x = "slope estimate",
          y = "station")
   
-  print(p1)
+  print(p)
   print(p2)
+  print(p1)
 }
 
 ```
