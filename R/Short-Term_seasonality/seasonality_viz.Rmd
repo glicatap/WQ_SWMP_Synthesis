@@ -60,6 +60,58 @@ chl_timing <- timing_calcs(chl_annual)
 time_ampl_plots(chl_timing, chl_annual, "Chl a", "peak")
 ```
 
+```{r, fig.width = 7, fig.height = 5}
+chl_timing$most_likely_month |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 12) +
+  theme(legend.position = "none") +
+  labs(title = "timing overall",
+       x = "median month")
+
+chl_timing$most_likely_month |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 12) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "timing by region",
+       x = "median month")
+```
+
+```{r, fig.width = 7, fig.height = 5}
+chl_annual |> 
+  summarize(.by = station,
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 20) +
+  theme(legend.position = "none") +
+  labs(title = "median normalized amplitude, overall",
+       x = "normalized amplitude")
+
+chl_annual |> 
+  summarize(.by = c(Region, station),
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 15) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "amplitude by region",
+       x = "median normalized amplitude")
+```
+
 
 # DO %  (min) 
 
@@ -74,6 +126,59 @@ dopct_annual <- annualize(wq, do_pct_median) |>
 dopct_timing <- timing_calcs(dopct_annual)
 
 time_ampl_plots(dopct_timing, dopct_annual, "DO % saturation", "minimum")
+```
+
+
+```{r, fig.width = 7, fig.height = 5}
+dopct_timing$most_likely_month |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 12) +
+  theme(legend.position = "none") +
+  labs(title = "timing overall",
+       x = "median month")
+
+dopct_timing$most_likely_month |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 12) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "timing by region",
+       x = "median month")
+```
+
+```{r, fig.width = 7, fig.height = 5}
+dopct_annual |> 
+  summarize(.by = station,
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 20) +
+  theme(legend.position = "none") +
+  labs(title = "median normalized amplitude, overall",
+       x = "normalized amplitude")
+
+dopct_annual |> 
+  summarize(.by = c(Region, station),
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 15) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "amplitude by region",
+       x = "median normalized amplitude")
 ```
 
 
@@ -92,6 +197,59 @@ domgl_timing <- timing_calcs(domgl_annual)
 time_ampl_plots(domgl_timing, domgl_annual, "DO mg/L", "minimum")
 ```
 
+```{r, fig.width = 7, fig.height = 5}
+domgl_timing$most_likely_month |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 12) +
+  theme(legend.position = "none") +
+  labs(title = "timing overall",
+       x = "median month")
+
+domgl_timing$most_likely_month |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 12) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "timing by region",
+       x = "median month")
+```
+
+```{r, fig.width = 7, fig.height = 5}
+domgl_annual |> 
+  summarize(.by = station,
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 20) +
+  theme(legend.position = "none") +
+  labs(title = "median normalized amplitude, overall",
+       x = "normalized amplitude")
+
+domgl_annual |> 
+  summarize(.by = c(Region, station),
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 15) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "amplitude by region",
+       x = "median normalized amplitude")
+```
+
+
 
 
 # proportion DO < 5 (min)  
@@ -109,6 +267,57 @@ do5_timing <- timing_calcs(doLessThan5_annual)
 time_ampl_plots(do5_timing, doLessThan5_annual, "Proportion of DO < 5 mg/L", "peak")
 ```
 
+```{r, fig.width = 7, fig.height = 5}
+do5_timing$most_likely_month |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 12) +
+  theme(legend.position = "none") +
+  labs(title = "timing overall",
+       x = "median month")
+
+do5_timing$most_likely_month |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 12) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "timing by region",
+       x = "median month")
+```
+
+```{r, fig.width = 7, fig.height = 5}
+doLessThan5_annual |> 
+  summarize(.by = station,
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 20) +
+  theme(legend.position = "none") +
+  labs(title = "median normalized amplitude, overall",
+       x = "normalized amplitude")
+
+doLessThan5_annual |> 
+  summarize(.by = c(Region, station),
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 15) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "amplitude by region",
+       x = "median normalized amplitude")
+```
 
 
 # proportion DO < 2 (min)  
@@ -125,6 +334,60 @@ do2_timing <- timing_calcs(doLessThan2_annual)
 
 time_ampl_plots(do2_timing, doLessThan2_annual, "Proportion of DO < 2 mg/L", "peak")
 ```
+
+```{r, fig.width = 7, fig.height = 5}
+do2_timing$most_likely_month |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 12) +
+  theme(legend.position = "none") +
+  labs(title = "timing overall",
+       x = "median month")
+
+do2_timing$most_likely_month |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_month,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 12) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "timing by region",
+       x = "median month")
+```
+
+```{r, fig.width = 7, fig.height = 5}
+doLessThan2_annual |> 
+  summarize(.by = station,
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl),
+                 fill = "blue3",
+                 col = "gray80",
+                 bins = 20) +
+  theme(legend.position = "none") +
+  labs(title = "median normalized amplitude, overall",
+       x = "normalized amplitude")
+
+doLessThan2_annual |> 
+  summarize(.by = c(Region, station),
+            median_norm_ampl = median(an_normalized_amplitude)) |> 
+  ggplot() +
+  geom_histogram(aes(x = median_norm_ampl,
+                     fill = Region),
+                 col = "gray80",
+                 bins = 15) +
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = "none") +
+  labs(title = "amplitude by region",
+       x = "median normalized amplitude")
+```
+
+
 
 # Some explanation  
 
