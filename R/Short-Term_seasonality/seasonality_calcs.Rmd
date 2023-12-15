@@ -1,0 +1,90 @@
+---
+title: "Seasonality quantification"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+
+wq <- wq |> 
+  mutate(do_proportion_below2 = round(doLessThan2_total / doLessThan2_nValid, 4),
+         do_proportion_below5 = round(doLessThan5_total / doLessThan5_nValid, 4)) 
+```
+
+
+From Cloern and Jassby 2008:
+
+1.  Monthly mean chl calculated (will use our monthly values)  
+2.  Annual mean determined by averaging monthly means  
+    a.  They only did this when all 12 values existed in a calendar year, or when there were 12 consecutive months of data. I don't think this will work for our purposes especially given some sites not sampling in winter months. 
+    b.  Probably ought to make some cutoff though to get a legitimate yearly average.  
+3.  Defined the month number of the largest monthly mean, within each year.  
+4.  Turned that into a probability distribution: "a site with three years of data and annual peaks in March, April and March respectively would have a distribution with March set to 0.67, April to 0.33 and other months to 0."  
+    a.  so essentially each month's number is the proportion of available years in which that month had the peak chl.  
+5.  Amplitude: (max - min) for each year. This is "highly dependent on the overall biomass level as expressed by the annual mean" so they also normalized: range divided by annual mean.  
+    a.  I don't see whether/how they calculated an overall amplitude - guess we'll take the average of whatever amplitudes are available?  
+    
+
+I'll start by only calculating these for chl (max), DO (min), and DO proportions (max).  
+
+Sometimes there are multiple peaks within a year so the `peak_month` (month or months containing the maximum reading for the year) and `floor_month` (month or months containing the minimum reading for the year) columns are list columns.   
+
+
+# Chl a  
+
+```{r}
+chl_annual <- annualize(nut, chla_n) |> 
+  select(-annual_min, -floor_month) 
+```
+
+
+# DO %  
+
+```{r}
+dopct_annual <- annualize(wq, do_pct_median) |> 
+  select(-annual_max, -peak_month) 
+```
+
+
+# DO mg/L  
+
+```{r}
+domgl_annual <- annualize(wq, do_mgl_median) |> 
+  select(-annual_max, -peak_month) 
+```
+
+
+
+# proportion DO < 5  
+
+```{r}
+doLessThan5_annual <- annualize(wq, do_proportion_below5) |> 
+  select(-annual_min, -floor_month) 
+```
+
+
+
+# proportion DO < 2  
+
+```{r}
+doLessThan2_annual <- annualize(wq, do_proportion_below2) |> 
+  select(-annual_min, -floor_month) 
+```
