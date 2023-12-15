@@ -643,6 +643,7 @@ annualize <- function(data, param){
     summarise(.by = c(station, year),
               annual_mean = mean({{param}}, na.rm = TRUE),
               annual_amplitude = max({{param}}, na.rm = TRUE) - min({{param}}, na.rm = TRUE),
+              an_normalized_amplitude = annual_amplitude / annual_mean,
               annual_n = sum(!is.na({{param}})),
               annual_max = max({{param}}, na.rm = TRUE),
               peak_month = list(month[which({{param}} == max({{param}}, na.rm = TRUE))]),

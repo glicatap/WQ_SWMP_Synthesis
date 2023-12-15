@@ -10,13 +10,16 @@ date: "`r Sys.Date()`"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
-                      error = TRUE)
+                      error = TRUE,
+                      fig.width = 7,
+                      fig.height = 7)
 ```
 
 ```{r}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(patchwork)
 
 source(here::here("helper_files", "definitions.R"))
 source(here::here("helper_files", "functions.R"))
@@ -39,7 +42,8 @@ From Cloern and Jassby 2008:
 3.  Defined the month number of the largest monthly mean, within each year.  
 4.  Turned that into a probability distribution: "a site with three years of data and annual peaks in March, April and March respectively would have a distribution with March set to 0.67, April to 0.33 and other months to 0."  
     a.  so essentially each month's number is the proportion of available years in which that month had the peak chl.  
-5.  Amplitude: (max - min) for each year. This is "highly dependent on the overall biomass level as expressed by the annual mean" so they also normalized: range divided by annual mean.  
+5.  Turned the probability dist'n into a frequency dist'n across all sites within a region - which we are not doing.  
+6.  Amplitude: (max - min) for each year. This is "highly dependent on the overall biomass level as expressed by the annual mean" so they also normalized: range divided by annual mean.  
     a.  I don't see whether/how they calculated an overall amplitude - guess we'll take the average of whatever amplitudes are available?  
     
 
@@ -64,7 +68,11 @@ chl_weighted_months <- chl_annual |>
   mutate(month_weight_within_year = 1/year_factor) |> 
   unnest(cols = peak_month)
 
-# this isn't working
+chl_maxes <- chl_annual |> 
+  unnest(cols = peak_month) |> 
+  group_by(station, year) |> 
+  filter(annual_max == max(annual_max, na.rm = TRUE))
+
 stn_distn <- chl_weighted_months |> 
   summarize(.by = c(station, peak_month),
             n_yrs_with_this_peak = n(),
@@ -82,6 +90,57 @@ stn_distn <- chl_weighted_months |>
   mutate(prob_of_peak = sum_weights/nyears) |> 
   arrange(station, desc(prob_of_peak)) |> 
   relocate(prob_of_peak, .after = peak_month)
+
+most_likely_month <- stn_distn |> 
+  summarize(.by = station,
+            most_likely_month = list(peak_month[which(prob_of_peak == max(prob_of_peak))])) |> 
+  unnest(cols = most_likely_month)
+```
+
+
+```{r}
+p1 <- most_likely_month |> 
+  arrange(most_likely_month) |> 
+  ggplot() +
+  geom_point(aes(x = most_likely_month,
+                 y = forcats::fct_inorder(station)),
+             alpha = 0) +
+  geom_point(data = chl_maxes,
+             aes(x = peak_month, y = station),
+             shape = 1,
+             col = "navy",
+             alpha = 0.6) +
+  geom_point(data = most_likely_month,
+             aes(x = most_likely_month, y = station),
+             col = "red3") +
+  theme(axis.text.y = element_text(size = rel(0.6))) +
+  labs(title = "Chl a",
+       x = "Timing of maximum",
+       y = "station, ordered by median")
+```
+
+
+```{r}
+p2 <- chl_annual |> 
+  select(station, year, an_normalized_amplitude) |> 
+  group_by(station) |> 
+  mutate(median_amplitude = median(an_normalized_amplitude)) |> 
+  arrange(median_amplitude) |> 
+  ggplot() +
+  geom_point(aes(x = an_normalized_amplitude, y = forcats::fct_inorder(station)),
+             col = "navy",
+             shape = 1,
+             alpha = 0.5) +
+  geom_point(aes(x = median_amplitude, y = station),
+             col = "red3") +
+  theme(axis.text.y = element_text(size = rel(0.6))) +
+  labs(title = "Chl a",
+       x = "Normalized amplitude",
+       y = "station, ordered by median")
+```
+
+```{r}
+p1 + p2
 ```
 
 
