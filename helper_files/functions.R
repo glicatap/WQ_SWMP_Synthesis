@@ -653,3 +653,152 @@ annualize <- function(data, param){
            annual_n >= 6)
 }
 
+
+timing_calcs <- function(data){
+  ofInterest <- data |> 
+    unnest(col = key_month) |> 
+    select(station, year, key_month)
+  
+  stn_medians <- ofInterest |> 
+    group_by(station, year) |> 
+    mutate(nKeyMonths = n(),
+           weighted = key_month / nKeyMonths) |>
+    ungroup() |> 
+    summarize(.by = c(station, year),
+              mean_keyMonth_for_year = mean(weighted)) |> 
+    summarize(.by = station,
+              median_month = median(mean_keyMonth_for_year))
+  
+  weighted_months <- data |> 
+    unnest(cols = key_month) |> 
+    summarize(.by = c(station, year),
+              year_factor = length(unique(key_month))) |> 
+    right_join(data) |> 
+    mutate(month_weight_within_year = 1/year_factor) |> 
+    unnest(cols = key_month)
+  
+  n_yrs <- data |> 
+    summarize(.by = station,
+              nyears = length(unique(year)))
+  
+  stn_distn <- weighted_months |> 
+    summarize(.by = c(station, key_month),
+              n_yrs_with_this_key = n(),
+              sum_weights = sum(month_weight_within_year)) |> 
+    left_join(n_yrs, by = "station") |> 
+    mutate(prob_of_keyMonth = sum_weights/nyears) |> 
+    arrange(station, desc(prob_of_keyMonth)) |> 
+    relocate(prob_of_keyMonth, .after = key_month)
+  
+  most_likely_month <- stn_distn |> 
+    summarize(.by = station,
+              most_likely_months = list(key_month[which(prob_of_keyMonth == max(prob_of_keyMonth))])) |> 
+    unnest(cols = most_likely_months) |> 
+    left_join(stn_medians, by = "station")
+  
+  return(list("ofInterest" = ofInterest, 
+              "weighted_months" = weighted_months, 
+              "stn_distn" = stn_distn, 
+              "most_likely_month" = most_likely_month))
+}
+
+
+time_ampl_plots <- function(wrangled_object, annualized_object, param, type){
+  # requires patchwork to be loaded; prints side-by-side plots
+  p1 <- wrangled_object$most_likely_month |> 
+    arrange(median_month) |> 
+    ggplot() +
+    geom_point(aes(x = median_month,
+                   y = forcats::fct_inorder(station)),
+               alpha = 0) +
+    geom_point(data = wrangled_object$ofInterest,
+               aes(x = key_month, y = station),
+               shape = 1,
+               col = "navy",
+               alpha = 0.6) +
+    # geom_point(data = wrangled_object$most_likely_month,
+    #            aes(x = most_likely_months, y = station),
+    #            # shape = 1,
+    #            col = "darkorange",
+    #            alpha = 0.6) +
+    geom_point(aes(x = median_month,
+                   y = forcats::fct_inorder(station)),
+               col = "red3"
+    ) +
+    theme(axis.text.y = element_text(size = rel(0.6)),
+          plot.caption = element_text(hjust = 0)) +
+    labs(title = param,
+         x = paste("Timing of", type),
+         y = "station, ordered by median")
+  
+  p2 <- annualized_object |> 
+    select(station, year, an_normalized_amplitude) |> 
+    group_by(station) |> 
+    mutate(median_amplitude = median(an_normalized_amplitude)) |> 
+    arrange(median_amplitude) |> 
+    ggplot() +
+    geom_point(aes(x = an_normalized_amplitude, y = forcats::fct_inorder(station)),
+               col = "navy",
+               shape = 1,
+               alpha = 0.5) +
+    geom_point(aes(x = median_amplitude, y = station),
+               col = "red3") +
+    theme(axis.text.y = element_text(size = rel(0.6)),
+          plot.caption = element_text(hjust = 0)) +
+    labs(title = param,
+         x = "Normalized amplitude",
+         y = "station, ordered by median")
+  
+  print(p1 + p2)
+}
+
+# NOT WORKING
+time_ampl_plots_Region <- function(wrangled_object, annualized_object, param, type){
+  # requires patchwork to be loaded; prints side-by-side plots
+  p1 <- wrangled_object$most_likely_month |> 
+    arrange(median_month) |> 
+    mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+    left_join(region_dictionary, by = c("reserve" = "Reserve"))
+    ggplot() +
+    geom_point(aes(x = median_month,
+                   y = forcats::fct_inorder(station)),
+               alpha = 0) +
+    geom_point(data = wrangled_object$ofInterest,
+               aes(x = key_month, y = station),
+               shape = 1,
+               col = "navy",
+               alpha = 0.6) +
+    # geom_point(data = wrangled_object$most_likely_month,
+    #            aes(x = most_likely_months, y = station),
+    #            # shape = 1,
+    #            col = "darkorange",
+    #            alpha = 0.6) +
+    geom_point(aes(x = median_month,
+                   y = forcats::fct_inorder(station),
+                   col = Region)) +
+    theme(axis.text.y = element_text(size = rel(0.6)),
+          plot.caption = element_text(hjust = 0)) +
+    labs(title = param,
+         x = paste("Timing of", type),
+         y = "station, ordered by median")
+  
+  p2 <- annualized_object |> 
+    select(station, year, an_normalized_amplitude) |> 
+    group_by(station) |> 
+    mutate(median_amplitude = median(an_normalized_amplitude)) |> 
+    arrange(median_amplitude) |> 
+    ggplot() +
+    geom_point(aes(x = an_normalized_amplitude, y = forcats::fct_inorder(station)),
+               col = "navy",
+               shape = 1,
+               alpha = 0.5) +
+    geom_point(aes(x = median_amplitude, y = station, col = Region)) +
+    theme(axis.text.y = element_text(size = rel(0.6)),
+          plot.caption = element_text(hjust = 0)) +
+    labs(title = param,
+         x = "Normalized amplitude",
+         y = "station, ordered by median")
+  
+  print(p1 + p2)
+}
+

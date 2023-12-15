@@ -1,0 +1,149 @@
+---
+title: "Seasonality quantification"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE,
+                      error = TRUE,
+                      fig.width = 7,
+                      fig.height = 7)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+
+region_dictionary <- read.csv(here::here("helper_files",
+                                         "region_dictionary.csv"))
+
+wq <- wq |> 
+  mutate(do_proportion_below2 = round(doLessThan2_total / doLessThan2_nValid, 4),
+         do_proportion_below5 = round(doLessThan5_total / doLessThan5_nValid, 4)) 
+```
+
+
+# About 
+
+These graphs imitate Figure 3 in Cloern and Jassby 2008. The plot on the left is the timing (month) of the parameter maximum (chl a; DO time below 2 and 5 mg/L) or minimum (DO % and mg/L). The plot on the right is normalized amplitude: annual range divided by annual mean.  
+
+Open blue circles are each individual point, and red points represent the overall median for the station. This got complicated for timing (many station/year combinations had 2-3 months with the same 'peak' value, and I attempted to weight these) so do not consider these final calculations, only preliminary.  
+
+
+
+# Chl a (peak)  
+
+```{r}
+chl_annual <- annualize(nut, chla_n) |> 
+  select(-annual_min, -floor_month) |> 
+  rename(key_stat = annual_max,
+         key_month = peak_month) |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+chl_timing <- timing_calcs(chl_annual)
+
+time_ampl_plots(chl_timing, chl_annual, "Chl a", "peak")
+```
+
+
+# DO %  (min) 
+
+```{r}
+dopct_annual <- annualize(wq, do_pct_median) |> 
+  select(-annual_max, -peak_month) |> 
+  rename(key_stat = annual_min,
+         key_month = floor_month) |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+dopct_timing <- timing_calcs(dopct_annual)
+
+time_ampl_plots(dopct_timing, dopct_annual, "DO % saturation", "minimum")
+```
+
+
+# DO mg/L (min)  
+
+```{r}
+domgl_annual <- annualize(wq, do_mgl_median) |> 
+  select(-annual_max, -peak_month) |> 
+  rename(key_stat = annual_min,
+         key_month = floor_month) |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+domgl_timing <- timing_calcs(domgl_annual)
+
+time_ampl_plots(domgl_timing, domgl_annual, "DO mg/L", "minimum")
+```
+
+
+
+# proportion DO < 5 (min)  
+
+```{r}
+doLessThan5_annual <- annualize(wq, do_proportion_below5) |> 
+  select(-annual_min, -floor_month) |> 
+  rename(key_stat = annual_max,
+         key_month = peak_month) |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+do5_timing <- timing_calcs(doLessThan5_annual)
+
+time_ampl_plots(do5_timing, doLessThan5_annual, "Proportion of DO < 5 mg/L", "peak")
+```
+
+
+
+# proportion DO < 2 (min)  
+
+```{r}
+doLessThan2_annual <- annualize(wq, do_proportion_below2) |> 
+  select(-annual_min, -floor_month) |> 
+  rename(key_stat = annual_max,
+         key_month = peak_month) |> 
+  mutate(reserve = stringr::str_sub(station, start = 1, end = 3)) |> 
+  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+
+do2_timing <- timing_calcs(doLessThan2_annual)
+
+time_ampl_plots(do2_timing, doLessThan2_annual, "Proportion of DO < 2 mg/L", "peak")
+```
+
+# Some explanation  
+
+From Cloern and Jassby 2008:
+
+1.  Monthly mean chl calculated (will use our monthly values)  
+2.  Annual mean determined by averaging monthly means  
+    a.  They only did this when all 12 values existed in a calendar year, or when there were 12 consecutive months of data. I don't think this will work for our purposes especially given some sites not sampling in winter months. 
+    b.  Probably ought to make some cutoff though to get a legitimate yearly average.  
+3.  Defined the month number of the largest monthly mean, within each year.  
+4.  Turned that into a probability distribution: "a site with three years of data and annual peaks in March, April and March respectively would have a distribution with March set to 0.67, April to 0.33 and other months to 0."  
+    a.  so essentially each month's number is the proportion of available years in which that month had the peak chl.  
+5.  Turned the probability dist'n into a frequency dist'n across all sites within a region - which we are not doing.  
+6.  Amplitude: (max - min) for each year. This is "highly dependent on the overall biomass level as expressed by the annual mean" so they also normalized: range divided by annual mean.  
+    a.  I don't see whether/how they calculated an overall amplitude - guess we'll take the average of whatever amplitudes are available?  
+    
+
+I'll start by only calculating these for chl (max), DO (min), and DO proportions (max).  
+
+Sometimes there are multiple peaks within a year so the `peak_month` (month or months containing the maximum reading for the year) and `floor_month` (month or months containing the minimum reading for the year) columns are list columns.  
+
+Need to unlist the column and then assign weights for each month of the year (so in years with only one month of a peak, the weight for the month going into the next weighting will be 1; when there are 3 peaks, each month's weight will be 0.33, etc.)
