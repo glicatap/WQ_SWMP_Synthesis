@@ -45,7 +45,9 @@ From Cloern and Jassby 2008:
 
 I'll start by only calculating these for chl (max), DO (min), and DO proportions (max).  
 
-Sometimes there are multiple peaks within a year so the `peak_month` (month or months containing the maximum reading for the year) and `floor_month` (month or months containing the minimum reading for the year) columns are list columns.   
+Sometimes there are multiple peaks within a year so the `peak_month` (month or months containing the maximum reading for the year) and `floor_month` (month or months containing the minimum reading for the year) columns are list columns.  
+
+Need to unlist the column and then assign weights for each month of the year (so in years with only one month of a peak, the weight for the month going into the next weighting will be 1; when there are 3 peaks, each month's weight will be 0.33, etc.)
 
 
 # Chl a  
@@ -53,6 +55,33 @@ Sometimes there are multiple peaks within a year so the `peak_month` (month or m
 ```{r}
 chl_annual <- annualize(nut, chla_n) |> 
   select(-annual_min, -floor_month) 
+
+chl_weighted_months <- chl_annual |> 
+  unnest(cols = peak_month) |> 
+  summarize(.by = c(station, year),
+            year_factor = length(unique(peak_month))) |> 
+  right_join(chl_annual) |> 
+  mutate(month_weight_within_year = 1/year_factor) |> 
+  unnest(cols = peak_month)
+
+# this isn't working
+stn_distn <- chl_weighted_months |> 
+  summarize(.by = c(station, peak_month),
+            n_yrs_with_this_peak = n(),
+            sum_weights = sum(month_weight_within_year)) 
+
+n_yrs <- chl_annual |> 
+  summarize(.by = station,
+            nyears = length(unique(year)))
+
+stn_distn <- chl_weighted_months |> 
+  summarize(.by = c(station, peak_month),
+            n_yrs_with_this_peak = n(),
+            sum_weights = sum(month_weight_within_year)) |> 
+  left_join(n_yrs, by = "station") |> 
+  mutate(prob_of_peak = sum_weights/nyears) |> 
+  arrange(station, desc(prob_of_peak)) |> 
+  relocate(prob_of_peak, .after = peak_month)
 ```
 
 
