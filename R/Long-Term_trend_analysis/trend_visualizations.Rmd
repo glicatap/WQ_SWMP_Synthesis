@@ -28,17 +28,34 @@ region_dictionary <- read.csv(here::here("helper_files",
 
 
 ```{r}
+# read in trends
 load(here::here("Outputs", 
                 "calculated_trends",
                 "long-term-trends.RData"))
 
+# read in seasonal amplitudes
+load(here::here("Outputs", 
+                "calculated_trends", 
+                "seasonal_characterization.RData"))
+
+# read in station metadata, including latitude
+stn_mdat <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) |> 
+  select(station = "Station Code",
+         Latitude,
+         Longitude)
+```
+
+
+```{r}
 trends_all <- bind_rows(trends_df, trends_met, trends_nut) |> 
   mutate(reserve = str_sub(station, start = 1, end = 3),
          type = case_when(str_ends(station, "wq") ~ "wq",
                           str_ends(station, "met") ~ "met",
                           str_ends(station, "nut") ~ "nut",
                           .default = "something's wrong")) |> 
-  left_join(region_dictionary, by = c("reserve" = "Reserve"))
+  left_join(seasonal_by_stn, by = c("station", "parameter")) |>  # join in the seasonal amplitudes
+  left_join(region_dictionary, by = c("reserve" = "Reserve")) |>   # join the pre-defined region categories
+  left_join(stn_mdat, by = "station")  # join the latitudes
 
 
 trends_seasonal <- trends_all |> 
@@ -60,7 +77,9 @@ trends_seasonal <- trends_all |>
 ```
 
 ```{r}
-rm(trends_df, trends_met, trends_nut, region_dictionary)
+rm(trends_df, trends_met, trends_nut, 
+   seasonal_by_stn,
+   region_dictionary, stn_mdat)
 ```
 
 
@@ -125,18 +144,18 @@ ggplot(filter(trends_all, type == "wq")) +
 
 ```{r}
 ggplot(filter(trends_all, type == "wq")) +
+  geom_hline(yintercept = 0,
+             linewidth = 0.7) +  
   geom_point(aes(x = ts_length,
                  y = Slope,
                  col = parameter),
              alpha = 0.7) +
-  geom_smooth(method = "loess", se = FALSE,
+  geom_smooth(method = "lm", se = TRUE,
               aes(x = ts_length,
                   y = Slope,
                   col = parameter),
               alpha = 0.6) +
   facet_wrap(~parameter, scales = "free") +
-  geom_hline(yintercept = 0,
-             linewidth = 0.7) +
   theme(legend.position = "none") +
   labs(title = "Slopes as a function of time series length for each parameter",
        x = "Time Series length (years)",
@@ -209,18 +228,18 @@ ggplot(filter(trends_all, type == "met")) +
 
 ```{r}
 ggplot(filter(trends_all, type == "met")) +
+  geom_hline(yintercept = 0,
+             linewidth = 0.7) +  
   geom_point(aes(x = ts_length,
                  y = Slope,
                  col = parameter),
              alpha = 0.7) +
-  geom_smooth(method = "loess", se = FALSE,
+  geom_smooth(method = "lm", se = TRUE,
               aes(x = ts_length,
                   y = Slope,
                   col = parameter),
               alpha = 0.6) +
   facet_wrap(~parameter, scales = "free") +
-  geom_hline(yintercept = 0,
-             linewidth = 0.7) +
   theme(legend.position = "none") +
   labs(title = "Slopes as a function of time series length for each parameter",
        x = "Time Series length (years)",
@@ -294,18 +313,18 @@ ggplot(filter(trends_all, type == "nut")) +
 
 ```{r}
 ggplot(filter(trends_all, type == "nut")) +
+  geom_hline(yintercept = 0,
+             linewidth = 0.7) +  
   geom_point(aes(x = ts_length,
                  y = Slope,
                  col = parameter),
              alpha = 0.7) +
-  geom_smooth(method = "loess", se = FALSE,
+  geom_smooth(method = "lm", se = TRUE,
               aes(x = ts_length,
                   y = Slope,
                   col = parameter),
               alpha = 0.6) +
   facet_wrap(~parameter, scales = "free") +
-  geom_hline(yintercept = 0,
-             linewidth = 0.7) +
   theme(legend.position = "none") +
   labs(title = "Slopes as a function of time series length for each parameter",
        x = "Time Series length (years)",

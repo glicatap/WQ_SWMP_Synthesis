@@ -45,6 +45,46 @@ ggplot(tmp_overall) +
          fill = "Region")
 ```
 
+```{r}
+# slope by latitude
+ggplot(tmp_overall, aes(x = Slope, y = Latitude)) +
+  geom_point(aes(col = Region), size = 2) +
+  geom_smooth(method = "lm", se = TRUE,
+              alpha = 0.2,
+              size = 0.5) +
+  theme_bw() +
+  labs(title = paste(prm, "slopes by latitude"),
+         fill = "Region")
+```
+
+```{r}
+# if there are seasonal amplitudes, plot with those too
+if(sum(is.na(tmp_overall$median_ampl)) < nrow(tmp_overall)){
+  ggplot(tmp_overall, aes(y = Slope, x = median_ampl)) +
+    geom_point(aes(col = Region), size = 2) +
+    geom_smooth(method = "lm", se = TRUE,
+                alpha = 0.2,
+                size = 0.5) +
+    theme_bw() +
+    labs(title = paste(prm, "slopes by seasonal amplitude"),
+         x = "Median amplitude",
+         fill = "Region")
+  
+  
+  ggplot(tmp_overall, aes(y = Slope, x = median_norm_ampl)) +
+    geom_point(aes(col = Region), size = 2) +
+    geom_smooth(method = "lm", se = TRUE,
+                alpha = 0.2,
+                size = 0.5) +
+    theme_bw() +
+    labs(title = paste(prm, "slopes by normalized seasonal amplitude"),
+         x = "Median normalized amplitude",
+         fill = "Region")
+}
+```
+
+
+
 ### Estimates + CIs  
 
 ```{r, fig.height = 7, fig.width = 5}

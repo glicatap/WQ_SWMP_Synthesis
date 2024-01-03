@@ -697,6 +697,7 @@ timing_calcs <- function(data){
     left_join(stn_medians, by = "station")
   
   return(list("ofInterest" = ofInterest, 
+              "stn_medians" = stn_medians,
               "weighted_months" = weighted_months, 
               "stn_distn" = stn_distn, 
               "most_likely_month" = most_likely_month))
