@@ -10,6 +10,7 @@ date: "`r Sys.Date()`"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
+                      message = FALSE,
                       error = TRUE)
 ```
 
@@ -19,6 +20,7 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
+library(patchwork)
 ```
 
 ```{r}
@@ -104,7 +106,7 @@ parms <- trends_all |>
 ## WQ  
 
 
-```{r}
+```{r, fig.width = 7, fig.height = 7}
 trends_all |>
   filter(type == "wq") |> 
   arrange(parameter, Slope, station) |> 
@@ -126,7 +128,7 @@ trends_all |>
         legend.direction = "horizontal")
 ```
 
-```{r}
+```{r, fig.width = 7, fig.height = 7}
 ggplot(filter(trends_all, type == "wq")) +
   geom_histogram(aes(x = Slope,
                      fill = parameter),
@@ -142,7 +144,7 @@ ggplot(filter(trends_all, type == "wq")) +
 ```
 
 
-```{r}
+```{r, fig.width = 7, fig.height = 7}
 ggplot(filter(trends_all, type == "wq")) +
   geom_hline(yintercept = 0,
              linewidth = 0.7) +  
@@ -189,7 +191,7 @@ ggplot(seas_wq) +
 ## MET  
 
 
-```{r}
+```{r, fig.width = 7, fig.height = 5}
 trends_all |>
   filter(type == "met") |> 
   arrange(parameter, Slope, station) |> 
@@ -211,7 +213,7 @@ trends_all |>
         legend.direction = "horizontal")
 ```
 
-```{r}
+```{r, fig.width = 7, fig.height = 5}
 ggplot(filter(trends_all, type == "met")) +
   geom_histogram(aes(x = Slope,
                      fill = parameter),
@@ -226,7 +228,7 @@ ggplot(filter(trends_all, type == "met")) +
        subtitle = "slopes are in [parameter's measurement units] / year")
 ```
 
-```{r}
+```{r, fig.width = 7, fig.height = 5}
 ggplot(filter(trends_all, type == "met")) +
   geom_hline(yintercept = 0,
              linewidth = 0.7) +  

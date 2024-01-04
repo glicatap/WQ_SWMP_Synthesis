@@ -5,7 +5,7 @@ output: html_document
 
 ### Across all stations  
 
-```{r}
+```{r, fig.height = 4, fig.width = 5}
 ggplot(tmp_overall) +
     geom_histogram(aes(x = Slope),
                    bins = 30,
@@ -45,42 +45,77 @@ ggplot(tmp_overall) +
          fill = "Region")
 ```
 
-```{r}
+### By Latitude
+
+```{r, fig.width = 8, fig.height = 4}
 # slope by latitude
-ggplot(tmp_overall, aes(x = Slope, y = Latitude)) +
+p1 <- ggplot(tmp_overall, aes(x = Latitude, y = Slope)) +
+  geom_point(aes(col = Region), size = 2) +
+  theme_bw() +
+  labs(fill = "Region")
+
+p2 <- ggplot(tmp_overall, aes(x = Latitude, y = Slope)) +
   geom_point(aes(col = Region), size = 2) +
   geom_smooth(method = "lm", se = TRUE,
               alpha = 0.2,
               size = 0.5) +
   theme_bw() +
-  labs(title = paste(prm, "slopes by latitude"),
+  labs(subtitle = "with linear smooth superimposed",
          fill = "Region")
+
+p1 + p2 + 
+  plot_layout(guides = "collect") + 
+  plot_annotation(title = paste(prm, "slopes by latitude"))
 ```
 
+### By Seasonal Amplitude  
+
+Only if amplitude has been calculated for the parameter.  
+
 ```{r}
-# if there are seasonal amplitudes, plot with those too
-if(sum(is.na(tmp_overall$median_ampl)) < nrow(tmp_overall)){
-  ggplot(tmp_overall, aes(y = Slope, x = median_ampl)) +
-    geom_point(aes(col = Region), size = 2) +
-    geom_smooth(method = "lm", se = TRUE,
-                alpha = 0.2,
-                size = 0.5) +
-    theme_bw() +
-    labs(title = paste(prm, "slopes by seasonal amplitude"),
-         x = "Median amplitude",
-         fill = "Region")
-  
-  
-  ggplot(tmp_overall, aes(y = Slope, x = median_norm_ampl)) +
-    geom_point(aes(col = Region), size = 2) +
-    geom_smooth(method = "lm", se = TRUE,
-                alpha = 0.2,
-                size = 0.5) +
-    theme_bw() +
-    labs(title = paste(prm, "slopes by normalized seasonal amplitude"),
-         x = "Median normalized amplitude",
-         fill = "Region")
-}
+amplitudes_exist <- sum(is.na(tmp_overall$median_ampl)) < nrow(tmp_overall)
+```
+
+
+```{r, eval = amplitudes_exist, fig.height = 7, fig.width = 8}
+p1 <- ggplot(tmp_overall, aes(y = Slope, x = median_ampl)) +
+  geom_point(aes(col = Region), size = 2) +
+  theme_bw() +
+  labs(subtitle = "Slope ~ Amplitude",
+       x = "Median amplitude",
+       fill = "Region")
+
+p2 <- ggplot(tmp_overall, aes(y = Slope, x = median_ampl)) +
+  geom_point(aes(col = Region), size = 2) +
+  geom_smooth(method = "lm", se = TRUE,
+              alpha = 0.2,
+              size = 0.5) +
+  theme_bw() +
+  labs(subtitle = "Slope ~ Amplitude, with lm",
+       x = "Median amplitude",
+       fill = "Region")
+
+
+p3 <- ggplot(tmp_overall, aes(y = Slope, x = median_norm_ampl)) +
+  geom_point(aes(col = Region), size = 2) +
+  theme_bw() +
+  labs(subtitle = "Normalized",
+       x = "Median normalized amplitude",
+       fill = "Region")
+
+p4 <- ggplot(tmp_overall, aes(y = Slope, x = median_norm_ampl)) +
+  geom_point(aes(col = Region), size = 2) +
+  geom_smooth(method = "lm", se = TRUE,
+              alpha = 0.2,
+              size = 0.5) +
+  theme_bw() +
+  labs(subtitle = "Normalized, with lm",
+       x = "Median normalized amplitude",
+       fill = "Region")
+
+(p1 + p2) / (p3 + p4) + 
+  plot_layout(guides = "collect") +
+  plot_annotation(title = paste(prm, "slopes by seasonal amplitude"))
 ```
 
 

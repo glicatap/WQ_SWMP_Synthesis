@@ -461,7 +461,9 @@ wtemp_annual |>
 
 # Concatenate all  
 
-This data frame contains one row per station per year. Columns contain the max/min for the year; month or months of the annual max/min (depending on parameter); the amplitude for that year (max - min); and the normalized amplitude for that year (amplitude / that year's mean).
+This data frame contains one row per station per year. Columns contain the max/min for the year; month or months of the annual max/min (depending on parameter); the amplitude for that year (max - min); and the normalized amplitude for that year (amplitude / that year's mean).  
+
+This file is exported and used in `trend_visualizations.Rmd` in the slopes ~ seasonal amplitude plots.  
 
 ```{r}
 all_seasonal_metrics <- list("chl max" = chl_annual, 
@@ -515,9 +517,14 @@ I'll start by only calculating these for chl (max), DO (min), and DO proportions
 
 Sometimes there are multiple peaks within a year so the `peak_month` (month or months containing the maximum reading for the year) and `floor_month` (month or months containing the minimum reading for the year) columns are list columns.  
 
-Need to unlist the column and then assign weights for each month of the year (so in years with only one month of a peak, the weight for the month going into the next weighting will be 1; when there are 3 peaks, each month's weight will be 0.33, etc.)
+Need to unlist the column and then assign weights for each month of the year (so in years with only one month of a peak, the weight for the month going into the next weighting will be 1; when there are 3 peaks, each month's weight will be 0.33, etc.)  
+
+
+## to normalize or not to normalize  
+
+Cloern and Jassby normalized amplitude by dividing by the yearly mean value. This was because variability in amplitude increased with increasing chl concentrations. It is probably not necessary to normalize all parameters, and in fact is probably even a bad idea for the DO proportions. Some plots below show each parameter with both non-normalized and normalized amplitudes. I think it's really only chl that needs to be normalized. Both versions of amplitude for each parameter are in the exported file though.   
     
-```{r}
+```{r, fig.width = 7, fig.height = 4}
 # does normalizing amplitude help?
 ampl_plots <- function(dat, param){
   x <- dat
