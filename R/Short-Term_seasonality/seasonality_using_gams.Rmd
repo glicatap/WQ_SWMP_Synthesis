@@ -73,6 +73,7 @@ newdat |> arrange(desc(pred))
 Yikes, October wins here, with November very close to it.  
 
 
+
 What do we get from the "simpler" method?  
 
 ```{r}
@@ -81,10 +82,10 @@ bhchl_raw <- nut |>
   select(station, year, month, chla_n, chla_n_cens)
 
 bhchl_ann <- annualize(bhchl_raw, chla_n) |> # note this is not grouped by station but probably should be
-  mutate(mean_peak_month = as.numeric(map(peak_month, mean)),
-         mean_floor_month = as.numeric(map(floor_month, mean)),
-         median_peak_month = as.numeric(map(peak_month, median)),
-         median_floor_month = as.numeric(map(floor_month, median)))
+  mutate(mean_peak_month = as.numeric(map(peak_month, mean, na.rm = TRUE)),
+         mean_floor_month = as.numeric(map(floor_month, mean, na.rm = TRUE)),
+         median_peak_month = as.numeric(map(peak_month, median, na.rm = TRUE)),
+         median_floor_month = as.numeric(map(floor_month, median, na.rm = TRUE)))
 ```
 
 ```{r}
@@ -112,12 +113,12 @@ Overall means and medians:
 ```{r}
 bhchl_ann |> 
   summarize(.by = station,
-            overall_mean_peak = mean(mean_peak_month),
-            overall_medianOfMedians_peak = median(median_peak_month),
-            overall_medianOfMeans_peak = median(mean_peak_month),
-            overall_mean_floor = mean(mean_floor_month),
-            overall_medianOfMedians_floor = median(median_floor_month),
-            overall_medianOfMeans_floor = median(mean_floor_month)) |> 
+            overall_mean_peak = mean(mean_peak_month, na.rm = TRUE),
+            overall_medianOfMedians_peak = median(median_peak_month, na.rm = TRUE),
+            overall_medianOfMeans_peak = median(mean_peak_month, na.rm = TRUE),
+            overall_mean_floor = mean(mean_floor_month, na.rm = TRUE),
+            overall_medianOfMedians_floor = median(median_floor_month, na.rm = TRUE),
+            overall_medianOfMeans_floor = median(mean_floor_month, na.rm = TRUE)) |> 
   knitr::kable()
 ```
 
@@ -127,21 +128,23 @@ Closest match to what I pulled from the gam is overall median peak of 8.5, close
 
 How about I run the annualize function and those summaries on all the stations, and plot a few of them against each other.  
 
+## calcs for all stations  
+
 ```{r}
 chl_ann <- annualize(nut, chla_n) |> 
-  mutate(mean_peak_month = as.numeric(map(peak_month, mean)),
-         mean_floor_month = as.numeric(map(floor_month, mean)),
-         median_peak_month = as.numeric(map(peak_month, median)),
-         median_floor_month = as.numeric(map(floor_month, median)))
+  mutate(mean_peak_month = as.numeric(map(peak_month, mean, na.rm = TRUE)),
+         mean_floor_month = as.numeric(map(floor_month, mean, na.rm = TRUE)),
+         median_peak_month = as.numeric(map(peak_month, median, na.rm = TRUE)),
+         median_floor_month = as.numeric(map(floor_month, median, na.rm = TRUE)))
 
 chl_summ <- chl_ann |> 
   summarize(.by = station,
-            overall_mean_peak = mean(mean_peak_month),
-            overall_medianOfMedians_peak = median(median_peak_month),
-            overall_medianOfMeans_peak = median(mean_peak_month),
-            overall_mean_floor = mean(mean_floor_month),
-            overall_medianOfMedians_floor = median(median_floor_month),
-            overall_medianOfMeans_floor = median(mean_floor_month)) 
+            overall_mean_peak = mean(mean_peak_month, na.rm = TRUE),
+            overall_medianOfMedians_peak = median(median_peak_month, na.rm = TRUE),
+            overall_medianOfMeans_peak = median(mean_peak_month, na.rm = TRUE),
+            overall_mean_floor = mean(mean_floor_month, na.rm = TRUE),
+            overall_medianOfMedians_floor = median(median_floor_month, na.rm = TRUE),
+            overall_medianOfMeans_floor = median(mean_floor_month, na.rm = TRUE)) 
   
 ```
 
@@ -169,19 +172,19 @@ Now check it on DO:
 
 ```{r}
 domgl_ann <- annualize(wq, do_mgl_median) |> 
-  mutate(mean_peak_month = as.numeric(map(peak_month, mean)),
-         mean_floor_month = as.numeric(map(floor_month, mean)),
-         median_peak_month = as.numeric(map(peak_month, median)),
-         median_floor_month = as.numeric(map(floor_month, median)))
+  mutate(mean_peak_month = as.numeric(map(peak_month, mean, na.rm = TRUE)),
+         mean_floor_month = as.numeric(map(floor_month, mean, na.rm = TRUE)),
+         median_peak_month = as.numeric(map(peak_month, median, na.rm = TRUE)),
+         median_floor_month = as.numeric(map(floor_month, median, na.rm = TRUE)))
 
 domgl_summ <- domgl_ann |> 
   summarize(.by = station,
-            overall_mean_peak = mean(mean_peak_month),
-            overall_medianOfMedians_peak = median(median_peak_month),
-            overall_medianOfMeans_peak = median(mean_peak_month),
-            overall_mean_floor = mean(mean_floor_month),
-            overall_medianOfMedians_floor = median(median_floor_month),
-            overall_medianOfMeans_floor = median(mean_floor_month))
+            overall_mean_peak = mean(mean_peak_month, na.rm = TRUE),
+            overall_medianOfMedians_peak = median(median_peak_month, na.rm = TRUE),
+            overall_medianOfMeans_peak = median(mean_peak_month, na.rm = TRUE),
+            overall_mean_floor = mean(mean_floor_month, na.rm = TRUE),
+            overall_medianOfMedians_floor = median(median_floor_month, na.rm = TRUE),
+            overall_medianOfMeans_floor = median(mean_floor_month, na.rm = TRUE))
 
 ggplot(domgl_summ) +
   geom_abline(slope = 1, intercept = 0,
@@ -205,6 +208,8 @@ Mean tends to skew earlier for month of DO min. This probably means.... it is sk
 
 
 # Changes in seasonality  
+
+## gndbhnut chl  
 
 First look at a time series plot.  
 
@@ -259,111 +264,30 @@ draw(m2) +
 draw(m2, contour = FALSE)
 ```
 
+
+### interaction term plus good graphs  
+
 ```{r}
-m3 <- gam(log_chla ~ s(year) + s(month) + ti(year, month),
+m3 <- gam(log_chla ~ s(year) + s(month) + ti(month, year),
           data = bhchl2)
 summary(m3)
 appraise(m3)
-draw(m3)
-
-month_smooth <- smooth_estimates(m3, smooth = "ti(month)")
-ggplot(month_smooth) +
-  geom_ribbon(aes(x = month, ymin = est - 2*se, ymax = est + 2*se),
-              fill = "gray80") +
-  geom_line(aes(x = month, y = est)) +
-  labs(title = "partial effect of month")
-
 
 draw(m3) +
-  scale_y_continuous(breaks = scales::pretty_breaks()) +
-  labs(x = "year-month")
-draw(m3, contour = FALSE)
-```
-
-How about another station, maybe in the great lakes?  
-
-```{r}
-chl_dat <- nut |> 
-  filter(station == "lksolnut") |> 
-  mutate(date = lubridate::ymd(paste(year, month, 15)),
-         dec_date = lubridate::decimal_date(date),
-         log_chla = log10(chla_n))
-```
-
-```{r}
-m1 <- gam(log_chla ~ s(month, bs = "cc") + s(dec_date),
-          data = chl_dat)
-summary(m1)
-draw(m1)
-appraise(m1)
-
-m3 <- gam(log_chla ~ s(year) + s(month) + ti(year, month),
-          data = chl_dat)
-summary(m3)
-appraise(m3)
-draw(m3)
-
-month_smooth <- smooth_estimates(m3, smooth = "ti(month)")
-ggplot(month_smooth) +
-  geom_ribbon(aes(x = month, ymin = est - 2*se, ymax = est + 2*se),
-              fill = "gray80") +
-  geom_line(aes(x = month, y = est)) +
-  labs(title = "partial effect of month")
-
-
-draw(m3) +
-  scale_y_continuous(breaks = scales::pretty_breaks()) +
-  labs(x = "year-month")
-draw(m3, contour = FALSE)
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(y = "year-month")
 ```
 
 
-Northeast somewhere
-
-
-```{r}
-chl_dat <- nut |> 
-  filter(station == "delblnut") |> 
-  mutate(date = lubridate::ymd(paste(year, month, 15)),
-         dec_date = lubridate::decimal_date(date),
-         log_chla = log10(chla_n))
-```
+#### first vs. last year seasonal cycles  
 
 ```{r}
-m1 <- gam(log_chla ~ s(month, bs = "cc") + s(dec_date),
-          data = chl_dat)
-summary(m1)
-draw(m1)
-appraise(m1)
-
-m3 <- gam(log_chla ~ s(year) + s(month) + ti(year, month),
-          data = chl_dat)
-summary(m3)
-appraise(m3)
-draw(m3)
-
-month_smooth <- smooth_estimates(m3, smooth = "ti(month)")
-ggplot(month_smooth) +
-  geom_ribbon(aes(x = month, ymin = est - 2*se, ymax = est + 2*se),
-              fill = "gray80") +
-  geom_line(aes(x = month, y = est)) +
-  labs(title = "partial effect of month")
-
-
-draw(m3) +
-  scale_y_continuous(breaks = scales::pretty_breaks()) +
-  labs(x = "year-month")
-```
-
-To interpret what's happening, make predictions from first and last years, and plot together? And/or plot the differences?  
-
-```{r}
-newdat <- data.frame(year = c(rep(min(chl$year), 12),
-                              rep(max(chl$year), 12)),
-                     month = c(1:12, 1:12)
+newdat <- data.frame(year = c(rep(min(bhchl2$year), length(unique(bhchl2$month))),
+                              rep(max(bhchl2$year), length(unique(bhchl2$month)))),
+                     month = c(sort(unique(bhchl2$month)), sort(unique(bhchl2$month)))
 ) |> 
   mutate(date = lubridate::ymd(paste(year, month, 15)))
-preds <- predict(m3, newdata = newdat, se.fit = TRUE)
+preds <- predict.gam(m3, newdata = newdat, se.fit = TRUE)
 newdat$preds = preds$fit
 newdat$se = preds$se.fit
 
@@ -375,12 +299,12 @@ ggplot(newdat) +
   geom_line(aes(x = month, y = preds, col = as.factor(year)),
             linewidth = 1) +
   scale_x_continuous(breaks = scales::pretty_breaks()) +
-  labs(y = "predicted",
+  labs(title = "gndbhnut",
+       y = "predicted log(chl)",
        fill = "Year",
        color = "Year")
 ```
 
-Are differences bigger in some months than others? This is where it might stand out more - the gap in summer looks like it might be bigger than that in winter based on the graph above.  
 
 ```{r}
 newdat2 <- newdat |> 
@@ -396,13 +320,7 @@ ggplot(newdat2, aes(x = month, y = change)) +
   scale_x_continuous(breaks = scales::pretty_breaks())
 ```
 
-Okay, it's subtle, but yes we do have higher changes in summer than fall/winter. Interesting. And I guess if timing was changing we'd see like a big negative change in one month and a big positive change in another month? ....only if the years weren't both "weird" ones. 
-
-Now what to do with all this.  
-
-I think gams may be best suited to telling us whether something about seasonality is changing, but we'd have to look at the output in other ways (maybe calculate different trends???) to know how amplitude and timing are changing.  
-
-# Specific changes  
+### peak through time  
 
 Visualize.  
 
@@ -411,7 +329,7 @@ Also, it might not necessarily be a trend; especially because months are sort of
 ```{r}
 p <- ggplot(bhchl_ann) +
   geom_point(aes(x = year, y = median_peak_month)) +
-  geom_hline(yintercept = median(bhchl_ann$median_peak_month),
+  geom_hline(yintercept = median(bhchl_ann$median_peak_month, na.rm = TRUE),
              col = "gray40",
              linetype = "dashed") +
   scale_y_continuous(breaks = scales::pretty_breaks()) +
@@ -420,11 +338,6 @@ p <- ggplot(bhchl_ann) +
        y = "peak month")
 
 p
-
-p +
-  geom_smooth(aes(x = year, y = median_peak_month),
-              method = "loess")
-
 ```
 
 Yikes. We sort of see more above the line in later years, so maybe the peak is getting a little later??  If we only do this for chl and do, we probably don't need to worry about censoring. Any other nutrient I'd worry about.  
@@ -457,3 +370,332 @@ ggplot(test, aes(x = year, y = value)) +
   labs(title = "Simulated data",
        subtitle = paste0("trend p-val = ", round(test_mk$p.value, 3)))
 ```
+
+
+### normalized amplitude by year  
+
+```{r}
+ggplot(bhchl_ann) +
+  geom_point(aes(x = year, y = an_normalized_amplitude)) +
+  labs(y = "normalized amplitude")
+```
+
+A few years have pretty big amplitudes. Is there a trend?  
+
+```{r}
+ampl_mk <- EnvStats::kendallTrendTest(an_normalized_amplitude ~ year, data = bhchl_ann)
+ampl_mk$estimate
+ampl_mk$p.value
+```
+
+Visually decreasing a bit, but not a significant p-value from a Kendall trend test.  
+
+I feel more okay about using a Kendall trend test for amplitude than for timing.  
+
+
+
+## lksolnut chl  
+
+
+```{r}
+stn = "lksolnut"
+
+chl_dat <- nut |> 
+  filter(station == stn) |> 
+  mutate(date = lubridate::ymd(paste(year, month, 15)),
+         dec_date = lubridate::decimal_date(date),
+         log_chla = log10(chla_n))
+
+chl_seas <- chl_ann |> 
+  filter(station == stn)
+```
+
+First look at a time series plot.  
+
+```{r}
+ggplot(chl_dat, aes(x = dec_date, y = chla_n)) +
+  geom_point() +
+  geom_line() +
+  labs(title = paste0("time series of chl at ", stn))
+```
+
+
+```{r}
+ggplot(chl_dat, aes(x = dec_date, y = log_chla)) +
+  geom_point() +
+  geom_line() +
+  labs(title = paste0("time series of log10-chl at ", stn))
+```
+
+
+### interaction term plus good graphs  
+
+```{r}
+m3 <- gam(log_chla ~ s(year) + s(month) + ti(month, year),
+          data = chl_dat)
+summary(m3)
+appraise(m3)
+
+draw(m3) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(y = "year-month")
+```
+
+No significant month x year interaction.  
+
+
+#### first vs. last year seasonal cycles  
+
+```{r}
+newdat <- data.frame(year = c(rep(min(chl_dat$year), length(unique(chl_dat$month))),
+                              rep(max(chl_dat$year), length(unique(chl_dat$month)))),
+                     month = c(sort(unique(chl_dat$month)), sort(unique(chl_dat$month)))
+) |> 
+  mutate(date = lubridate::ymd(paste(year, month, 15)))
+preds <- predict.gam(m3, newdata = newdat, se.fit = TRUE)
+newdat$preds = preds$fit
+newdat$se = preds$se.fit
+
+ggplot(newdat) +
+  geom_ribbon(aes(x = month, ymin = preds - 2*se, 
+                  ymax = preds + 2*se,
+                  fill = as.factor(year)),
+              alpha = 0.1) +
+  geom_line(aes(x = month, y = preds, col = as.factor(year)),
+            linewidth = 1) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("seasonality in first and last years at ", stn),
+       y = "predicted log(chl)",
+       fill = "Year",
+       color = "Year")
+```
+
+No big visual change here.  
+
+
+```{r}
+newdat2 <- newdat |> 
+  select(-date, -se) |> 
+  mutate(year = case_when(year == max(year) ~ "end",
+                          year == min(year) ~ "start")) |> 
+  pivot_wider(names_from = year,
+              values_from = preds) |> 
+  mutate(change = end - start)
+
+ggplot(newdat2, aes(x = month, y = change)) +
+  geom_point() +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("change between first and last years at ", stn, " by month"))
+```
+
+### peak through time  
+
+Visualize.  
+
+Also, it might not necessarily be a trend; especially because months are sort of categorical. Maybe this would be a good use of a Mann-Kendall test?  
+
+```{r}
+p <- ggplot(chl_seas) +
+  geom_point(aes(x = year, y = median_peak_month)) +
+  geom_hline(yintercept = median(chl_seas$median_peak_month, na.rm = TRUE),
+             col = "gray40",
+             linetype = "dashed") +
+  scale_y_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("chl peak months by year at ", stn),
+       subtitle = "dashed line is overall median",
+       y = "peak month")
+
+p
+```
+
+I mean..... that seems like it's decreasing.    
+
+```{r}
+timing_mk <- EnvStats::kendallTrendTest(median_peak_month ~ year, data = chl_seas)
+timing_mk$estimate
+timing_mk$p.value
+
+timing_mk2 <- with(chl_seas, Kendall::Kendall(x = year, y = median_peak_month))
+timing_mk2
+# doesn't give a slope
+
+mkslopes <- timing_mk$estimate 
+p +
+  geom_abline(slope = mkslopes["slope"], intercept = mkslopes["intercept"]) +
+  labs(subtitle = paste0("black line is Kendall trend; p = ", round(timing_mk$p.value, 3)))
+```
+
+Not statistically significant. Pretty steep slope though.  
+
+### normalized amplitude by year  
+
+```{r}
+ggplot(chl_seas) +
+  geom_point(aes(x = year, y = an_normalized_amplitude)) +
+  labs(title = paste0("amplitude at ", stn, " through the years"), 
+       y = "normalized amplitude")
+```
+
+A few years have pretty big amplitudes. Is there a trend?  
+
+```{r}
+ampl_mk <- EnvStats::kendallTrendTest(an_normalized_amplitude ~ year, data = chl_seas)
+ampl_mk$estimate
+ampl_mk$p.value
+```
+
+Not significant. Pretty steep slope though.  
+
+
+
+
+
+## delblnut chl  
+
+```{r}
+stn = "delblnut"
+
+chl_dat <- nut |> 
+  filter(station == stn) |> 
+  mutate(date = lubridate::ymd(paste(year, month, 15)),
+         dec_date = lubridate::decimal_date(date),
+         log_chla = log10(chla_n))
+
+chl_seas <- chl_ann |> 
+  filter(station == stn)
+```
+
+First look at a time series plot.  
+
+```{r}
+ggplot(chl_dat, aes(x = dec_date, y = chla_n)) +
+  geom_point() +
+  geom_line() +
+  labs(title = paste0("time series of chl at ", stn))
+```
+
+
+```{r}
+ggplot(chl_dat, aes(x = dec_date, y = log_chla)) +
+  geom_point() +
+  geom_line() +
+  labs(title = paste0("time series of log10-chl at ", stn))
+```
+
+
+### interaction term plus good graphs  
+
+```{r}
+m3 <- gam(log_chla ~ s(year) + s(month) + ti(month, year),
+          data = chl_dat)
+summary(m3)
+appraise(m3)
+
+draw(m3) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(y = "year-month")
+```
+
+Significant month x year interaction.  OF course I haven't accounted for autocorrelation yet, so be cautious.  
+
+
+#### first vs. last year seasonal cycles  
+
+```{r}
+newdat <- data.frame(year = c(rep(min(chl_dat$year), length(unique(chl_dat$month))),
+                              rep(max(chl_dat$year), length(unique(chl_dat$month)))),
+                     month = c(sort(unique(chl_dat$month)), sort(unique(chl_dat$month)))
+) |> 
+  mutate(date = lubridate::ymd(paste(year, month, 15)))
+preds <- predict.gam(m3, newdata = newdat, se.fit = TRUE)
+newdat$preds = preds$fit
+newdat$se = preds$se.fit
+
+ggplot(newdat) +
+  geom_ribbon(aes(x = month, ymin = preds - 2*se, 
+                  ymax = preds + 2*se,
+                  fill = as.factor(year)),
+              alpha = 0.1) +
+  geom_line(aes(x = month, y = preds, col = as.factor(year)),
+            linewidth = 1) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("seasonality in first and last years at ", stn),
+       y = "predicted log(chl)",
+       fill = "Year",
+       color = "Year")
+```
+
+Looks like it's different between the two years.    
+
+
+```{r}
+newdat2 <- newdat |> 
+  select(-date, -se) |> 
+  mutate(year = case_when(year == max(year) ~ "end",
+                          year == min(year) ~ "start")) |> 
+  pivot_wider(names_from = year,
+              values_from = preds) |> 
+  mutate(change = end - start)
+
+ggplot(newdat2, aes(x = month, y = change)) +
+  geom_point() +
+  scale_x_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("change between first and last years at ", stn, " by month"))
+```
+
+### peak through time  
+
+Visualize.  
+ 
+
+```{r}
+p <- ggplot(chl_seas) +
+  geom_point(aes(x = year, y = median_peak_month)) +
+  geom_hline(yintercept = median(chl_seas$median_peak_month, na.rm = TRUE),
+             col = "gray40",
+             linetype = "dashed") +
+  scale_y_continuous(breaks = scales::pretty_breaks()) +
+  labs(title = paste0("chl peak months by year at ", stn),
+       subtitle = "dashed line is overall median",
+       y = "peak month")
+
+p
+```
+
+Eh, maybe there's a trend, but it's not strong.    
+
+```{r}
+timing_mk <- EnvStats::kendallTrendTest(median_peak_month ~ year, data = chl_seas)
+timing_mk$estimate
+timing_mk$p.value
+
+timing_mk2 <- with(chl_seas, Kendall::Kendall(x = year, y = median_peak_month))
+timing_mk2
+# doesn't give a slope
+
+mkslopes <- timing_mk$estimate 
+p +
+  geom_abline(slope = mkslopes["slope"], intercept = mkslopes["intercept"]) +
+  labs(subtitle = paste0("black line is Kendall trend; p = ", round(timing_mk$p.value, 3)))
+```
+
+And it's a flat line.  
+
+### normalized amplitude by year  
+
+```{r}
+ggplot(chl_seas) +
+  geom_point(aes(x = year, y = an_normalized_amplitude)) +
+  labs(title = paste0("amplitude at ", stn, " through the years"), 
+       y = "normalized amplitude")
+```
+
+Seems like this could be decreasing? 
+
+```{r}
+ampl_mk <- EnvStats::kendallTrendTest(an_normalized_amplitude ~ year, data = chl_seas)
+ampl_mk$estimate
+ampl_mk$p.value
+```
+
+Not significant. Also not a very steep slope.    
