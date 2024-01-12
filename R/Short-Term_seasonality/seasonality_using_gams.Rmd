@@ -598,6 +598,36 @@ draw(m3) +
 
 Significant month x year interaction.  OF course I haven't accounted for autocorrelation yet, so be cautious.  
 
+```{r}
+fitted_2d_smooth <- smooth_estimates(m3, smooth = "ti(month,year)") |> 
+  mutate(fYear = str_split(as.character(year), pattern = "\\.", simplify = TRUE))
+
+ggplot(fitted_2d_smooth, aes(x = month, y = est, col = fYear[,1])) +
+  geom_line()
+```
+
+```{r}
+newdat <- expand.grid(min(chl_dat$year):max(chl_dat$year), unique(chl_dat$month))
+names(newdat) <- c("year", "month")
+
+preds <- predict.gam(m3, newdat, se.fit = TRUE)
+
+newdat$fitted = preds$fit
+newdat$se = preds$se.fit
+newdat$date = lubridate::ymd(paste(newdat$year, newdat$month, 15))
+
+ggplot(newdat, aes(x = date, y = fitted)) +
+  geom_line()
+```
+
+
+```{r}
+ggplot(newdat, aes(x = month, group = year)) +
+  geom_line(aes(y = fitted, col = year))
+```
+
+From that plot, we can see that later years have higher fitted values, but also some changing shape - looks like the peak of the smooth is getting later. Can't really tell if it's also getting steeper.  
+
 
 #### first vs. last year seasonal cycles  
 
