@@ -1,0 +1,359 @@
+---
+title: "PCA"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE, 
+                      error = TRUE,
+                      fig.width = 7,
+                      fig.height = 7)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(vegan)
+library(ggplot2)
+```
+
+# Data import and shaping  
+
+```{r}
+load(here::here("Outputs", "calculated_trends", "long-term-trends.RData"))
+trends_all <- bind_rows(trends_df, trends_nut)  # not met trends, because stations don't match wq/nut
+
+# can probably join in primary SWMP station based on reserve code, for later iterations
+```
+
+```{r}
+all_wide <- trends_all |> 
+  mutate(station = substr(station, start = 1, stop = 5),
+         sig_trend = case_when(sig_trend == "yes" ~ 1,
+                               sig_trend == "no" ~ 0,
+                               is.na(sig_trend) ~ NA_real_),
+         sig_seasonality = case_when(sig_seasonality == "yes" ~ 1,
+                                     sig_seasonality == "no" ~ 0,
+                                     is.na(sig_seasonality) ~ NA_real_)) |> 
+  select(station, parameter, Slope_overall = Slope,
+         Spring_estimate, Fall_estimate,  # possible in ordination or explanatory
+         Winter_estimate, Summer_estimate,
+         overall_median, sig_trend, sig_seasonality) |>   # explanatory  
+  pivot_wider(id_cols = station,
+              names_from = parameter,
+              values_from = Slope_overall:sig_seasonality,
+              names_glue = "{parameter}_{.value}",
+              names_vary = "slowest") |> 
+  tibble::column_to_rownames("station")
+```
+
+```{r}
+# select only chl and DO params of interest, and only their slopes
+# and widen out the data frame
+response_vars <- c("chla_n", "do_mgl_median",
+                        "do_proportion_below2", "do_proportion_below5")
+
+# extract
+slopes_only <- all_wide |> 
+  select(all_of(paste0(response_vars, "_Slope_overall"))) 
+# scale
+slopes_scaled <- as.data.frame(apply(slopes_only, MARGIN = 2, scale))
+rownames(slopes_scaled) <- rownames(slopes_only)
+
+# replace NAs with 0s
+
+# we lose 30 stations to that na.omit - I suspect a lot of them are because DO proportion
+# trends couldn't be calculated - that was problematic
+# yep 24 rows with NA in proportion below 2 slope; actually 23 for chl
+
+# going to substitute 0 for when a slope couldn't be calculated
+# but to avoid skewing the scaling, will only add into scaled data frame
+# RUN THIS BY OTHERS.......
+slopes_scaled[][is.na(slopes_scaled[])] <- 0
+```
+
+```{r}
+# pull out a few additional factors for exploration
+# seasonal slopes, temp trend (air and water),
+# overall medians for all params
+env_factors <- all_wide |> 
+  select(ends_with("overall_median"),
+         temp_median_Slope_overall)
+names(env_factors) <- stringr::str_remove(names(env_factors), "median_")
+# and scale
+env_scaled <- as.data.frame(apply(env_factors, MARGIN = 2, scale))
+rownames(env_scaled) <- rownames(env_factors)
+
+```
+
+
+# PCA  
+
+Using the `vegan` package because you can do fancier things with it after you've run the PCA. I scaled all columns manually during data processing because the output from `vegan`'s `scale` argument seems to give ever so slightly different results than `scale` in the base R functions `princomp` and `prcomp`. By scaling manually, I am ensuring the math comes out the same.  
+
+```{r}
+pca_out <- rda(slopes_scaled)
+```
+
+## Output  
+
+```{r}
+eigs <- summary(eigenvals(pca_out))
+knitr::kable(eigs,
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+
+```{r}
+knitr::kable(scores(pca_out, 
+                    choices = 1:4,
+                    display = "species",
+                    scaling = 0),
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+```
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"))
+```
+
+We fed 4 variables into this PCA, and can see that the first two axes explain about 83% of the variation in the data.  
+
+What we see from both the loadings and the biplot is that our DO trends separate sites along Axis 1, and the chla trends separate sites along Axis 2.  
+
+Unsurprisingly, increasing "time hypoxic" (as represented by do_proportion_below_2 or 5 mg/L) is almost directly opposite increasing median DO mg/L.  
+
+I do not see any groupings of stations in this output.  
+
+
+## More detail  
+
+The following graph is the same as above, but instead of points, each station is labelled with its station code (minus the `wq` or `nut` suffix).  
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"))
+```
+
+
+Now we can pick a few sites and see if we're interpreting correctly.  
+
+-  `gndbl` looks like it should have a relatively high increase in chla and not much trend in DO; maybe a small increase.  
+-  `welht` is at the other end - potentially large decrease in chla, and potential decrease in DO (with an increasing number of hypoxic events).  
+-  `cbmmc` seems to have little trend in chla, and increasing DO/decreasing hypoxic events.  
+-  `apaeb` looks fairly in the middle for chl trends, and on the decreasing DO side.  
+
+```{r, fig.width = 5, fig.height = 5}
+check_dat <- trends_all |> 
+  filter(parameter %in% c("chla_n", "do_mgl_median",
+                          "do_proportion_below2",
+                          "do_proportion_below5"))
+check_stns <- check_dat |>
+  mutate(station = substr(station, start = 1, stop = 5)) |> 
+  filter(station %in% c("gndbl", "welht", "cbmmc", "apaeb"))
+
+ggplot() +
+  geom_histogram(data = check_dat, aes(x = Slope),
+                 fill = "gray",
+                 col = "gray20") +
+  geom_vline(xintercept = 0, col = "black", linewidth = 1) +
+  geom_vline(data = check_stns, 
+             aes(col = station, xintercept = Slope),
+             linewidth = 1) +
+  facet_wrap(~parameter, scales = "free") +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal") +
+  labs(title = "histograms of long-term trends, with specific stations overlaid")
+```
+
+The thoughts about each station generally check out. 
+
+
+# Adding additional overlays  
+
+The following were generated using `vegan::envfit()`. These variables have also already been centered and scaled. I'm approaching this using a single type of metric at a time because there are so many parameters.   
+
+
+## Seasonally calculated slopes of our main responses  
+
+```{r}
+# select vars
+env_factors1 <- all_wide |> 
+  select(starts_with(response_vars) & ends_with("estimate"))
+
+# clean up names
+names(env_factors1) <- stringr::str_remove(names(env_factors1), "_estimate")
+names(env_factors1) <- stringr::str_remove(names(env_factors1), "_proportion")
+names(env_factors1) <- stringr::str_remove(names(env_factors1), "_median")
+
+# and scale
+env1_scaled <- as.data.frame(apply(env_factors1, MARGIN = 2, scale))
+rownames(env1_scaled) <- rownames(env_factors1)
+
+# substitute 0 in place of NAs  
+env1_scaled[][is.na(env1_scaled[])] <- 0
+
+
+# env fit
+ev1 <- envfit(pca_out, env1_scaled)
+```
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "Seasonal Trends in responses overlaid")
+plot(ev1, cex = 0.6)
+```
+
+
+Seeing a bit of separation from hypoxic events in fall and winter. These all have significant correlations with the PC axes; chl ones are more correlated with PC1, and DO ones with PC2. We can see in the PC2 numbers for do_below_etc the ones that break away diagonally from the axes in the triplot.    
+
+```{r}
+ev1
+```
+
+
+
+## Latitude  
+
+Seems like just coloring by latitude is a simpler way to look at its effect for now. I'll use ggplot in a rough way for this.  
+
+```{r}
+pca_species <- as.data.frame(scores(pca_out, display = "species"))
+pca_sites <- as.data.frame(scores(pca_out, display = "sites")) |> 
+  rownames_to_column(var = "station")
+
+latitudes <- readr::read_csv(here::here("helper_files", "sampling_stations.csv")) |> 
+  select(station = "Station Code", "Latitude") |> 
+  mutate(station = substr(station, start = 1, stop = 5)) |> 
+  filter(station %in% rownames(all_wide))
+
+pca_sites <- left_join(pca_sites, latitudes)
+```
+
+```{r, fig.width = 5, fig.height = 5}
+ggplot(pca_sites, aes(x = PC1, y = PC2, col = Latitude)) +
+  geom_point(size = 3, alpha = 0.6) +
+  # scale_color_distiller(palette = "PuBuGn") +
+  scale_color_viridis_c() +
+  geom_segment(data = pca_species,
+               aes(x = 0, y = 0,
+                   xend = PC1, yend = PC2),
+               arrow = grid::arrow(),
+               col = "red3")
+```
+
+
+
+## Overall parameter medians  
+
+```{r}
+# select vars
+env_factors2 <- all_wide |> 
+  select(ends_with("overall_median"))
+
+# clean up names
+names(env_factors2) <- stringr::str_remove(names(env_factors2), "_overall_median")
+names(env_factors2) <- stringr::str_remove(names(env_factors2), "_proportion")
+names(env_factors2) <- stringr::str_remove(names(env_factors2), "_median")
+
+# and scale
+env2_scaled <- as.data.frame(apply(env_factors2, MARGIN = 2, scale))
+rownames(env2_scaled) <- rownames(env_factors2)
+
+# substitute 0 in place of NAs  
+env2_scaled[][is.na(env2_scaled[])] <- 0
+
+
+# env fit
+ev2 <- envfit(pca_out, env2_scaled)
+```
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "Overall station medians of all parameters overlaid")
+plot(ev2, cex = 0.6)
+```
+
+
+Some overall medians have strong correlations with our axes, and others don't. I'm not entirely sure how to interpret these outputs.  
+
+```{r}
+ev2
+```
+
+
+
+## Long-term slopes of other parameters  
+
+```{r}
+# select vars
+env_factors3 <- all_wide |> 
+  select(ends_with("Slope_overall"),
+         -starts_with(response_vars))
+
+# clean up names
+names(env_factors3) <- stringr::str_remove(names(env_factors3), "_Slope_overall")
+names(env_factors3) <- stringr::str_remove(names(env_factors3), "_median")
+
+# and scale
+env3_scaled <- as.data.frame(apply(env_factors3, MARGIN = 2, scale))
+rownames(env3_scaled) <- rownames(env_factors3)
+
+# substitute 0 in place of NAs  
+env3_scaled[][is.na(env3_scaled[])] <- 0
+
+
+# env fit
+ev3 <- envfit(pca_out, env3_scaled)
+```
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "Long-term slopes of other parameters overlaid")
+plot(ev3, cex = 0.6)
+```
+
+Temperature is kind of key here, based on our conversations. It correlates more with PC2 (chla trends), but not strongly (r2 = 0.07, see below). Only DO % has a decent r2, which isn't surprising. Also unsurprising that it's most correlated with PC1, the DO axis.  
+
+```{r}
+ev3
+```

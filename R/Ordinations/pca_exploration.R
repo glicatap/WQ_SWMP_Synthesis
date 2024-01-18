@@ -193,6 +193,16 @@ biplot(pca_out,
 plot(veg_env, cex = 0.5)
 
 
+biplot(pca_out, choices = c(2, 3),
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+plot(veg_env, cex = 0.5)
 
-
+biplot(pca_out, choices = c(2, 3),
+            display = c("sites",
+                        "species"),
+            type = c("text",
+                     "text"))
 
