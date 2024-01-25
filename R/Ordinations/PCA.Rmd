@@ -137,8 +137,83 @@ Unsurprisingly, increasing "time hypoxic" (as represented by do_proportion_below
 
 I do not see any groupings of stations in this output.  
 
+## Compare NMDS  
 
-## More detail  
+```{r}
+mds_out <- metaMDS(slopes_scaled, distance = "euclidean",
+                   autotransform = FALSE)
+
+# get species scores using envfit
+# see https://stackoverflow.com/questions/57393901/how-to-get-species-score-for-ordination-with-metamds
+spp_scores <- envfit(mds_out, slopes_scaled)
+```
+
+```{r}
+plot(mds_out, type = "text")
+plot(spp_scores, add = TRUE, cex = 0.8, col = "red")
+```
+
+```{r}
+# try to make it the same orientation as the PCA
+mds_scores <- scores(mds_out, tidy = TRUE)
+spp_scores2 <- as.data.frame(scores(spp_scores, display = "vectors"))
+
+mds_scores_rev <- mds_scores |> 
+  mutate(across(c("NMDS1", "NMDS2"),
+                function(x) x*-1))
+
+spp_scores_rev <- spp_scores2 |> 
+  mutate(across(c("NMDS1", "NMDS2"),
+                function(x) x*-1)) |> 
+  rownames_to_column("var")
+
+ggplot() +
+  geom_text(data = mds_scores_rev, 
+            aes(x = NMDS1, y = NMDS2, label = label),
+            size = 3) +
+  geom_segment(data = spp_scores_rev,
+               aes(x = 0, y = 0, 
+                   xend = NMDS1*4, yend = NMDS2*4),
+               arrow = grid::arrow(),
+               col = "red3") +
+  geom_text(data = spp_scores_rev, 
+            aes(x = NMDS1*4, y = NMDS2*4, 
+                label = var),
+            col = "red3") +
+  ggtitle("NMDS") +
+  theme_bw()
+```
+
+
+```{r}
+# now do the PCA one in ggplot
+# try to make it the same orientation as the PCA
+pca_scores <- scores(pca_out, tidy = TRUE) |> 
+  filter(score == "sites")
+pca_spp_scores <- scores(pca_out, tidy = TRUE) |> 
+  filter(score == "species")
+
+
+ggplot() +
+  geom_text(data = pca_scores, 
+            aes(x = PC1, y = PC2, label = label),
+            size = 3) +
+  geom_segment(data = pca_spp_scores,
+               aes(x = 0, y = 0, 
+                   xend = PC1*0.8, yend = PC2*0.8),
+               arrow = grid::arrow(),
+               col = "red3") +
+  geom_text(data = pca_spp_scores, 
+            aes(x = PC1, y = PC2, 
+                label = label),
+            col = "red3") +
+  ggtitle("PCA") +
+  theme_bw()
+```
+
+
+
+## PCA - More detail  
 
 The following graph is the same as above, but instead of points, each station is labelled with its station code (minus the `wq` or `nut` suffix).  
 
@@ -185,6 +260,8 @@ ggplot() +
 ```
 
 The thoughts about each station generally check out. 
+
+
 
 
 # Adding additional overlays  
@@ -237,6 +314,106 @@ ev1
 ```
 
 
+## Seasonally calculated slopes of predictors  
+
+```{r}
+# select vars
+env_seas_preds <- all_wide |> 
+  select(ends_with("_estimate") &
+         starts_with(c("temp", "spcond", "nh4f", "po4f")),
+         ends_with("_Slope_overall") &
+         starts_with(c("temp", "spcond", "nh4f", "po4f")))
+
+# clean up names
+names(env_seas_preds) <- stringr::str_remove(names(env_seas_preds), "_estimate")
+names(env_seas_preds) <- stringr::str_remove(names(env_seas_preds), "_median")
+names(env_seas_preds) <- stringr::str_remove(names(env_seas_preds), "_Slope")
+# and scale
+envSeas_scaled <- as.data.frame(apply(env_seas_preds, MARGIN = 2, scale))
+rownames(envSeas_scaled) <- rownames(env_seas_preds)
+
+# substitute 0 in place of NAs  
+envSeas_scaled[][is.na(envSeas_scaled[])] <- 0
+
+
+# env fit
+evSeasPreds <- envfit(pca_out, envSeas_scaled)
+```
+
+```{r}
+tempSeas <- envfit(pca_out, select(envSeas_scaled, starts_with("temp")))
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "Temperature slopes overlaid")
+plot(tempSeas, cex = 0.6)
+```
+
+Winter temperature slopes seem to separate out some sites along PC1.  
+
+```{r}
+spcondSeas <- envfit(pca_out, select(envSeas_scaled, starts_with("spcond")))
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "SpCond slopes overlaid")
+plot(spcondSeas, cex = 0.6)
+```
+
+Winter and Fall slopes, a little bit.  
+
+```{r}
+nh4Seas <- envfit(pca_out, select(envSeas_scaled, starts_with("nh4")))
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "NH4 slopes overlaid")
+plot(nh4Seas, cex = 0.6)
+```
+
+Winter slopes going in a pretty different direction from the others, along both axes. I don't remember if I accounted for censoring when calculating seasonal trends - **need to check this**.  
+
+
+```{r}
+po4Seas <- envfit(pca_out, select(envSeas_scaled, starts_with("po4")))
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "PO4 slopes overlaid")
+plot(po4Seas, cex = 0.6)
+```
+
+PO4 separating out mostly along axis 2 (chl). Again it's Winter that seems most different from others.  
+
+# Reminder  
+
+Remember, all we're doing here is looking at how our sites separate out along these DO and chl gradients. This doesn't necessarily indicate drivers, but does have some interesting implications for changes in temp, nh4, and po4 in Winter, and their associations with DO and chla change.  
+
+```{r}
+evSeasPreds
+```
+
+
 
 ## Latitude  
 
@@ -264,9 +441,62 @@ ggplot(pca_sites, aes(x = PC1, y = PC2, col = Latitude)) +
                aes(x = 0, y = 0,
                    xend = PC1, yend = PC2),
                arrow = grid::arrow(),
-               col = "red3")
+               col = "red3") +
+  labs(title = "Latitude as color")
 ```
 
+
+## Seasonality amplitudes  
+
+```{r}
+load(here::here("Outputs", "calculated_trends", "seasonal_characterization.RData"))
+```
+
+
+```{r}
+seasonal_amps <- seasonal_by_stn |> 
+  mutate(ampl = case_when(parameter == "chla_n" ~ median_norm_ampl,
+                          .default = median_ampl),
+         station = substr(station, start = 1, stop = 5)) |> 
+  select(station, parameter, ampl) |> 
+  filter(station %in% rownames(slopes_scaled)) |> 
+  pivot_wider(names_from = parameter,
+              names_prefix = "ampl_",
+              values_from = ampl) |> 
+  column_to_rownames("station")
+
+names(seasonal_amps) <- stringr::str_remove(names(seasonal_amps), "_median")
+names(seasonal_amps) <- stringr::str_remove(names(seasonal_amps), "_proportion")
+
+# and scale
+env_amps <- as.data.frame(apply(seasonal_amps, MARGIN = 2, scale))
+rownames(env_amps) <- rownames(seasonal_amps)
+
+# substitute 0 in place of NAs  
+env_amps[][is.na(env_amps[])] <- 0
+```
+
+```{r}
+# env fit
+ev_amps <- envfit(pca_out, env_amps)
+```
+
+
+```{r}
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "point"),
+       xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "Seasonal amplitudes of key parameters overlaid")
+plot(ev_amps, cex = 0.6)
+```
+
+```{r}
+ev_amps
+```
 
 
 ## Overall parameter medians  
