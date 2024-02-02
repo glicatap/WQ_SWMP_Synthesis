@@ -293,23 +293,23 @@ water_all2 <- water_all |>
                 function(x) log10(x)))
 ```
 
-```{r, fig.height = 10, fig.width = 12}
+```{r, fig.height = 12, fig.width = 14}
 lowerFn <- function(data, mapping, method = "loess", ...) {
   p <- ggplot(data = data, mapping = mapping) +
-    geom_point(colour = "navy", alpha = 0.5) +
+    geom_point(colour = "navy", alpha = 0.8) +
     geom_smooth(method = method, color = "darkorange", 
                 se = FALSE, linewidth = 0.9, ...)
   p
 }
 
 ggpairs(water_all2[3:ncol(water_all2)],
-        upper = list(continuous = wrap("cor", method = "spearman")),
-        lower = list(continuous = wrap(lowerFn)))
+        upper = list(continuous = "cor", method = "spearman"),
+        lower = list(continuous = wrap(lowerFn)),
+        axisLabels = "none")
 ```
 
 
-
-```{r, fig.height = 9, fig.width = 12}
+```{r, fig.height = 12, fig.width = 14}
 pairs(water_all2[, 3:ncol(water_all2)],
       lower.panel = panel.smooth,
       upper.panel = NULL)
