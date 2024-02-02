@@ -11,8 +11,8 @@ date: "`r Sys.Date()`"
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
-                      fig.height = 7,
-                      fig.width = 7)
+                      fig.height = 8.5,
+                      fig.width = 8)
 
 # packages
 library(tidyverse)
@@ -219,6 +219,10 @@ water_all <- left_join(trnds_water, water_medians,
                        by = c("reserve", "station")) |> 
   left_join(lat_wq, by = c("reserve", "station")) |> 
   left_join(seas, by = "station")
+
+# write.csv(water_all, here::here("Data", "compiled_predictors.csv"),
+#           row.names = FALSE,
+#           na = "")
 ```
 
 # Correlation plots  
@@ -293,7 +297,7 @@ water_all2 <- water_all |>
                 function(x) log10(x)))
 ```
 
-```{r, fig.height = 12, fig.width = 14}
+```{r, fig.height = 11, fig.width = 15}
 lowerFn <- function(data, mapping, method = "loess", ...) {
   p <- ggplot(data = data, mapping = mapping) +
     geom_point(colour = "navy", alpha = 0.8) +
@@ -309,7 +313,7 @@ ggpairs(water_all2[3:ncol(water_all2)],
 ```
 
 
-```{r, fig.height = 12, fig.width = 14}
+```{r, fig.height = 11, fig.width = 15}
 pairs(water_all2[, 3:ncol(water_all2)],
       lower.panel = panel.smooth,
       upper.panel = NULL)
