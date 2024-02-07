@@ -1,0 +1,92 @@
+---
+title: "Untitled"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(car)
+library(corrplot)
+```
+
+```{r}
+predictors <- read.csv(here::here("Data", "compiled_predictors.csv"))
+
+```
+
+What happens if we throw in all the predictors?  
+
+Center and scale (z-score; everything but chla trends) to avoid issues with different scales. Also log-transform nutrient medians first.  
+
+```{r}
+df_for_chla <- predictors |> 
+  select(-reserve, -station, -met_station) |> 
+  mutate(across(c(chla_n_median, nh4f_median, no23f_median, po4f_median),
+                function(x) log10(x+0.001))) |> 
+  mutate(across(c(temp_trend:turb_trend, po4f_trend:precp_trend),
+                function(x) scale(x)))
+
+chla_mod <- lm(chla_trend ~ .,
+               data = df_for_chla)
+
+plot(chla_mod)
+# i'm pretty happy
+
+vif(chla_mod)
+# YIKES
+
+modvif <- as.data.frame(vif(chla_mod)) |> 
+  rownames_to_column("predictor") |> 
+  rename(VIF = `vif(chla_mod)`) |> 
+  arrange(VIF) |> 
+  mutate(predictor = fct_inorder(predictor))
+
+ggplot(modvif) +
+  geom_col(aes(x = VIF, y = predictor),
+           fill = "cadetblue3") +
+  geom_vline(xintercept = 5, linetype = "dashed", 
+             col = "red3",
+             size = 1)
+
+```
+
+Okay, get rid of things that are pretty clearly redundant, like:  
+
+-  max wind speed median  
+-  air temp median  
+-  latitude  
+
+```{r}
+df2 <- df_for_chla |> 
+  select(-maxwspd_median,
+         -atemp_median,
+         -latitude)
+
+mod2 <- lm(chla_trend ~ .,
+               data = df2)
+
+plot(mod2)
+# still pretty happy
+
+vif(mod2)
+# YIKES
+
+modvif <- as.data.frame(vif(mod2)) |> 
+  rownames_to_column("predictor") |> 
+  rename(VIF = `vif(mod2)`) |> 
+  arrange(VIF) |> 
+  mutate(predictor = fct_inorder(predictor))
+
+ggplot(modvif) +
+  geom_col(aes(x = VIF, y = predictor),
+           fill = "cadetblue3") +
+  geom_vline(xintercept = 5, linetype = "dashed", 
+             col = "red3",
+             size = 1)
+```
+
