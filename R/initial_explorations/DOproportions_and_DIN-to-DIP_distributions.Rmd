@@ -86,6 +86,33 @@ Seems important to know which portion is left-censored. If the denominator is le
 ## Exploration  
 
 ```{r}
+table(dat_nut$DIN_to_DIP_censBoth)
+```
+
+Not a huge proportion having both values censored. How does that break down by station?  
+
+```{r}
+ratio_cens <- janitor::tabyl(dat_nut, station, DIN_to_DIP_censBoth) |> 
+  setNames(c("station", "no", "yes")) |> 
+  mutate(proportion_both_cens = round(yes / (yes + no), 4)) |> 
+  arrange(desc(proportion_both_cens))
+
+hist(ratio_cens$proportion_both_cens, breaks = 20,
+     xlab = "Proportion of values, by station, where DIN and DIP are both censored",
+     main = "Dual-censoring frequency")
+```
+
+Seems to be a big break at about 20% - only a few stations have more "both censored" values than that. I'll print the table for all that have more than 10% "both censored", because I'd be pretty uncomfortable just ignoring more than 10% of a dataset (even that gives me some pause).  Unfortunately these seem to be from just a handful of places:  
+
+```{r}
+ratio_cens |> 
+  filter(proportion_both_cens > 0.1) |> 
+  knitr::kable(caption = "Are both DIN and DIP values censored?")
+```
+
+Wells, Grand Bay, Jobos Bay, and North Carolina with >20%. Apalach and Weeks Bay add quite a few stations between 10-20%; so by ignoring this issue we're excluding all three of the northern Gulf reserves (plus Jobos, NOC, and Wells).  20 stations have at least 10% of the values qualifying as "both censored".  
+
+```{r}
 summary(dat_nut$DIN_to_DIP)
 
 dat_nut |> 
