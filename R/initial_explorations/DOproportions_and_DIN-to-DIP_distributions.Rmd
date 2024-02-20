@@ -21,6 +21,7 @@ library(mgcv)
 library(gratia)
 library(gt)
 library(gtsummary)
+library(scales)
 
 
 source(here::here("helper_files", "definitions.R"))
@@ -120,6 +121,59 @@ dat_nut |>
   arrange(desc(DIN_to_DIP)) |> 
   head(30)
 ```
+
+Quick scatterplot and correlations.  
+
+First turn anything above 200 into 200. (this is ~4% of the non-NA values.)  
+
+`sum(dat_nut$DIN_to_DIP >= 200, na.rm = TRUE)/sum(!is.na(dat_nut$DIN_to_DIP))`
+
+```{r}
+dat_nut2 <- dat_nut |> 
+  mutate(DIN_to_DIP = case_when(DIN_to_DIP >= 10000 ~ 10000,
+                                .default = DIN_to_DIP + 0.0001),
+         censoring = case_when(DIN_to_DIP_censBoth == 1 ~ "both",
+                               DIN_to_DIP_censNum == 1 ~ "DIN",
+                               DIN_to_DIP_censDenom == 1 ~ "DIP",
+                               .default = "neither"))
+```
+
+```{r}
+ggplot(dat_nut2) +
+  geom_point(aes(x = po4f, y = DIN_to_DIP, col = censoring)) +
+  scale_x_log10(labels = label_comma()) +
+  scale_y_log10(labels = label_comma()) +
+  annotation_logticks(sides = "bl") +
+  scale_color_brewer(palette = "Paired") +
+  labs(title = "DIN:DIP vs PO4",
+       x = "PO4 (mg/L)",
+       y = "DIN:DIP",
+       color = "What is censored")
+
+
+ggplot(dat_nut2) +
+  geom_point(aes(x = nh4f, y = DIN_to_DIP, col = censoring)) +
+  scale_x_log10(labels = label_comma()) +
+  scale_y_log10(labels = label_comma()) +
+  annotation_logticks(sides = "bl") +
+  scale_color_brewer(palette = "Paired") +
+  labs(title = "DIN:DIP vs NH4",
+       x = "NH4 (mg/L)",
+       y = "DIN:DIP",
+       color = "What is censored")
+
+ggplot(dat_nut2) +
+  geom_point(aes(x = no23f, y = DIN_to_DIP, col = censoring)) +
+  scale_x_log10(labels = label_comma()) +
+  scale_y_log10(labels = label_comma()) +
+  annotation_logticks(sides = "bl") +
+  scale_color_brewer(palette = "Paired") +
+  labs(title = "DIN:DIP vs NO23",
+       x = "NO23 (mg/L)",
+       y = "DIN:DIP",
+       color = "What is censored")
+```
+
 
 There are 0s in the dataset, and they're not always flagged as censored :-O
 
