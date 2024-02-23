@@ -73,9 +73,11 @@ mod_fun <- function(df){
 }
 ```
 
+
 ### Chla  
 
-```{r}
+```{r, fig.width = 5, fig.height = 7}
+par(mfrow = c(2, 1))
 chl_mods <- chl_annual |> 
   mutate(mod = purrr::map(data, mod_fun),
          tidy = purrr::map(mod, broom::tidy))
@@ -94,7 +96,8 @@ abline(v = 0.05, col = "red", lwd = 2)
 
 ### DO mg/L  
 
-```{r}
+```{r, fig.width = 5, fig.height = 7}
+par(mfrow = c(2, 1))
 do_mods <- do_annual |> 
   mutate(mod = purrr::map(data, mod_fun),
          tidy = purrr::map(mod, broom::tidy))
@@ -115,7 +118,8 @@ abline(v = 0.05, col = "red", lwd = 2)
 
 Change in normalized seasonal amplitude of water temperature
 
-```{r}
+```{r, fig.width = 5, fig.height = 7}
+par(mfrow = c(2, 1))
 tmp_mods <- tmp_annual |> 
   mutate(mod = purrr::map(data, mod_fun),
          tidy = purrr::map(mod, broom::tidy))
@@ -146,3 +150,102 @@ saveRDS(all_estimates, file = here::here("Outputs", "calculated_trends",
                                          "seasonal_amplitude_trends.rds"))
 ```
 
+# Diagnostics  
+
+I'm not crazy about how residuals look from a linear model, which generated the information above. I started down this road to check for autocorrelation in the residuals, which doesn't seem like a major problem, but it's worth looking at the data and what seems to be going on.  
+
+### Chl  
+
+```{r, results = FALSE, fig.height = 7, fig.width = 7}
+op <- par()
+par(mfrow = c(2, 2))
+
+chl2 <- chl_annual |> unnest(cols = data)
+for(i in seq_along(unique(chl2$station))){
+  st = unique(chl2$station)[i]
+  tmp <- chl2 |> filter(station == st)
+  print(plot(an_normalized_amplitude ~ year, data = tmp, main = paste(st, "time series"), type = "b"))
+  lm1 <- lm(an_normalized_amplitude ~ year, data = tmp)
+  print(plot(lm1, which = 1, main = st))
+  print(plot(lm1, which = 2, main = st))
+  print(acf(resid(lm1), main = st))
+  cat("\n-----------------------")
+  cat("\n-----------------------\n")
+}
+
+# not seeing systemic autocorrelation issues, actually
+# a few stations might have some
+# but since we're not overly focused on -pvalues, I'm not
+# sure it's worth the effort to incorporate
+
+# i wasn't crazy about residual plots though
+```
+
+### Chl - log transformed??  
+
+```{r, results = FALSE, fig.height = 7, fig.width = 7}
+op <- par()
+par(mfrow = c(2, 2))
+
+chl2 <- chl_annual |> unnest(cols = data)
+for(i in seq_along(unique(chl2$station))){
+  st = unique(chl2$station)[i]
+  tmp <- chl2 |> filter(station == st)
+  print(plot(log10(an_normalized_amplitude) ~ year, data = tmp, main = paste(st, "time series"), type = "b"))
+  lm1 <- lm(log10(an_normalized_amplitude) ~ year, data = tmp)
+  print(plot(lm1, which = 1, main = st))
+  print(plot(lm1, which = 2, main = st))
+  print(acf(resid(lm1), main = st))
+  cat("-----------------------")
+  cat("-----------------------")
+}
+
+# not seeing systemic autocorrelation issues, actually
+# a few stations might have some
+# but since we're not overly focused on -pvalues, I'm not
+# sure it's worth the effort to incorporate
+
+# i wasn't crazy about residual plots though
+```
+
+
+### DO mg/L  
+
+```{r, results = FALSE, fig.height = 7, fig.width = 7}
+op <- par()
+par(mfrow = c(2, 2))
+
+do2 <- do_annual |> unnest(cols = data)
+for(i in seq_along(unique(do2$station))){
+  st = unique(do2$station)[i]
+  tmp <- do2 |> filter(station == st)
+  print(plot(an_normalized_amplitude ~ year, data = tmp, main = paste(st, "time series"), type = "b"))
+  lm1 <- lm(an_normalized_amplitude ~ year, data = tmp)
+  print(plot(lm1, which = 1, main = st))
+  print(plot(lm1, which = 2, main = st))
+  print(acf(resid(lm1), main = st))
+    cat("-----------------------")
+  cat("-----------------------")
+}
+```
+
+
+### Water temperature  
+
+```{r, results = FALSE, fig.height = 7, fig.width = 5}
+op <- par()
+par(mfrow = c(2, 2))
+
+tmp2 <- tmp_annual |> unnest(cols = data)
+for(i in seq_along(unique(tmp2$station))){
+  st = unique(tmp2$station)[i]
+  tmp <- tmp2 |> filter(station == st)
+  print(plot(an_normalized_amplitude ~ year, data = tmp, main = paste(st, "time series"), type = "b"))
+  lm1 <- lm(an_normalized_amplitude ~ year, data = tmp)
+  print(plot(lm1, which = 1, main = st))
+  print(plot(lm1, which = 2, main = st))
+  print(acf(resid(lm1), main = st))
+    print("-----------------------")
+  print("-----------------------")
+}
+```
