@@ -1,0 +1,105 @@
+---
+title: " "
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(vegan)
+```
+
+Start by running `exploring_predictors.Rmd` through the "One Big PCA" step. Will peel off highly correlated predictors to make a reasonable grouping, then see what comes next in "another big PCA". This is an attempt to let the math drive things, though I'm not convinced that randomly throwing something like `median_no23f` into a PCA with only weather variables would be a good idea, so I will do some balancing and picking/choosing. Ultimately though, the math has to work okay for everything.  
+
+`preds_all2` has the nutrient medians log-transformed. Still needs to be scaled, and missing values replaced with 0s.  
+
+```{r}
+# redo pca with vegan
+preds_scaled <- as.data.frame(apply(preds_all2[4:ncol(preds_all2)], 2, scale))
+rownames(preds_scaled) <- preds_all2$station
+preds_scaled[][is.na(preds_scaled[])] <- 0
+
+
+pca_out <- rda(preds_scaled)
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"),
+       # xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       # ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "PCA with all predictors")
+
+
+biplot(pca_out,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "points"),
+       # xlab = paste0("PC1 (", round(eigs[2, 1]*100, 2), "%)"),
+       # ylab = paste0("PC2 (", round(eigs[2, 2]*100, 2), "%)"),
+       main = "PCA with all predictors")
+```
+
+```{r}
+summary(pca_out)
+```
+
+```{r}
+# rda(Q)
+# throws an error
+```
+
+PCA on correlation matrix comes out differently than PCA on centered, scaled variables (guess this makes sense). Using the correlation matrix in a PCA (explaining the biggest variability in correlations) might help figure out what should go together into a 'predictor PCA', but ultimately for our next modeling step, we want our combined variables to be based on a 'predictor PCA' drawn from the actual (or centered, scaled) values of the variables.  
+
+
+### 1. Remove some  
+
+Air temp (trend and median) and maxwspd (median only; trend has not yet been calculated)
+
+```{r}
+preds_scaled2 <- preds_scaled |> 
+  select(-atemp_trend, -atemp_median, 
+         -maxwspd_median)
+```
+
+### 2. Combine some weather/climate/general conditions vars  
+
+start by including the trends; see if they relate and if not drop them.  
+
+```{r}
+preds_met1 <- preds_scaled2 |> 
+  select(temp_median,
+         latitude,
+         dailyPAR_median,
+         wspd_median,
+         totprcp_total,
+         temp_trend,
+         dailyPAR_trend,
+         precp_trend)
+
+corrplot(cor(preds_met1, method = "spearman"))
+```
+
+Really, it's temp, latitude, and PAR.  
+
+```{r}
+pca_met1 <- rda(preds_met1)
+biplot(pca_met1,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "points"))
+```
+
+Not a bad biplot, actually.  
+
+```{r}
+summ1 <- summary(pca_met1)
+summ1$cont$importance
+
+screeplot(pca_met1, type = "lines")
+```
+
+Ehhhhh, not loving this.  

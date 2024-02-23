@@ -1,0 +1,148 @@
+---
+title: "Seasonal amplitudes and trends"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE,
+                      fig.width = 7,
+                      fig.height = 5)
+```
+
+This Rmd file is living in the `R/Long-Term_trend_analysis` directory because we are looking for changes through time in seasonal amplitude. Amplitudes were originally calculated in `R/Short-Term_seasonality/seasonality_viz` and are re-calculated here for completeness (and not having to search for output from that folder now that we are also interested in a long-term component).  
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+
+source(here::here("helper_files", "definitions.R"))
+source(here::here("helper_files", "functions.R"))
+
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
+# load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyMET.RData"))
+
+wq <- wq |> 
+  mutate(do_proportion_below2 = round(doLessThan2_total / doLessThan2_nValid, 4),
+         do_proportion_below5 = round(doLessThan5_total / doLessThan5_nValid, 4)) 
+```
+
+```{r}
+# we really only want to use stations where we've already calculated long-term trends
+# so read those in too and subset the main data frames
+load(here::here("Outputs", "calculated_trends", "long-term-trends.RData"))
+
+# station names so far are the long form (wq and nut at ends)
+wq <- filter(wq, station %in% trends_df$station)
+nut <- filter(nut, station %in% trends_nut$station)
+```
+
+
+
+```{r}
+# annualize is a custom function
+chl_annual <- annualize(nut, chla_n) |> 
+  select(station, year, an_normalized_amplitude) |> 
+  nest(data = c(year, an_normalized_amplitude))
+
+do_annual <- annualize(wq, do_mgl_median) |> 
+  select(station, year, an_normalized_amplitude) |> 
+  nest(data = c(year, an_normalized_amplitude))
+
+tmp_annual <- annualize(wq, temp_median) |> 
+  select(station, year, an_normalized_amplitude) |> 
+  nest(data = c(year, an_normalized_amplitude))
+```
+
+## Model  
+
+Currently this is just a simple linear model; does not account for autocorrelation in residuals  
+
+```{r}
+mod_fun <- function(df){
+  lm(an_normalized_amplitude ~ year, data = df)
+}
+```
+
+### Chla  
+
+```{r}
+chl_mods <- chl_annual |> 
+  mutate(mod = purrr::map(data, mod_fun),
+         tidy = purrr::map(mod, broom::tidy))
+
+chl_estimates <- chl_mods |> 
+  select(station, tidy) |> 
+  unnest(cols = tidy) |> 
+  filter(term == "year") |> 
+  select(-term)
+
+hist(chl_estimates$estimate, breaks = 50)
+abline(v = 0, col = "blue", lwd = 2)
+hist(chl_estimates$p.value, breaks = 50)
+abline(v = 0.05, col = "red", lwd = 2)
+```
+
+### DO mg/L  
+
+```{r}
+do_mods <- do_annual |> 
+  mutate(mod = purrr::map(data, mod_fun),
+         tidy = purrr::map(mod, broom::tidy))
+
+do_estimates <- do_mods |> 
+  select(station, tidy) |> 
+  unnest(cols = tidy) |> 
+  filter(term == "year") |> 
+  select(-term)
+
+hist(do_estimates$estimate, breaks = 50)
+abline(v = 0, col = "blue", lwd = 2)
+hist(do_estimates$p.value, breaks = 50)
+abline(v = 0.05, col = "red", lwd = 2)
+```
+
+### water temp  
+
+Change in normalized seasonal amplitude of water temperature
+
+```{r}
+tmp_mods <- tmp_annual |> 
+  mutate(mod = purrr::map(data, mod_fun),
+         tidy = purrr::map(mod, broom::tidy))
+
+tmp_estimates <- tmp_mods |> 
+  select(station, tidy) |> 
+  unnest(cols = tidy) |> 
+  filter(term == "year") |> 
+  select(-term)
+
+hist(tmp_estimates$estimate, breaks = 50)
+abline(v = 0, col = "blue", lwd = 2)
+hist(tmp_estimates$p.value, breaks = 50)
+abline(v = 0.05, col = "red", lwd = 2)
+```
+
+# prepare these for joining with other predictors  
+
+```{r}
+tmp_estimates$param = "temp"
+do_estimates$param = "do_mgl"
+chl_estimates$param = "chla"
+
+all_estimates <- bind_rows(chl_estimates, do_estimates, tmp_estimates) |> 
+  mutate(test = "trend in normalized seasonal amplitude")
+
+saveRDS(all_estimates, file = here::here("Outputs", "calculated_trends",
+                                         "seasonal_amplitude_trends.rds"))
+```
+

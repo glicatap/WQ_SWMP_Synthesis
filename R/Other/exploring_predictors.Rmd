@@ -278,6 +278,12 @@ pca_summ <- summary(pca_out)
 summary(pca_out)$importance[, 1:6]
 ```
 
+
+```{r}
+pca2 <- prcomp(preds_scaled, scale. = FALSE)
+```
+
+
 26 axes total.  
 
 First 3 axes get us up to 77% of variance explained. 4th gets us to 86%.  
