@@ -1,0 +1,163 @@
+---
+title: "Predictor PCAs"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+## Read and wrangle data
+
+```{r}
+# wq, met, nut trends; overall medians; overall seasonal amplitudes
+# station is 5-letter version
+preds_all <- read.csv(here::here("Data", "compiled_predictors.csv"))
+
+# all original trend calculations; will need to trim this
+# only keep chla and do trends
+# chla trend should already be present in preds_all though
+# station is 7-8 letter version
+responses <- read.csv(here::here("Outputs", "calculated_trends",
+                                 "long-term-trends.csv"))
+
+# trends in seasonal amplitudes
+# station is 7-8 letter version
+seas_trends <- readRDS(here::here("Outputs", "calculated_trends", 
+                               "seasonal_amplitude_trends.rds"))
+```
+
+```{r}
+responses_main <- responses |> 
+  filter(parameter %in% c("do_mgl_median",
+                          "do_proportion_below2",
+                          "chla_n"),
+         station %in% seas_trends$station) |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  select(station, parameter, Slope) |> 
+  pivot_wider(names_from = parameter,
+              values_from = Slope) |> 
+  rename(chla_trend = chla_n,
+         domgl_trend = do_mgl_median,
+         do_below2_trend = do_proportion_below2)
+
+seas_trends_main <- seas_trends |> 
+  select(station, param, estimate) |> 
+  mutate(station = substr(station, 1, 5),
+         param = case_match(param,
+                            "chla" ~ "chla_seasAmp_trend",
+                            "do_mgl" ~ "domgl_seasAmp_trend",
+                            "temp" ~ "temp_seasAmp_trend")) |> 
+  pivot_wider(names_from = param, 
+              values_from = estimate)
+
+preds_main <- preds_all |> 
+  select(-maxwspd_median, -latitude,
+         -atemp_median, -atemp_trend) |> 
+  mutate(across(c(chla_n_median,
+                  nh4f_median,
+                  no23f_median,
+                  po4f_median,
+                  turb_median),
+                log10)) |> 
+  rename(turb_median.log10 = turb_median,
+         chla_median.log10 = chla_n_median,
+         nh4_median.log10 = nh4f_median,
+         no23_median.log10 = no23f_median,
+         po4_median.log10 = po4f_median,
+         chla_seasAmp = chla_seas_ampl,
+         domgl_seasAmp = do_mgl_seas_ampl,
+         temp_seasAmp = temp_seas_ampl)
+
+preds_main <- preds_main |> 
+  select(order(names(preds_main))) |> 
+  relocate(c(reserve, station, met_station))
+```
+
+
+
+## Compile matrices for each response
+
+These will mostly be similar.
+
+## Correlation matrix
+
+## Predictor histograms
+
+Make sure each predictor is roughly bell-shaped, for inclusion in PCA
+
+# List of responses and predictors:
+
+-   Responses: chla trend, domgl trend, do\<2 trend.
+
+-   Predictors (pulled from slide 6 of \'[SWMP Synthesis model pieces](https://docs.google.com/presentation/d/1DGCyR5U5pYlU9qp5I0hYXLhKjZjly_Kq1iUfF721s-0/edit?usp=sharing)\', which we discussed some during a February Data Team meeting): 
+
+    -   DO responses only: 
+
+        -   Chla slope
+
+    -   All responses; do PCAs to reduce variable load. Red highlights mean a parameter hasn\'t been calculated.
+
+        -   Related to responses:
+
+            -   Chla median
+
+            -   Chla median seasonal amplitude
+
+            -   Chla trend in seasonal amplitude
+
+            -   DO mgl median seasonal amplitude
+
+            -   DO mgl trend in seasonal amplitude
+
+        -   WQ params:
+
+            -   SpCond slope
+
+            -   SpCond median
+
+            -   Temp slope
+
+            -   Temp median
+
+            -   Temp median seasonal amplitude
+
+            -   Temp trend in seasonal amplitude
+
+            -   Turbidity slope
+
+            -   Turbidity median
+
+        -   MET params:
+
+            -   Precip slope - note this was calculated on sqrt-transformed values.
+
+            -   Precip median yearly total - there is a column in the compiled predictors file named \'totprcp_total\' - ranges in value from 4 (TJR) up to \~120 (GND); believe this is mm so we\'re looking at median monthly totals. Median of all months still useful though? 
+
+            -   PAR slope
+
+            -   PAR median
+
+            -   Wind speed median
+
+        -   NUT params. Note: slopes were calculated on log10-transformed values. Medians were calculated using censored data methods and need to be log10-transformed before inclusion.
+
+            -   PO4 slope
+
+            -   PO4 median
+
+            -   NH4 slope
+
+            -   NH4 median
+
+            -   NO23 slope
+
+            -   NO23 median
