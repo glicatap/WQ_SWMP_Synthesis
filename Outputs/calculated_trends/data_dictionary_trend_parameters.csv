@@ -1,0 +1,17 @@
+Data Type,Analyzed Parameter Name,Measured Parameter Name,Description,Measurement units,Transformation,Distribution used in GAM,Trend slope units
+WQ,do_pct_median,do_pct_median,monthly median dissolved oxygen percent saturation,% saturation,none,gaussian,% saturation/yr
+WQ,do_mgl_median,do_mgl_median,monthly median dissolved oxygen mg/L,mg/L,none,gaussian,mg/L/yr
+WQ,temp_median,temp_median,monthly median water temperature,degrees C,none,gaussian,degrees C/yr
+WQ,spcond_median,spcond_median,monthly median specific conductance,mS/cm,none,gaussian,ms/cm/yr
+WQ,sal_median,sal_median,monthly median salinity,psu,none,gaussian,psu/yr
+WQ,turb_median,turb_median,monthly median turbidity,NTU,none,gaussian,NTU/yr
+WQ,do_proportion_below2,do_proportion_below2,proportion of dissolved oxygen readings in the month that were below 2 mg/L,,none,betar,
+WQ,do_proportion_below5,do_proportion_below5,proportion of dissolved oxygen readings in the month that were below 5 mg/L,,none,betar,
+MET,atemp_median,atemp_median,monthly median air temperature,degrees C,none,gaussian,degrees C/yr
+MET,sqrt_prcp_total,totprcp_total,total monthly precipitation,mm,sqrt,gaussian,sqrt(mm)/yr
+MET,dailyPAR_median,dailyPAR_median,monthly median of daily-total photosynthetically active radiation,mmol/(m^2),none,gaussian,mmol/(m^2)/yr
+NUT,chla_n,chla_n,chlorophyll a,ug/L,log10,cnorm,log10(ug/L)/yr
+NUT,po4f,po4f,dissolved orthophosphate,mg/L,log10,cnorm,log10(mg/L)/yr
+NUT,nh4f,nh4f,dissolved ammonium,mg/L,log10,cnorm,log10(mg/L)/yr
+NUT,no23f,no23f,dissolved nitrite + nitrate,mg/L,log10,cnorm,log10(mg/L)/yr
+NUT,DIN_to_DIP,DIN_to_DIP,ratio of dissolved inorganic nitrogen (nh4f + no23f) to dissolved inorganic phosphorus (po4f),,,,
