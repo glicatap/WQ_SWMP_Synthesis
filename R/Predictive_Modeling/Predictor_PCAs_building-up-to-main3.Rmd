@@ -1,0 +1,800 @@
+---
+title: "Predictor PCAs"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "`r Sys.Date()`"
+---
+
+This document is being started after conversation at the Data Analysis Team Meeting on 4/2/24. The group expressed interest in separating out medians from other wq variables, and possibly leaving them out of the predictors completely.  
+
+Additionally, I've been spending some time reading Frank Harrell's book *Regression Modeling Strategies*, and he uses some clustering - the `Hmisc::varclust()` function - to help wtih data reduction. I'll look at that here as well to try to come up with some different groupings of predictor variables.  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(corrplot)
+library(vegan)
+library(car)  # for vif()
+library(Hmisc)
+library(GGally)
+```
+
+# Data Import {.tabset}  
+
+## Read and wrangle
+
+```{r}
+# wq, met, nut trends; overall medians; overall seasonal amplitudes
+# station is 5-letter version
+preds_all <- read.csv(here::here("Data", "compiled_predictors.csv"))
+
+# all original trend calculations; will need to trim this
+# only keep chla and do trends
+# chla trend should already be present in preds_all though
+# station is 7-8 letter version
+responses <- read.csv(here::here("Outputs", "calculated_trends",
+                                 "long-term-trends.csv"))
+
+# trends in seasonal amplitudes
+# station is 7-8 letter version
+seas_trends <- readRDS(here::here("Outputs", "calculated_trends", 
+                               "seasonal_amplitude_trends.rds"))
+
+# SWMP CLUE classification matrix
+# station is 7-8 letter version and all caps
+swmp_clue <- readxl::read_xlsx(here::here("Data",
+                                          "Copy of SWMP CLUE_All Site Classification_Mar2022_for review.xlsx"),
+                               skip = 1)
+```
+
+```{r}
+responses_main <- responses |> 
+  filter(parameter %in% c("do_mgl_median",
+                          "do_proportion_below2",
+                          "chla_n"),
+         station %in% seas_trends$station) |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  select(station, parameter, Slope) |> 
+  pivot_wider(names_from = parameter,
+              values_from = Slope) |> 
+  rename(chla_trend = chla_n,
+         domgl_trend = do_mgl_median,
+         do_below2_trend = do_proportion_below2)
+
+seas_trends_main <- seas_trends |> 
+  select(station, param, estimate) |> 
+  mutate(station = substr(station, 1, 5),
+         param = case_match(param,
+                            "chla" ~ "chla_seasAmp_trend",
+                            "do_mgl" ~ "domgl_seasAmp_trend",
+                            "temp" ~ "temp_seasAmp_trend")) |> 
+  pivot_wider(names_from = param, 
+              values_from = estimate)
+
+preds_main <- preds_all |> 
+  select(-maxwspd_median, 
+         -atemp_median, -atemp_trend,
+         -reserve, -met_station,
+         -chla_trend) |> 
+  mutate(across(c(chla_n_median,
+                  nh4f_median,
+                  no23f_median,
+                  po4f_median,
+                  turb_median),
+                function(x) log10(x+0.001))) |> 
+  rename(turb_median.log10 = turb_median,
+         chla_median.log10 = chla_n_median,
+         nh4_median.log10 = nh4f_median,
+         no23_median.log10 = no23f_median,
+         po4_median.log10 = po4f_median,
+         chla_seasAmp = chla_seas_ampl,
+         domgl_seasAmp = do_mgl_seas_ampl,
+         temp_seasAmp = temp_seas_ampl)
+
+preds_main <- preds_main |> 
+  select(order(names(preds_main))) |> 
+  relocate(station)
+
+# only pulling out numeric ones
+swmp_clue_main <- swmp_clue |> 
+  mutate(station = substr(tolower(StationCode), 1, 5)) |> 
+  mutate(pctDev.log10 = log10(Dev_pctLand + 0.001)) |> 
+  select(station, pctDev.log10) |> 
+  filter(station %in% preds_main$station) |>
+  distinct()
+```
+
+From pairs plots, log-Developed and log-Impervious are almost a straight line, so we should probably only use one. Ag percent land is hard to get bell-shaped. So only using log10-developed land for now.
+
+## Compile  
+
+Create one master data frame with all responses and predictors; center and scale all the predictors (NOT the responses); then subset from it for later modeling.
+
+Chla trend is in there twice - once as the response, and once with "\_asPredictor" appended to the name for centering and scaling.
+
+```{r}
+master_df <- left_join(responses_main, preds_main, by = "station") |> 
+  left_join(seas_trends_main, by = "station") |> 
+  left_join(swmp_clue_main, by = "station") |> 
+  mutate(chla_trend_asPredictor = chla_trend) |> 
+  relocate(chla_trend_asPredictor, .after = chla_trend) |> 
+  column_to_rownames("station")
+
+master_df_scaled <- master_df |> 
+  mutate(across(c(4:ncol(master_df)),
+                function(x) as.vector(scale(x))))
+```
+
+## Unscaled df overview  
+
+
+```{r}
+skimr::skim(master_df)
+```
+
+## Scaled df overview  
+
+```{r}
+skimr::skim(master_df_scaled)
+```
+
+Fill in NAs with 0
+
+```{r}
+master_df_scaled[][is.na(master_df_scaled[])] <- 0
+```
+
+## Correlation matrix
+
+```{r}
+my_corrplot <- function(df, start_col){
+  tmp <- df
+  Q <- cor(tmp[start_col:ncol(tmp)], 
+           method = "spearman",
+           use = "pairwise.complete.obs")
+  testRes = cor.mtest(tmp[start_col:ncol(tmp)], conf.level = 0.95)
+  corrplot(Q, 
+           type = "upper",
+           # order = 'FPC',
+           method = "ellipse",
+           p.mat = testRes$p, 
+           sig.level = 0.05,
+           insig = "label_sig",
+           pch.cex = 2.5,
+           pch.col = "gray20",
+           tl.pos = "lt",
+           tl.cex = 0.8,
+           tl.srt = 45)
+  corrplot(Q, add = TRUE,
+           type = "lower",
+           # order = 'FPC',
+           method = "number",
+           insig = "n",
+           diag = FALSE,
+           tl.pos = "n",
+           cl.pos = "n",
+           number.cex = 0.6)
+}
+
+```
+
+```{r}
+my_corrplot(master_df_scaled, start_col = 4)
+```
+
+`chla_trend_asPredictor` doesn't seem to have much correlation with any others, so since it's only going to be used with DO and not in PCAs for chl, I'll remove it from the matrices moving forward.
+
+## Chl trend predictive df
+
+```{r}
+chl_df <- master_df_scaled |> 
+  select(-domgl_trend,
+         -do_below2_trend,
+         -chla_trend_asPredictor)
+```
+
+## VIFs in predictive chl
+
+
+```{r vif-function}
+vif_graph <- function(lm_obj){
+  
+  modvif <- as.data.frame(vif({{lm_obj}})) |> 
+    rownames_to_column("predictor") |> 
+    set_names(c("predictor", "VIF")) |> 
+    arrange(VIF) |> 
+    mutate(predictor = fct_inorder(predictor))
+  
+  
+  ggplot(modvif) +
+    geom_col(aes(x = VIF, y = predictor),
+             fill = "cadetblue3") +
+    geom_vline(xintercept = 5, linetype = "dashed", 
+               col = "red3",
+               linewidth = 1,
+               alpha = 0.8) +
+    geom_text(aes(x = VIF, y = predictor,
+                  label = round(VIF, 1)),
+              hjust = 1.1,
+              col = "black",
+              size = rel(3)) +
+    labs(title = "VIFs for chla_trend ~ all predictors below")
+}
+
+```
+
+```{r vif-first-use}
+mod1 <- lm(chla_trend ~ ., data = chl_df)
+vif_graph(mod1)
+```
+
+# Clustering {.tabset}  
+
+pp. 166-167 of Harrell 2001 - on his example dataset, he uses Spearman correlations; then in the cluster analysis, Hoeffding D statistics. "D will detect nonmotonic associations".  
+
+## unscaled, Spearman  
+
+
+```{r}
+preds_main_numeric <- select(preds_main, -station)
+vc1 <- varclus(as.matrix(preds_main_numeric),
+               sim = "spearman")
+plot(vc1, ylab = "Spearman clustering, raw predictors")
+```
+
+Groupings:  
+
+-  Latitude group I used before falls out (in each of these clusters, honestly): latitude, median temp, PAR, temp seasonal amplitude, and chl seasonal amplitude.  
+-  precip trend and spcond trend. PAR trend and no23 trend are the next closest cluster to these two, which I can only sort of fathom.    
+-  no23 median, spcond median, chla median, turb median; do seasonal amplitude - most of these are describing salinity/turbidity/chl conditions  
+-  po4 median, precip median, nh4 median, wind speed median - po4 and nh4 make sense to me together; precip and wind speed, maybe - all 4 of them together is a little strange, but.... maybe not. wetter and winder conditions lead to certain po4 and nh4 conditions?  
+-  temp trend, turbidity trend; po4 trend, nh4 trend - these don't make as much sense to me together (aside from po4 and nh4 trends)  
+
+
+These are sort of different median and trend groupings, though.  
+
+
+
+## unscaled, Hoeffding  
+
+
+```{r}
+vc2 <- varclus(as.matrix(preds_main_numeric),
+               sim = "hoeffding")
+plot(vc2, ylab = "Hoeffding clustering, raw predictors")
+```
+
+
+Groupings:  
+
+-  Latitude group again: latitude, median temp, PAR, temp seasonal amplitude, and chl seasonal amplitude.  
+-  precip trend and PAR trend together here, with no23 trend, and po4 median and precip median. 
+-  spcond trend, chl median, turb median, and do seasonal amplitude. Not sure why spcond trend groups with these others - I could see an argument for the other three. Chl and turb medians seem especially logical. The next closest group to this is the latitude grouping.
+-  no23 median & spcond median; turb trend; nh4 median, wspd median - this one doesn't make a ton of sense to me either. Can sort of see no23, spcond, and nh4 medians. Not sure how turb trend or wspd fit in.  
+
+
+## scaled, Spearman  
+
+
+
+```{r}
+preds_main_numeric_scaled <- select(chl_df, -chla_trend)
+vc1 <- varclus(as.matrix(preds_main_numeric_scaled),
+               sim = "spearman")
+plot(vc1, ylab = "Spearman clustering, scaled predictors")
+```
+
+Groupings:  
+
+-  latitude stuff  
+-  no23 median, spcond median; chla median, turb median; do seasonal amplitude  
+-  po4 median, precip median; nh4 median, wind speed median  
+-  temp trend, temp seasonality trend; turb trend  
+-  nh4 trend, po4 trend; PAR trend, do seasonal amplitude trend  
+-  % developed; precip trend and spcond trend; no23 trend and chl seasonality trend  
+
+
+## scaled, Hoeffding  
+
+
+```{r}
+vc2 <- varclus(as.matrix(preds_main_numeric_scaled),
+               sim = "hoeffding")
+plot(vc2, ylab = "Hoeffding clustering, scaled predictors")
+```
+
+
+Groupings:  
+
+-  Latitude group  
+-  po4 median + median precip; no23 trend, PAR trend, precip trend.  
+-  no23 median, spcond median; do seasonality; chla and turb medians  
+-  nh4 median, wspd median; turb trend  
+-  nh4 trend, po4 trend; do seasonality trend - somewhat clustered with turb, nh4, wspd from prior line  
+-  temp trend, temp seasonality trend, spcond trend, % developed  
+
+
+## summary of clustering  
+
+The latitude factors always came out together, and the same - so that's a good solid grouping of variables.  
+
+NH4 and PO4 trends always group with each other. Their medians group in a more variable way.  
+
+Chl and turb group together a lot, as medians and/or trends.  
+
+NO23 median groups with various spcond params frequently - this surprised me some but I can see where it would make sense.  
+
+The Spearman clustering on centered, scaled variables leads to some potential, meaningful structure I can play with. Medians do tend to separate from trends in that version, and that should address the work group's interest in separating them out. The trick will be to make sure I can do so without a lot of collinearity.  
+
+Another thing Harrell's book made me think about is how many PCs to keep. We really want to maximize the variability explained by the first axis or two of a PCA. It would be great if we could only keep the first one or two, and then we don't have to worry about whether to keep PCs 1, 2, and 3 if PC4 is significant. We could just keep the PCs from a grouping, only 1 PC, or drop them all - in candidate models for model selection.  
+
+
+# PCA groupings 1 {.tabset}  
+
+## Variables  
+
+Variables in each grouping are:  
+
+**Latitude** - 2 PCs for 84.7%    
+
+-  latitude
+-  temp_median  
+-  dailyPAR_median  
+-  temp_seasAmp  
+-  chla_seasAmp  
+
+
+**Medians a** - 2 PCs for 76% (3 PCs for 88.7%)   
+
+-  no23_median.log10  
+-  spcond_median  
+-  chla_median.log10  
+-  turb_median.log10  
+-  domgl_seasAmp  
+  
+
+**Medians b** - 2 PCs for 81.2%   
+
+-  po4_median.log10  
+-  totprcp_total  (median monthly precip)  
+-  nh4_median.log10  
+-  wspd_median  
+
+
+**Trends a** - 2 PCs for 83.7%    
+
+-  turb_trend  
+-  temp_trend  
+-  temp_seasAmp_trend  
+
+
+**Trends b** - 2 PCs for 73.3%  (3 PCs for 92.5%)    
+
+-  nh4f_trend  
+-  po4f_trend  
+-  dailyPAR_trend  
+-  domgl_seasAmp_trend  
+  
+
+**Trends c** - 3 PCs for 75% (4 for 88%)    
+
+-  precp_trend  
+-  spcond_trend  
+-  pctDev.log10  
+-  no23f_trend  
+-  chla_seasAmp_trend  
+
+
+
+## Latitude  
+
+Vars: temp_median, latitude, dailyPAR_median, temp_seasAmp, chla_seasAmp  
+```{r}
+lat_df <- chl_df |> 
+  select(latitude,
+         temp_median,
+         temp_seasAmp,
+         dailyPAR_median,
+         chla_seasAmp)
+lat_pca <- rda(lat_df)
+```
+
+```{r}
+screeplot(lat_pca, type = "lines")
+biplot(lat_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+```
+
+```{r}
+eigs <- summary(eigenvals(lat_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+Use first 2 axes. Showing information for 4, for reference.
+
+```{r}
+# loadings
+scores_lat <- as.data.frame(scores(lat_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_lat,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_lat <- as.data.frame(scores(lat_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("Lat-PC1", "Lat-PC2"))
+```
+
+
+## Medians a  
+
+Vars: no23_median.log10, spcond_median, chla_median.log10, turb_median.log10, domgl_seasAmp  
+
+```{r}
+mediansA_df <- chl_df |> 
+  select(no23_median.log10,
+         spcond_median,
+         chla_median.log10,
+         turb_median.log10,
+         domgl_seasAmp)
+mediansA_pca <- rda(mediansA_df)
+
+screeplot(mediansA_pca, type = "lines")
+biplot(mediansA_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(mediansA_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_mediansA <- as.data.frame(scores(mediansA_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_mediansA,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_mediansA <- as.data.frame(scores(mediansA_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("mediansA-PC1", "mediansA-PC2"))
+```
+
+Takes 3 PCs to get above 80% variance explained, but 2 PCs gets to 76% and that seems pretty good....  
+
+
+## Medians b  
+
+Vars: po4_median.log10, totprcp_total, nh4_median.log10, wspd_median  
+
+```{r}
+mediansB_df <- chl_df |> 
+  select(po4_median.log10,
+         totprcp_total,
+         nh4_median.log10,
+         wspd_median)
+mediansB_pca <- rda(mediansB_df)
+
+screeplot(mediansB_pca, type = "lines")
+biplot(mediansB_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(mediansB_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_mediansB <- as.data.frame(scores(mediansB_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_mediansB,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_mediansB <- as.data.frame(scores(mediansB_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("mediansB-PC1", "mediansB-PC2"))
+```
+
+2 axes do a very good job here.  
+
+## Trends a  
+
+Vars: turb_trend, temp_trend, temp_seasAmp_trend  
+
+```{r}
+trendsA_df <- chl_df |> 
+  select(turb_trend,
+         temp_trend,
+         temp_seasAmp_trend)
+trendsA_pca <- rda(trendsA_df)
+
+screeplot(trendsA_pca, type = "lines")
+biplot(trendsA_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(trendsA_pca))
+knitr::kable(eigs[, 1:3],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_trendsA <- as.data.frame(scores(trendsA_pca, choices = 1:3,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_trendsA,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_trendsA <- as.data.frame(scores(trendsA_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("trendsA-PC1", "trendsA-PC2"))
+```
+
+Again, 2 axes good here.  
+
+## Trends b  
+
+Vars: nh4f_trend, po4f_trend, dailyPAR_trend, domgl_seasAmp_trend  
+
+```{r}
+trendsB_df <- chl_df |> 
+  select(nh4f_trend,
+         po4f_trend,
+         dailyPAR_trend,
+         domgl_seasAmp_trend)
+trendsB_pca <- rda(trendsB_df)
+
+screeplot(trendsB_pca, type = "lines")
+biplot(trendsB_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(trendsB_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_trendsB <- as.data.frame(scores(trendsB_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_trendsB,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_trendsB <- as.data.frame(scores(trendsB_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("trendsB-PC1", "trendsB-PC2"))
+```
+
+2 PCs doesn't get us quite to 80% but does do pretty well; around 76% again and seems worth getting rid of the third axis.  
+
+## Trends c  
+
+Vars: precp_trend, spcond_trend, pctDev.log10, no23f_trend, chla_seasAmp_trend  
+
+```{r}
+trendsC_df <- chl_df |> 
+  select(precp_trend,
+         spcond_trend,
+         pctDev.log10,
+         no23f_trend,
+         chla_seasAmp_trend)
+trendsC_pca <- rda(trendsC_df)
+
+screeplot(trendsC_pca, type = "lines")
+biplot(trendsC_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(trendsC_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_trendsC <- as.data.frame(scores(trendsC_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_trendsC,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_trendsC <- as.data.frame(scores(trendsC_pca, choices = 1:3,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("trendsC-PC1", "trendsC-PC2", "trendsC-PC3"))
+```
+
+Really need 3 axes from this one.  
+
+## Outcome  
+
+ALL of the variables went into a PCA above in this go-round.  
+
+```{r}
+preds_from_pca1 <- bind_cols(
+  sites_lat,
+  sites_mediansA,
+  sites_mediansB,
+  sites_trendsA,
+  sites_trendsB,
+  sites_trendsC
+)
+
+chl_df_pca1 <- chl_df |> 
+  select(chla_trend) |> 
+  bind_cols(preds_from_pca1)
+```
+
+```{r}
+my_corrplot(chl_df_pca1, start_col = 2)
+```
+
+Latitude is correlating really strongly with PC2 of one of the median groups, but not PC1 - so I don't really know what to do about that. Some of the median groups are correlating with some of the trend groups, don't really know how to tackle that either.    
+
+What do a few of these pairs plots look like.  
+
+```{r}
+sub_df <- chl_df_pca1 |> 
+  select("Lat-PC1", "Lat-PC2", "mediansA-PC1", "mediansA-PC2", "mediansB-PC1", "trendsC-PC1")
+my_corrplot(sub_df, 1)
+ggpairs(sub_df)
+```
+
+Lat-PC1 and mediansA-PC2 is pretty concerning. trendsC-PC1 is concerning with both Lat-PC1 (even though corr wasn't significant) and mediansA-PC1. trendsC-1 with mediansA-2 isn't quite as linear as the others, even though the Spearman correlation was significant.    
+
+PC2 of mediansA is largely no23 median opposed to chla, turb, spcond medians and do_mgl seasonal amplitude.  
+
+Doesn't feel like throwing these two groups together into the same PCA is going to do anything good, but will try it below.  
+
+```{r}
+mod1 <- lm(chla_trend ~ ., data = chl_df_pca1)
+vif_graph(mod1)
+```
+
+Pretty great actually.  
+
+```{r}
+lowerFn <- function(data, mapping, method = "lm", ...) {
+  p <- ggplot(data = data, mapping = mapping) +
+    geom_point(colour = "navy", alpha = 0.8) +
+    geom_smooth(method = method, color = "darkorange", 
+                se = FALSE, linewidth = 0.9, ...)
+  p
+}
+```
+
+```{r}
+ggpairs(chl_df_pca1[, 2:ncol(chl_df_pca1)],
+        upper = list(continuous = "cor", method = "spearman"),
+        lower = list(continuous = wrap(lowerFn)),
+        axisLabels = "none")
+```
+
+
+## follow-up  
+
+### combining lat and mediansA  
+
+```{r}
+latMedA_df <- bind_cols(lat_df, mediansA_df)
+latMedA_pca <- rda(latMedA_df)
+
+screeplot(latMedA_pca, type = "lines")
+biplot(latMedA_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(latMedA_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+scores_latMedA <- as.data.frame(scores(latMedA_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_latMedA,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_latMedA <- as.data.frame(scores(latMedA_pca, choices = 1:3,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("latMedA-PC1", "latMedA-PC2", "latMedA-PC3"))
+```
+
+The biplot is more crowded and a little more difficult to interpret, but pulling 3-4 PCs out of all these variables might not be the worst way to go....  
+
+How do all our correlations look when we do this?  
+
+```{r}
+preds_from_pca2 <- bind_cols(
+  sites_latMedA,
+  sites_mediansB,
+  sites_trendsA,
+  sites_trendsB,
+  sites_trendsC
+)
+
+chl_df_pca2 <- chl_df |> 
+  select(chla_trend) |> 
+  bind_cols(preds_from_pca2)
+
+my_corrplot(chl_df_pca2, start_col = 2)
+
+mod2 <- lm(chla_trend ~ ., data = chl_df_pca2)
+vif_graph(mod2)
+```
+
+Not bad.... some correlation between the **latitude/medians PC2** (turb/chl median & do seasonal amplitude opposing spcond median) and **mediansB-PC2** (nh4 median opposing wspd median) and **trendsC-PC1** (prcp trend opposing % developed, spcond trend, and (less so) no23 trend and chl seasonal amplitude trend).  So we sort of have some relationships between precip/spcond trends and turb/chl, spcond, and do seasonal amplitude?  
+
+```{r}
+sub_df2 <- chl_df_pca2 |> 
+  select("latMedA-PC2", "mediansB-PC2", "trendsC-PC1")
+my_corrplot(sub_df2, 1)
+ggpairs(sub_df2)
+```
+
+Yeah, I don't like those much.  VIFs were fine though.  
+
+OH YIKES THOUGH, those R^2s - this isn't a good starting point for model selection. Guess we need to keep more axes if we want to do this combination of predictor PCAs??
+
+```{r}
+summary(mod2)
+```
+
+
+What did our first one look like?  
+
+```{r}
+summary(mod1)
+```
+
+
