@@ -787,14 +787,102 @@ Yeah, I don't like those much.  VIFs were fine though.
 OH YIKES THOUGH, those R^2s - this isn't a good starting point for model selection. Guess we need to keep more axes if we want to do this combination of predictor PCAs??
 
 ```{r}
-summary(mod2)
+summary(mod2)$r.squared; summary(mod2)$adj.r.squared
 ```
 
 
 What did our first one look like?  
 
 ```{r}
-summary(mod1)
+summary(mod1)$r.squared; summary(mod1)$adj.r.squared
 ```
 
+
+# One big PCA {.tabset}  
+
+## Sparse PCA  
+
+Sparse PCA forces some loadings to 0, making axes simpler to interpret (see Harrell 2001, section 8.6.1 - starts on p. 175)  
+
+using {pcaPP} package  
+
+```{r}
+library(pcaPP)
+```
+
+
+```{r}
+# number of components to play with
+k = 26
+
+s <- sPCAgrid(preds_main_numeric_scaled, k = k)
+plot(s, type = "lines", main = "")
+# addscree(s)
+
+s$loadings
+pcs <- s$scores
+aic <- numeric(k)
+
+
+for(i in 1:k){
+  ps <- pcs[,1:i]
+  aic[i] <- AIC(lm(responses_main$chla_trend ~ ps))
+}
+
+plot(1:k, aic, xlab = "number of components used", ylab = "AIC", type = "b")
+
+```
+
+We need a lot of PCs for explanatory power - best is around 22, but another good jump is around 16.  
+
+16 components:  
+
+```{r}
+aic[c(16, 22)]
+
+test <- summary(lm(responses_main$chla_trend ~ pcs[,1:16]))
+test$r.squared; test$adj.r.squared
+```
+
+
+## Regular (non-sparse) PCA  
+
+If we sacrifice some interpretablity, can we get any better explanatory power?  
+
+```{r}
+k=26
+s2 <- PCAgrid(preds_main_numeric_scaled, k = k)
+plot(s2, type = "lines", main = "")
+# addscree(s)
+
+s2$loadings
+pcs <- s2$scores
+aic <- numeric(k)
+
+
+for(i in 1:k){
+  ps <- pcs[,1:i]
+  aic[i] <- AIC(lm(responses_main$chla_trend ~ ps))
+}
+
+plot(1:k, aic, xlab = "number of components used", ylab = "AIC", type = "b")
+```
+
+Maybe some. Best is still around 17 components, but we might could get away with 13.  
+
+```{r}
+aic[c(6, 13, 17)]
+
+test <- summary(lm(responses_main$chla_trend ~ pcs[,1:13]))
+test$r.squared; test$adj.r.squared
+```
+
+Not bad. How about if we drop it from 13 components to 6?  
+
+```{r}
+test <- summary(lm(responses_main$chla_trend ~ pcs[,1:6]))
+test$r.squared; test$adj.r.squared
+```
+
+Nope, that cuts our R^2s in half. We'd need at least 13, so we really need to think about interpretability of this option. This option has mostly been off the table since I started playing, but I keep coming back to it as a "what if.....?" - at least I have enough info now to feel good keeping it off the table, and info to show others if it comes back up.   
 
