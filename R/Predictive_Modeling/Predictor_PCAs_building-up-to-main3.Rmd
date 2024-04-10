@@ -671,6 +671,7 @@ chl_df_pca1 <- chl_df |>
 
 ```{r}
 my_corrplot(chl_df_pca1, start_col = 2)
+plot(varclus(as.matrix(preds_from_pca1)))
 ```
 
 Latitude is correlating really strongly with PC2 of one of the median groups, but not PC1 - so I don't really know what to do about that. Some of the median groups are correlating with some of the trend groups, don't really know how to tackle that either.    
@@ -1267,3 +1268,375 @@ summary(mod6)$r.squared; summary(mod6)$adj.r.squared
 Medians correlating some with trends again in this version. Again really no improvement in R^2s.  
 
 
+# 2 Groups to start  
+
+Here, I'll try combining latitude with all the medians, and making a separate group with all of the trends. I'll..... pick off variables until we get a decent amount explained in each PCA, and then try combinations of the ones that were removed? Not sure how well this is going to work, or if there's a way to go other than brute forcing.  
+
+## Latitude & Medians  
+
+Including seasonal amplitudes in this, and % developed.  
+
+```{r}
+lat_meds_df <- chl_df |> 
+  select(latitude,
+         chla_median.log10,
+         chla_seasAmp,
+         dailyPAR_median,
+         domgl_seasAmp,
+         nh4_median.log10,
+         no23_median.log10,
+         po4_median.log10,
+         spcond_median,
+         temp_median,
+         temp_seasAmp,
+         totprcp_total,
+         turb_median.log10,
+         wspd_median,
+         pctDev.log10)
+lat_meds_pca <- rda(lat_meds_df)
+
+screeplot(lat_meds_pca, type = "lines")
+biplot(lat_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+```
+
+From the biplot, I'd think we can remove % developed, po4 median, possibly nh4 median, possibly total precip, possibly temp seasonal amplitude, possibly chla seasonal amplitude, though the latter tracks pretty well with latitude
+
+```{r}
+
+eigs <- summary(eigenvals(lat_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+
+### Try again  
+
+Keeping precip because keeping spcond. Removed % developed, po4 median, nh4 median.
+
+```{r}
+lat_meds_df <- chl_df |> 
+  select(latitude,
+         chla_median.log10,
+         chla_seasAmp,
+         dailyPAR_median,
+         domgl_seasAmp,
+         no23_median.log10,
+         spcond_median,
+         temp_median,
+         temp_seasAmp,
+         totprcp_total,
+         turb_median.log10
+         )
+lat_meds_pca <- rda(lat_meds_df)
+
+screeplot(lat_meds_pca, type = "lines")
+biplot(lat_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(lat_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+Could probably get away with 3 axes, but does it improve by removing NO23 and temp seasonality?  
+
+### Try again  
+
+```{r}
+lat_meds_df <- chl_df |> 
+  select(latitude,
+         chla_median.log10,
+         chla_seasAmp,
+         dailyPAR_median,
+         domgl_seasAmp,
+         spcond_median,
+         temp_median,
+         totprcp_total,
+         turb_median.log10
+         )
+lat_meds_pca <- rda(lat_meds_df)
+
+screeplot(lat_meds_pca, type = "lines")
+biplot(lat_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(lat_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+
+Nah, that didn't improve it.  
+
+What if we just do latitude, chl seasonality, PAR, and temp  
+
+### This one might work  
+
+Pulling conductivity in or out makes a difference between 2 and 3 axes needed. So drop conductivity and see if we can add anything else back in. 
+
+Can probably get away with 2, maybe 3 axes, including chl and turb medians. (probably want to include 3 and let the model selection choose for us on the 3rd?)
+
+```{r}
+lat_meds_df <- chl_df |> 
+  select(latitude,
+         chla_seasAmp,
+         dailyPAR_median,
+         temp_median,
+         chla_median.log10,
+         turb_median.log10
+         )
+lat_meds_pca <- rda(lat_meds_df)
+
+screeplot(lat_meds_pca, type = "lines")
+biplot(lat_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(lat_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+
+### One more try at pulling 2 axes from more than 4 of these variables  
+
+```{r}
+lat_meds_df <- chl_df |> 
+  select(latitude,
+         chla_seasAmp,
+         dailyPAR_median,
+         domgl_seasAmp,
+         temp_median,
+         temp_seasAmp,
+         totprcp_total
+         )
+lat_meds_pca <- rda(lat_meds_df)
+
+screeplot(lat_meds_pca, type = "lines")
+biplot(lat_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(lat_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+# Disregard latitude and try water/nutrient medians  
+
+```{r}
+water_medians <- chl_df |> 
+  select(chla_median.log10,
+         turb_median.log10,
+         spcond_median,
+         nh4_median.log10,
+         no23_median.log10,
+         po4_median.log10)
+
+water_meds_pca <- rda(water_medians)
+
+screeplot(water_meds_pca, type = "lines")
+biplot(water_meds_pca,
+       choices = c(1, 2),
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(water_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+Doesn't work very well and I don't see an obvious thing to remove.  
+
+```{r}
+water_medians <- chl_df |> 
+  select(chla_median.log10,
+         # turb_median.log10,
+         spcond_median,
+         nh4_median.log10,
+         no23_median.log10,
+         po4_median.log10)
+
+water_meds_pca <- rda(water_medians)
+
+screeplot(water_meds_pca, type = "lines")
+biplot(water_meds_pca,
+       choices = c(1, 2),
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(water_meds_pca))
+knitr::kable(eigs[, 1:6],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+```
+
+
+# Try building up from latitude PCA again  
+
+If we only use the latitude PCA, is the rest of the collinearity acceptable? Just do that one, then examine clustering and corrplots.  
+
+```{r}
+lat_df <- chl_df |> 
+  select(latitude,
+         temp_median,
+         temp_seasAmp,
+         dailyPAR_median,
+         chla_seasAmp,
+         totprcp_total)
+lat_pca <- rda(lat_df)
+
+screeplot(lat_pca, type = "lines")
+biplot(lat_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(lat_pca))
+knitr::kable(eigs[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+# loadings
+scores_lat <- as.data.frame(scores(lat_pca, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_lat,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_lat <- as.data.frame(scores(lat_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("Lat-PC1", "Lat-PC2"))
+```
+
+```{r}
+remaining_predictors <- preds_main_numeric_scaled |> 
+  select(-all_of(names(lat_df)))
+new_combnd <- bind_cols(sites_lat, remaining_predictors)
+my_corrplot(new_combnd, 1)
+```
+
+```{r}
+some_medians <- preds_main_numeric_scaled |> 
+  select(no23_median.log10, 
+         nh4_median.log10,
+         po4_median.log10,
+         spcond_median)  
+some_meds_pca <- rda(some_medians)
+
+screeplot(some_meds_pca, type = "lines")
+biplot(some_meds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(some_meds_pca))
+knitr::kable(eigs[, 1:3],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+# loadings
+scores_some_meds <- as.data.frame(scores(some_meds_pca, choices = 1:2,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_some_meds,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_some_meds <- as.data.frame(scores(some_meds_pca, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("MedsA-PC1", "MedsA-PC2"))
+```
+
+```{r}
+remaining_predictors <- preds_main_numeric_scaled |> 
+  select(-all_of(names(some_medians)),
+         -all_of(names(lat_df)))
+new_combnd <- bind_cols(sites_lat, sites_some_meds, remaining_predictors)
+my_corrplot(new_combnd, 1)
+plot(varclus(as.matrix(new_combnd)))
+```
+
+Then it's back to combining the latitude and medians PCA, and.... see above. Around and around we go.  
+
+```{r}
+combnd_lats_meds <- bind_cols(lat_df, some_medians)
+combnd_latsMeds_pca <- rda(combnd_lats_meds)
+
+screeplot(combnd_latsMeds_pca, type = "lines")
+biplot(combnd_latsMeds_pca,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs <- summary(eigenvals(combnd_latsMeds_pca))
+knitr::kable(eigs[, 1:5],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+# loadings
+scores_combnd_latMeds <- as.data.frame(scores(combnd_latsMeds_pca, choices = 1:5,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_combnd_latMeds,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_LatMeds <- as.data.frame(scores(combnd_latsMeds_pca, choices = 1:3,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("LatMeds-PC1", "LatMeds-PC2", "LatMeds-PC3"))
+```
+
+Need 3 or 4 if we go this route.    
+
+
+```{r}
+remaining_predictors <- preds_main_numeric_scaled |> 
+  select(-all_of(names(combnd_lats_meds)))
+new_combnd <- bind_cols(sites_LatMeds, remaining_predictors)
+my_corrplot(new_combnd, 1)
+plot(varclus(as.matrix(new_combnd)))
+```
+
+Going around in circles.  
+
+# Latitude, Seasonality, Nutrients  
+
+Maybe break out seasonality medians and trends toge
