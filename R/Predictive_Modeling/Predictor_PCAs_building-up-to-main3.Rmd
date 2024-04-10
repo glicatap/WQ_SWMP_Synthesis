@@ -337,7 +337,7 @@ The Spearman clustering on centered, scaled variables leads to some potential, m
 Another thing Harrell's book made me think about is how many PCs to keep. We really want to maximize the variability explained by the first axis or two of a PCA. It would be great if we could only keep the first one or two, and then we don't have to worry about whether to keep PCs 1, 2, and 3 if PC4 is significant. We could just keep the PCs from a grouping, only 1 PC, or drop them all - in candidate models for model selection.  
 
 
-# PCA groupings 1 {.tabset}  
+# PCA groupings 1   
 
 ## Variables  
 
@@ -800,7 +800,7 @@ summary(mod1)$r.squared; summary(mod1)$adj.r.squared
 ```
 
 
-# One big PCA {.tabset}  
+# One big PCA   
 
 ## Sparse PCA  
 
@@ -897,7 +897,7 @@ test$r.squared; test$adj.r.squared
 Nope, that cuts our R^2s in half. We'd need at least 13, so we really need to think about interpretability of this option. This option has mostly been off the table since I started playing, but I keep coming back to it as a "what if.....?" - at least I have enough info now to feel good keeping it off the table, and info to show others if it comes back up.   
 
 
-# Try dropping medians {.tabset}  
+# Try dropping medians   
 
 
 Suggestion was that maybe they're so tangled up with latitude/geographic patterns that we don't need them at all? Let's find out what happens to our R^2s when we drop the general water quality/nutrient medians (except for chl and do, which we might want to keep because those are responses)  
@@ -920,7 +920,7 @@ test$r.squared; test$adj.r.squared
 Not ideal. Not as bad as trying to use too few PCs above, but not the greatest starting point. So we want to try to incorporate these somehow.  
 
 
-# One big Medians PCA {.tabset}  
+# One big Medians PCA   
 
 ## Single Medians PCA  
 
@@ -1142,7 +1142,7 @@ Correlations with PC1 of the medians don't look so bad anymore. Now it's PC2. Th
 Not much improved over the single trends PCA version, but at least now the biggest VIF belongs to median chl. Maybe I should go ahead and add both that and DO seasonality to the medians PCA.  
 
 
-# One bigger medians PCA {.tabset}  
+# One bigger medians PCA   
 
 Keep trends PCAs as above, and see what happens when we add chl median and DO seasonality into the median PCA.  
 
