@@ -62,11 +62,6 @@ upper_bound <- 0.318
 test<-replace(tmp, tmp >= lower_bound & tmp <= upper_bound, 0)
 
 
-
-# Define custom breaks and colors for the color ramp
-my_breaks <- c(-1, -0.318,0, 0.318, 1)  # Define breaks
-my_colors <- c("red", "white", "white", "red")  # Define corresponding colors
-
 # Plot correlation matrix with custom color ramp
 corrplot(as.matrix(test), 
          type = "upper",
@@ -81,8 +76,41 @@ corrplot(as.matrix(test),
          tl.srt = 45) 
 
 
+#####################################################################
+# Get the row and column names of the correlation matrix
+col_names <- colnames(correlation_estimates)
 
-upper_triangular <- test[upper.tri(test)]
+# Initialize empty vectors to store pairs and correlation values
+pairs <- character()
+correlation_values <- numeric()
 
-# Print the extracted upper triangular part
-print(upper_triangular)
+# Loop through the upper triangular part of the correlation matrix
+for (i in 1:(length(col_names) - 1)) {
+  for (j in (i + 1):length(col_names)) {
+    pairs <- c(pairs, paste(col_names[i], col_names[j], sep = "-"))
+    correlation_values <- c(correlation_values, correlation_estimates[i, j])
+  }
+}
+
+# Create a data frame with pairs and corresponding correlation estimates
+correlation_df <- data.frame(Pairs = pairs, Correlation = correlation_values)
+
+
+filtered_correlation_df <- correlation_df[correlation_df$Correlation > 0.318 | correlation_df$Correlation < -0.318, ]
+
+# Print the filtered data frame
+print(filtered_correlation_df)
+
+
+unique(filtered_correlation_df$Pairs)
+
+################################
+
+
+# Load the knitr package
+library(knitr)
+
+# Print the data frame as a formatted table
+kable(filtered_correlation_df)
+
+
