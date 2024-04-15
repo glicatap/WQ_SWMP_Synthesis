@@ -1,0 +1,317 @@
+---
+title: "Untitled"
+author: "Kim Cressman, Catbird Stats, LLC"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(corrplot)
+library(vegan)
+library(car)  # for vif()
+library(Hmisc)
+library(GGally)
+library(ggfortify)
+```
+
+# Data Import {.tabset}  
+
+## Read and wrangle
+
+```{r}
+# wq, met, nut trends; overall medians; overall seasonal amplitudes
+# station is 5-letter version
+preds_all <- read.csv(here::here("Data", "compiled_predictors.csv"))
+
+# all original trend calculations; will need to trim this
+# only keep chla and do trends
+# chla trend should already be present in preds_all though
+# station is 7-8 letter version
+responses <- read.csv(here::here("Outputs", "calculated_trends",
+                                 "long-term-trends.csv"))
+
+# trends in seasonal amplitudes
+# station is 7-8 letter version
+seas_trends <- readRDS(here::here("Outputs", "calculated_trends", 
+                               "seasonal_amplitude_trends.rds"))
+
+# SWMP CLUE classification matrix
+# station is 7-8 letter version and all caps
+swmp_clue <- readxl::read_xlsx(here::here("Data",
+                                          "Copy of SWMP CLUE_All Site Classification_Mar2022_for review.xlsx"),
+                               skip = 1)
+```
+
+```{r}
+responses_main <- responses |> 
+  filter(parameter %in% c("do_mgl_median",
+                          "do_proportion_below2",
+                          "chla_n"),
+         station %in% seas_trends$station) |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  select(station, parameter, Slope) |> 
+  pivot_wider(names_from = parameter,
+              values_from = Slope) |> 
+  rename(chla_trend = chla_n,
+         domgl_trend = do_mgl_median,
+         do_below2_trend = do_proportion_below2)
+
+seas_trends_main <- seas_trends |> 
+  select(station, param, estimate) |> 
+  mutate(station = substr(station, 1, 5),
+         param = case_match(param,
+                            "chla" ~ "chla_seasAmp_trend",
+                            "do_mgl" ~ "domgl_seasAmp_trend",
+                            "temp" ~ "temp_seasAmp_trend")) |> 
+  pivot_wider(names_from = param, 
+              values_from = estimate)
+
+preds_main <- preds_all |> 
+  select(-maxwspd_median, 
+         -atemp_median, -atemp_trend,
+         -reserve, -met_station,
+         -chla_trend) |> 
+  mutate(across(c(chla_n_median,
+                  nh4f_median,
+                  no23f_median,
+                  po4f_median,
+                  turb_median),
+                function(x) log10(x+0.001))) |> 
+  rename(turb_median.log10 = turb_median,
+         chla_median.log10 = chla_n_median,
+         nh4_median.log10 = nh4f_median,
+         no23_median.log10 = no23f_median,
+         po4_median.log10 = po4f_median,
+         chla_seasAmp = chla_seas_ampl,
+         domgl_seasAmp = do_mgl_seas_ampl,
+         temp_seasAmp = temp_seas_ampl)
+
+preds_main <- preds_main |> 
+  select(order(names(preds_main))) |> 
+  relocate(station)
+
+# only pulling out numeric ones
+swmp_clue_main <- swmp_clue |> 
+  mutate(station = substr(tolower(StationCode), 1, 5)) |> 
+  mutate(pctDev.log10 = log10(Dev_pctLand + 0.001)) |> 
+  select(station, pctDev.log10) |> 
+  filter(station %in% preds_main$station) |>
+  distinct()
+```
+
+From pairs plots, log-Developed and log-Impervious are almost a straight line, so we should probably only use one. Ag percent land is hard to get bell-shaped. So only using log10-developed land for now.
+
+## Compile  
+
+Create one master data frame with all responses and predictors; center and scale all the predictors (NOT the responses); then subset from it for later modeling.
+
+Chla trend is in there twice - once as the response, and once with "\_asPredictor" appended to the name for centering and scaling.
+
+```{r}
+master_df <- left_join(responses_main, preds_main, by = "station") |> 
+  left_join(seas_trends_main, by = "station") |> 
+  left_join(swmp_clue_main, by = "station") |> 
+  mutate(chla_trend_asPredictor = chla_trend) |> 
+  relocate(chla_trend_asPredictor, .after = chla_trend) |> 
+  column_to_rownames("station")
+
+master_df_scaled <- master_df |> 
+  mutate(across(c(4:ncol(master_df)),
+                function(x) as.vector(scale(x))))
+```
+
+## Unscaled df overview  
+
+
+```{r}
+skimr::skim(master_df)
+```
+
+## Scaled df overview  
+
+```{r}
+skimr::skim(master_df_scaled)
+```
+
+Fill in NAs with 0
+
+```{r}
+master_df_scaled[][is.na(master_df_scaled[])] <- 0
+```
+
+## Correlation matrix
+
+```{r}
+my_corrplot <- function(df, start_col){
+  tmp <- df
+  Q <- cor(tmp[start_col:ncol(tmp)], 
+           method = "spearman",
+           use = "pairwise.complete.obs")
+  testRes = cor.mtest(tmp[start_col:ncol(tmp)], conf.level = 0.95)
+  corrplot(Q, 
+           type = "upper",
+           # order = 'FPC',
+           method = "ellipse",
+           p.mat = testRes$p, 
+           sig.level = 0.05,
+           insig = "label_sig",
+           pch.cex = 2.5,
+           pch.col = "gray20",
+           tl.pos = "lt",
+           tl.cex = 0.8,
+           tl.srt = 45)
+  corrplot(Q, add = TRUE,
+           type = "lower",
+           # order = 'FPC',
+           method = "number",
+           insig = "n",
+           diag = FALSE,
+           tl.pos = "n",
+           cl.pos = "n",
+           number.cex = 0.6)
+}
+
+```
+
+```{r}
+my_corrplot(master_df_scaled, start_col = 4)
+```
+
+`chla_trend_asPredictor` doesn't seem to have much correlation with any others, so since it's only going to be used with DO and not in PCAs for chl, I'll remove it from the matrices moving forward.
+
+## Chl trend predictive df
+
+```{r}
+chl_df <- master_df_scaled |> 
+  select(-domgl_trend,
+         -do_below2_trend,
+         -chla_trend_asPredictor)
+```
+
+## VIFs in predictive chl
+
+
+```{r vif-function}
+vif_graph <- function(lm_obj){
+  
+  modvif <- as.data.frame(vif({{lm_obj}})) |> 
+    rownames_to_column("predictor") |> 
+    set_names(c("predictor", "VIF")) |> 
+    arrange(VIF) |> 
+    mutate(predictor = fct_inorder(predictor))
+  
+  
+  ggplot(modvif) +
+    geom_col(aes(x = VIF, y = predictor),
+             fill = "cadetblue3") +
+    geom_vline(xintercept = 5, linetype = "dashed", 
+               col = "red3",
+               linewidth = 1,
+               alpha = 0.8) +
+    geom_text(aes(x = VIF, y = predictor,
+                  label = round(VIF, 1)),
+              hjust = 1.1,
+              col = "black",
+              size = rel(3)) +
+    labs(title = "VIFs for chla_trend ~ all predictors below")
+}
+
+```
+
+```{r vif-first-use}
+mod1 <- lm(chla_trend ~ ., data = chl_df)
+vif_graph(mod1)
+```
+
+
+```{r}
+library(cluster)
+```
+
+
+```{r}
+wssplot(preds_main_numeric_scaled, 10)
+kfit <- kmeans(preds_main_numeric_scaled,
+               centers = 8,
+               nstart = 25)
+
+autoplot(kfit, preds_main_numeric_scaled, 
+         frame = TRUE, 
+         # frame.type = 'norm',
+         shape = FALSE,
+         label = TRUE,
+         loadings = TRUE,
+         loadings.label = TRUE,
+         loadings.label.size = 3)
+sort(kfit$cluster)
+
+
+for(i in 2:10){
+  kfit <- kmeans(preds_main_numeric_scaled,
+               centers = i,
+               nstart = 25)
+
+  print(autoplot(kfit, preds_main_numeric_scaled, 
+                 frame = TRUE,
+                 shape = FALSE,
+                 label = TRUE) + 
+          ggtitle(paste(i, "clusters")))
+}
+```
+
+2 or 3 work okay, without much overlapping, but are touching.  
+
+With 2, GND and WKB group together. With 3, they're next to each other, but in different clusters.  
+
+At 5 clusters, JOB separates out. At 6, MAR. At 7, KAC.  
+
+At 8, we get geographic groupings: KAC, PDB, and two SOS stations are grouped again. TJR, ELK, and SFB are together. HUD, OWC, CBM, DEL together. WKB, APA, SAP, RKB, NIW, NOC, ACE, GTM together. JOB, MAR, and GND are each independent.  
+
+At 9, GND lumps back in with some others; WKB and CBM are together; WEL and some WQB separate out.  
+
+10 is maybe more latitudinal?  
+
+```{r}
+autoplot(kfit, preds_main_numeric_scaled, 
+         frame = TRUE, 
+         # frame.type = 'norm',
+         shape = FALSE,
+         label = TRUE,
+         loadings = TRUE,
+         loadings.label = TRUE,
+         loadings.label.size = 3)
+```
+
+
+What if we drop PAR?  
+
+```{r}
+preds2 <- select(preds_main_numeric_scaled, 
+                 -dailyPAR_median,
+                 -dailyPAR_trend)
+```
+
+```{r}
+wssplot(preds2, 10)
+kfit <- kmeans(preds2,
+               centers = 8,
+               nstart = 25)
+
+autoplot(kfit, preds2, 
+         frame = TRUE, 
+         # frame.type = 'norm',
+         shape = FALSE,
+         label = TRUE,
+         loadings = TRUE,
+         loadings.label = TRUE,
+         loadings.label.size = 3)
+```
+

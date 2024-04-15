@@ -321,6 +321,180 @@ Groupings:
 -  nh4 trend, po4 trend; do seasonality trend - somewhat clustered with turb, nh4, wspd from prior line  
 -  temp trend, temp seasonality trend, spcond trend, % developed  
 
+## k-means from {varclust}  
+
+These clusters change with every different random seed, and some of them become rather non-sensical.  
+
+```{r}
+library(varclust)
+```
+
+
+```{r, cache = TRUE}
+set.seed(42)
+mlcc.fit <- mlcc.bic(preds_main_numeric_scaled,
+                     numb.clusters = 1:10,
+                     max.iter = 20,
+                     greedy = FALSE)
+# default is greedy = TRUE which stops at the first local minimum
+# which in our case is 2
+print(mlcc.fit)
+plot(mlcc.fit)
+# looks like substantial improvement at 4; and again at 7
+# and looks like a generally upward slope with a different random start
+# even if 10 is objectively "best"
+
+show.clusters(preds_main_numeric_scaled,
+              mlcc.fit$segmentation)
+
+mlcc.fit2 <- mlcc.bic(preds_main_numeric_scaled,
+                     numb.clusters = 1:10,
+                     max.iter = 20,
+                     greedy = TRUE)
+print(mlcc.fit2)
+plot(mlcc.fit2)
+show.clusters(preds_main_numeric_scaled,
+              mlcc.fit2$segmentation)
+
+
+
+mlcc.fit3 <- mlcc.bic(preds_main_numeric_scaled,
+                     numb.clusters = 1:5,
+                     max.iter = 20,
+                     greedy = FALSE,
+                     flat.prior = TRUE)  
+print(mlcc.fit3)
+plot(mlcc.fit3)
+show.clusters(preds_main_numeric_scaled,
+              mlcc.fit3$segmentation)
+```
+
+```{r, cache = TRUE}
+set.seed(1234)
+for(i in 2:8){
+  fit <- mlcc.kmeans(preds_main_numeric_scaled,
+                     number.clusters = i)
+  cat(paste("\n\n", i, "clusters \n\n"))
+  show.clusters(preds_main_numeric_scaled,
+                fit$segmentation)
+}
+
+fit$pcas
+
+```
+
+## k-means in {stats}  
+
+Need to flip the data frame because we're clustering variables, not stations  
+
+```{r}
+preds_flipped <- preds_main_numeric_scaled |> 
+  rownames_to_column("station") |> 
+  pivot_longer(2:(1+ncol(preds_main_numeric_scaled)),
+               names_to = "param",
+               values_to = "value") |> 
+  pivot_wider(names_from = "station",
+              values_from = "value") |> 
+  column_to_rownames("param")
+```
+
+```{r}
+# function from https://towardsdatascience.com/k-means-clustering-concepts-and-implementation-in-r-for-data-science-32cae6a3ceba
+wssplot <- function(data, nc=15, seed=1234){
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")
+  wss
+}
+```
+
+```{r}
+wssplot(preds_flipped, nc = 20, seed = 123456)
+```
+Random seed doesn't make a big difference here.  
+
+There's no elbow. Guess it's back to figuring out what number (and contents) of groups makes the most sense and seeing what's in the groups.   
+
+
+```{r}
+library(ggfortify)
+```
+
+
+```{r}
+kfit <- kmeans(preds_flipped,
+               centers = 6,
+               nstart = 25)
+
+autoplot(kfit, preds_flipped, frame = "TRUE")
+sort(kfit$cluster)
+```
+
+Too many?  
+
+Also, this number of groups doesn't have latitude and temperature together though.....  
+
+```{r}
+kfit <- kmeans(preds_flipped,
+               centers = 5,
+               nstart = 25)
+
+autoplot(kfit, preds_flipped, frame = "TRUE")
+sort(kfit$cluster)
+```
+
+I don't really get why clusters 2 and 4 are separate here. Might be able to combine them.  
+
+```{r}
+kfit <- kmeans(preds_flipped,
+               centers = 4,
+               nstart = 25)
+
+autoplot(kfit, preds_flipped, frame = "TRUE")
+sort(kfit$cluster)
+```
+
+
+```{r}
+kfit <- kmeans(preds_flipped,
+               centers = 3,
+               nstart = 25)
+
+autoplot(kfit, preds_flipped, frame = "TRUE")
+sort(kfit$cluster)
+```
+
+This shows the best separation so far, but still has temp median in a different group than latitude. Hm.  
+
+How does that align with the clusters from the other package?  
+
+```{r}
+set.seed(1234)
+i=3
+fit <- mlcc.kmeans(preds_main_numeric_scaled,
+                     number.clusters = i)
+  cat(paste("\n\n", i, "clusters \n\n"))
+  show.clusters(preds_main_numeric_scaled,
+                fit$segmentation)
+```
+
+I find the varclust output to be more sensible...at least the output of whichever random seed I just saw.   
+
+What if we try to cluster on unscaled variables?  
+```{r}
+set.seed(123)
+i=4
+fit <- mlcc.kmeans(na.omit(preds_main_numeric),
+                     number.clusters = i)
+  cat(paste("\n\n", i, "clusters \n\n"))
+  show.clusters(preds_main_numeric,
+                fit$segmentation)
+```
+
+Just so variable, every time.  
 
 ## summary of clustering  
 
@@ -696,7 +870,35 @@ mod1 <- lm(chla_trend ~ ., data = chl_df_pca1)
 vif_graph(mod1)
 ```
 
-Pretty great actually.  
+Pretty great actually. 
+
+
+What are the R^2s?  
+
+```{r}
+summary(mod1)$r.squared; summary(mod1)$adj.r.squared
+```
+
+Does it work any better with DO?  
+
+```{r}
+do_df <- responses_main |> 
+  select(domgl_trend) |> 
+  bind_cols(preds_from_pca1)
+mod1b <- lm(domgl_trend ~ ., data = do_df)
+summary(mod1b)$r.squared; summary(mod1b)$adj.r.squared
+```
+
+What are the R^2s for DO with all original predictors?  
+
+```{r}
+mod1c <- lm(responses_main$domgl_trend ~ .,
+            data = preds_main_numeric_scaled)
+summary(mod1c)$r.squared; summary(mod1c)$adj.r.squared
+```
+
+Eh, it's dropped quite a lot with these variable groupings. The residuals look a little better too without the PCA groupings, for DO at least.   
+ 
 
 ```{r}
 lowerFn <- function(data, mapping, method = "lm", ...) {
