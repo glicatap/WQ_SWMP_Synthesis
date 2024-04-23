@@ -112,13 +112,6 @@ swmp_clue_main <- swmp_clue |>
   distinct()
 ```
 
-```{r}
-preds_main_numeric <- select(preds_main, -station)
-preds_main_numeric_scaled <- select(chl_df, -chla_trend)
-```
-
-From pairs plots, log-Developed and log-Impervious are almost a straight line, so we should probably only use one. Ag percent land is hard to get bell-shaped. So only using log10-developed land for now.
-
 ## Compile  
 
 Create one master data frame with all responses and predictors; center and scale all the predictors (NOT the responses); then subset from it for later modeling.
@@ -138,6 +131,11 @@ master_df_scaled <- master_df |>
                 function(x) as.vector(scale(x))))
 ```
 
+Fill in NAs with 0
+
+```{r}
+master_df_scaled[][is.na(master_df_scaled[])] <- 0
+```
 
 ## Predictive dfs for all responses
 
@@ -156,6 +154,15 @@ do_below2_df <- master_df_scaled |>
          -chla_trend)
 ```
 
+```{r}
+preds_main_numeric <- select(preds_main, -station)
+preds_main_numeric_scaled <- select(chl_df, -chla_trend)
+```
+
+From pairs plots, log-Developed and log-Impervious are almost a straight line, so we should probably only use one. Ag percent land is hard to get bell-shaped. So only using log10-developed land for now.
+
+
+
 ## Unscaled df overview  
 
 
@@ -169,11 +176,7 @@ skimr::skim(master_df)
 skimr::skim(master_df_scaled)
 ```
 
-Fill in NAs with 0
 
-```{r}
-master_df_scaled[][is.na(master_df_scaled[])] <- 0
-```
 
 ## Correlation matrix
 
@@ -328,7 +331,7 @@ haven't written yet
 
 # Predictive modeling  {.tabset}  
 
-## Latitude PCA  
+## Latitude PCA full  
 
 ```{r}
 lat_df <- chl_df |> 
@@ -368,7 +371,7 @@ sites_lat <- as.data.frame(scores(lat_pca, choices = 1:2,
 
 ```
 
-## updated corrplot  
+### updated corrplot  
 
 ```{r}
 # using merge rather than a dplyr join function
@@ -380,7 +383,7 @@ chl_df3 <- merge(chl_df2, sites_lat, by = "row.names") |>
 my_corrplot(chl_df3, start_col = 2)
 ```
 
-## chl model  
+### chl model  
 
 ```{r}
 mod2 <- lm(chla_trend ~ ., data = chl_df3)
@@ -407,13 +410,102 @@ check_model(mod1b)
 ```
 
 
-## domgl model  
+### domgl model  
 
 ```{r}
 # using merge rather than a dplyr join function
 # because the tidyverse doesn't let you use rownames to join
 domgl_df2 <- domgl_df |> 
   select(-all_of(names(lat_df)))
+domgl_df3 <- merge(domgl_df2, sites_lat, by = "row.names") |> 
+  column_to_rownames("Row.names")
+my_corrplot(domgl_df3, start_col = 2)
+```
+
+Only difference between this and the chla model's corrplot should be that we have `chla_trend_asPredictor` in here. It doesn't seem to correlate strongly with anything.  
+
+```{r}
+mod2 <- lm(domgl_trend ~ ., data = domgl_df3)
+vif_graph(mod2)
+glance(mod2)
+```
+
+Those R^2s didn't change at all!  
+
+
+## Latitude PCA reduced  
+
+removing chl seasonal amplitude.  
+
+```{r}
+lat_df2 <- chl_df |> 
+  select(latitude,
+         temp_median,
+         temp_seasAmp,
+         dailyPAR_median)
+lat_pca2 <- rda(lat_df2)
+
+screeplot(lat_pca2, type = "lines")
+biplot(lat_pca2,
+       display = c("sites",
+                   "species"),
+       type = c("text",
+                "text"))
+
+eigs2 <- summary(eigenvals(lat_pca2))
+knitr::kable(eigs2[, 1:4],
+             caption = "Variance explained by PC axes",
+             digits = 4)
+
+# loadings
+scores_lat2 <- as.data.frame(scores(lat_pca2, choices = 1:4,
+                     display = "species",
+                     scaling = 0))
+knitr::kable(scores_lat2,
+             caption = "unscaled loadings onto PC axes",
+             digits = 4)
+
+
+# site scores - to add to chl predictor df before the next round
+sites_lat2 <- as.data.frame(scores(lat_pca2, choices = 1:2,
+                     display = "sites",
+                     scaling = 0)) |> 
+  set_names(c("LatPC1", "LatPC2"))
+
+```
+
+### updated corrplot  
+
+```{r}
+# using merge rather than a dplyr join function
+# because the tidyverse doesn't let you use rownames to join
+chl_df2b <- chl_df |> 
+  select(-all_of(names(lat_df2)))
+chl_df3b <- merge(chl_df2b, sites_lat2, by = "row.names") |> 
+  column_to_rownames("Row.names")
+my_corrplot(chl_df3b, start_col = 2)
+```
+
+### chl model  
+
+```{r}
+mod2b <- lm(chla_trend ~ ., data = chl_df3b)
+vif_graph(mod2b)
+glance(mod2b)
+check_model(mod2b)
+```
+
+Very little change in R^2.  
+
+
+
+### domgl model  
+
+```{r}
+# using merge rather than a dplyr join function
+# because the tidyverse doesn't let you use rownames to join
+domgl_df2 <- domgl_df |> 
+  select(-all_of(names(lat_df2)))
 domgl_df3 <- merge(domgl_df2, sites_lat, by = "row.names") |> 
   column_to_rownames("Row.names")
 my_corrplot(domgl_df3, start_col = 2)

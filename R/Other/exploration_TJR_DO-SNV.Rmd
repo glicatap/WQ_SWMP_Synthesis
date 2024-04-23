@@ -1,0 +1,136 @@
+---
+title: "DO SNV flagging"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+At the spring 2024 RC meeting, the RC at TJR expressed some concern about how proportions of DO were tallied, because they have at least one site where they have to flag small negative values frequently, and whether this is enough to throw off the calculations more generally (changing both the numerator AND denominator) is unknown. Exploring that here.  
+
+Start by reading in un-qc'd data.  
+
+```{r}
+in_path <- here::here("Data", "compiled_by_stn")
+load(here::here(in_path, "tjrbrwq.RData"))
+load(here::here(in_path, "tjroswq.RData"))
+load(here::here(in_path, "tjrprwq.RData"))
+load(here::here(in_path, "tjrsbwq.RData"))
+```
+
+Bind, then look at flags etc.  
+
+```{r}
+tjrwq <- bind_rows(br = tjrbrwq,
+                   os = tjroswq,
+                   pr = tjrprwq,
+                   sb = tjrsbwq,
+                   .id = "station")
+
+tjrdo <- tjrwq |> 
+  select(station, datetimestamp, do_mgl, f_do_mgl) |> 
+  mutate(SNV = case_when(str_detect(f_do_mgl, "SNV") ~ "yes",
+                         .default = "no"),
+         SNV_code = case_when(SNV == "yes" ~ f_do_mgl,
+                              .default = NA_character_))
+
+table(tjrdo$station, tjrdo$SNV)
+```
+
+1,000 flags out of ~596,000 data points at tjrbrwq.  
+
+Okay, that's our problem station; let's break it down to more recent QA/QC flagging (where we can control it; see if it's a bigger proportion here) and then by month/year, in case it disproportionately affects certain months (e.g. summer).  
+
+```{r}
+brdo <- tjrbrwq |> 
+  select(datetimestamp, do_mgl, f_do_mgl) |> 
+  mutate(SNV = case_when(str_detect(f_do_mgl, "SNV") ~ "yes",
+                         .default = "no"),
+         SNV_code = case_when(SNV == "yes" ~ f_do_mgl,
+                              .default = NA_character_),
+         year = lubridate::year(datetimestamp),
+         month = lubridate::month(datetimestamp),
+         yearmonth = zoo::as.yearmon(datetimestamp)) |> 
+  filter(year >= 2007)
+
+janitor::tabyl(tjrdo, station, SNV) |> gt::gt()
+
+brdo2 <- brdo |> 
+  summarize(.by = yearmonth,
+            SNV_present = sum(SNV == "yes"),
+            n_dataPoints = sum(!is.na(do_mgl))) |> 
+  mutate(proportion_SNV = round(SNV_present/n_dataPoints, 3))
+
+```
+
+```{r}
+gt::gt(head(arrange(brdo2, desc(proportion_SNV)), 10),
+             caption = "Months sorted by decreasing proportion of flagged negative values (top 10 of 193 months)")
+```
+
+
+What about those values in comparison to the number of 'valid' data points otherwise?  
+
+```{r}
+load(here::here("Data", "QAQCd_by_stn", "tjrbrwq_qc.RData"))
+```
+
+```{r}
+brdo_qc <- tjrbrwq_qc |> 
+  select(datetimestamp, do_mgl) |> 
+  mutate(year = lubridate::year(datetimestamp),
+         month = lubridate::month(datetimestamp),
+         yearmonth = zoo::as.yearmon(datetimestamp)) |> 
+  filter(year >= 2007)
+
+brdo_qc2 <- brdo_qc |> 
+  summarize(.by = yearmonth,
+            nValid = sum(!is.na(do_mgl)))
+```
+
+```{r}
+brdo_all <- left_join(brdo2, brdo_qc2,
+                      by = "yearmonth")
+
+gt::gt(head(arrange(brdo_all, desc(proportion_SNV)), 10),
+             caption = "Months sorted by decreasing proportion of flagged negative values (top 10 of 193 months)")
+```
+
+```{r}
+proportions <- brdo_qc |>
+  mutate(below2 = do_mgl <= 2,
+         below5 = do_mgl <= 5) |> 
+  summarize(.by = yearmonth,
+            below2 = sum(below2, na.rm = TRUE),
+            below5 = sum(below5, na.rm = TRUE))
+
+brdo_all <- left_join(brdo_all, proportions) |> 
+  mutate(below2.nValid = below2/nValid,
+         below2.withSNV = (below2 + SNV_present)/(nValid + SNV_present),
+         below5.nValid = below5/nValid,
+         below5.withSNV = (below5 + SNV_present)/(nValid + SNV_present),
+         across(below2.nValid:below5.withSNV,
+                ~round(., 3)))
+
+
+
+gt::gt(head(arrange(brdo_all, desc(proportion_SNV)), 10),
+             caption = "Months sorted by decreasing proportion of flagged negative values (top 10 of 193 months)")  
+```
+
+
+NOTE - these calculations assume that all values rejected due to small negative values *should have* been retained - we do not know if this is true. It makes a pretty big difference in some of these months, but.... really only 3 out of 193. Honestly, really only two months where the impact is more than 5%, one of which only had 340 valid points otherwise and so we probably shouldn't add the SNVs back into that one.  
