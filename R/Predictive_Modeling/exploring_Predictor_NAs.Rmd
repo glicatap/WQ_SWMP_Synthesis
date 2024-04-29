@@ -121,6 +121,17 @@ nut_goofs <- preds_all |>
 gt::gt(nut_goofs)
 ```
 
+```{r}
+nut_goofs2 <- nut_goofs |> 
+  pivot_longer(chla_trend:no23f_trend,
+               names_to = "param",
+               values_to = "value") |> 
+  filter(is.na(value)) |> 
+  select(station, param) |> 
+  arrange(station, param) |> 
+  summarize(.by = station,
+            params = paste(unique(param), collapse = "; "))
+```
 
 
 Missing NO23 trends:  

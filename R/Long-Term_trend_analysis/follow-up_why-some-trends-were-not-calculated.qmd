@@ -1,0 +1,184 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(lubridate)
+library(mgcv)
+source(here::here("helper_files", "functions.R"))
+```
+
+
+Read in all QAQC'd monthly nutrient data  
+
+```{r}
+load(here::here("Data",
+                "QAQCd_monthly_byType",
+                "SWMP_monthlyNUT.RData"))
+```
+
+Working with one station/parameter at a time, figure out what the problem is.  
+
+To do that:  
+
+- plot the time series  
+- try to fit the bam  
+
+```{r}
+stn = "narpcnut"
+param = "nh4f"
+```
+
+
+```{r}
+  # subset to that stn/param combo
+  tmp <- subset_df("nut", nut, stn, param)
+  
+  # capture some info about the station and time series:
+  ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
+                         ts_end = max(tmp$dec_date, na.rm = TRUE),
+                         ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
+                         n_points = sum(!is.na(tmp$value)),
+                         overall_median = median(tmp$value, na.rm = TRUE))
+  
+  test <- run_bam_nut(tmp, k = 5)
+  
+```
+
+```{r}
+  dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                 family = cnorm(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = tmp,
+                 method = "fREML")
+```
+
+Error in bgam.fitd(G, mf, gp, scale, nobs.extra = 0, rho = rho, coef = coef,  : 
+  cannot find valid starting values: please specify some
+  
+  
+```{r}
+  dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc"),
+                 family = cnorm(),
+                 data = tmp,
+                 method = "fREML")
+```
+  
+  
+```{r}
+# make a data frame with no 0s
+tmp2 <- nut |> 
+  mutate(across(c(po4f, nh4f, no2f, no3f, no23f, chla_n),
+                function(x) case_when(x == 0 ~ 0.001,
+                          .default = x)))
+  
+  
+  # subset to that stn/param combo
+tmp2b <- subset_df("nut", tmp2, stn, param)
+```
+  
+```{r}
+dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = 12),
+                 family = cnorm(),
+                 discrete = TRUE,
+                 AR.start = ARrestart,
+                 rho = 0.0001,
+                 data = tmp2b,
+                 method = "fREML")
+```
+  
+  
+```{r}
+nut2 <- nut
+names(nut2) <- c("station", "year", "month",
+                 "po4f_value", "nh4f_value",
+                 "no2f_value", "no3f_value",
+                 "no23f_value", "chlan_value",
+                 "po4f_cens", "nh4f_cens",
+                 "no2f_cens", "no3f_cens",
+                 "no23f_cens", "chlan_cens")
+
+nut_long <- pivot_longer(nut2,
+                         po4f_value:chlan_cens,
+                         names_to = c("param", "indicator"),
+                         names_sep = "_",
+                         values_to = "number") |> 
+  pivot_wider(names_from = indicator,
+              values_from = number)
+
+nut_long <- nut_long |> 
+  mutate(zero = value == 0)
+
+nut_long |> 
+  filter(param %in% c("chlan", "nh4f",
+                      "no23f", "po4f"),
+         zero == TRUE) |> 
+  select(station, param) |> 
+  janitor::tabyl(station, param)
+
+zero_df <- nut_long |> 
+  filter(param %in% c("chlan", "nh4f",
+                      "no23f", "po4f"),
+         zero == TRUE) |> 
+  mutate(reserve = substr(station, 1, 3)) |> 
+  arrange(reserve, year, param)
+```
+
+
+So exact 0s actually account for most of the non-calculated trends. The only exceptions are the two HUD stations - which I think don't report no23, but rather no2 and no3 separately - so we just need to add them together and account for censoring - and the sfb station.  
+
+```{r}
+sfb <- nut |> 
+  filter(station == "sfbfmnut")
+```
+
+```{r}
+skimr::skim(sfb)
+```
+
+NO23 is only 15% complete. NO3 is 33% complete. That's not really much.  
+
+I'm not sure why there are so many NA values. Let me look at their non-qaqc'd data.  
+
+```{r}
+load(here::here("Data", "compiled_by_stn",
+                "sfbfmnut.RData"))
+```
+
+Values are all there, but most are flagged  0 CHB or 1 CHB - and we got rid of all CHBs (beyond holding time).  There are a few other codes and those must be the samples that were retained for the analysis. Lots of CDRs - "sample diluted and rerun". Mostly 1 CHB for all of the nitrogen parameters. I think this station is just going to have to be removed.  
+
+```{r}
+hud <- nut |> 
+  filter(station %in% c("hudtnnut", "hudtsnut"))
+```
+
+HUD only reporting NO3 (no NO2) through 2021; NO23 starts 2022.  
+
+from 2022 metadata: "Beginning in 2022, HUDNERR began processing nutrient data in-house, and no longer utilizes the methodologies and MDLs provided by the Cary Institute of Ecosystem Studies Rachel L Carson Analytical Laboratory" - that is probably the reason for NO23.  
+
+```{r}
+load(here::here("Data", "compiled_by_stn",
+                "hudtnnut.RData"))
+```
+
+```{r}
+nut |> 
+  mutate(reserve = substr(station, 1, 3)) |> 
+  filter(reserve == "noc",
+         year == 2022) |> 
+  View()
+```
+
+```{r}
+nut |> 
+  filter(station == "owcbrnut") |> 
+  View()
+```
+

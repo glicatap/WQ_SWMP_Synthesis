@@ -1,7 +1,10 @@
 ---
 title: "Still more"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 In the first batch of PCAs, I hadn't included median chlorophyll (???), so making sure to do that here.  
@@ -301,7 +304,7 @@ Marginal R^2 (R2m) represents the variance explained by the fixed effects. Condi
 mod1 <- lm(domgl_trend ~ .,
            data = domgl_df)
 glance(mod1)
-check_model(mod1)
+# check_model(mod1)
 ```
 
 
@@ -319,7 +322,7 @@ mod1b <- lmer(fo,
 mod_anov <- anova(mod1b, ddf = "Kenward-Roger")
 MuMIn::r.squaredGLMM(mod1b)
 
-check_model(mod1b)
+# check_model(mod1b)
 ```
 
 
@@ -389,7 +392,7 @@ my_corrplot(chl_df3, start_col = 2)
 mod2 <- lm(chla_trend ~ ., data = chl_df3)
 vif_graph(mod2)
 glance(mod2)
-check_model(mod2)
+# check_model(mod2)
 ```
 
 Very little change in R^2.  
@@ -406,7 +409,7 @@ mod1b <- lmer(fo,
 mod_anov <- anova(mod1b, ddf = "Kenward-Roger")
 MuMIn::r.squaredGLMM(mod1b)
 
-check_model(mod1b)
+# check_model(mod1b)
 ```
 
 
@@ -492,7 +495,7 @@ my_corrplot(chl_df3b, start_col = 2)
 mod2b <- lm(chla_trend ~ ., data = chl_df3b)
 vif_graph(mod2b)
 glance(mod2b)
-check_model(mod2b)
+# check_model(mod2b)
 ```
 
 Very little change in R^2.  
