@@ -1,0 +1,119 @@
+---
+title: "WQ/NUT median calculations"
+format: html
+toc: true
+toc-position: left
+echo: true
+code-fold: true
+warning: false
+message: false
+error: true
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyNUT.RData"))
+stn_mdat <- read_csv(here::here("helper_files",
+                                "sampling_stations.csv"))
+```
+
+## Station Information  
+
+```{r}
+# pull relevant station info for combining
+# limit to wq stations because only using wq/nut combinations
+stn_info <- stn_mdat |> 
+  select(`Station Code`,
+         `Station Name`,
+         Latitude,
+         Longitude,
+         State,
+         `Reserve Name`,
+         "Reserve Code" = `NERR Site ID`) |> 
+  mutate(State = toupper(State),
+         `Reserve Code` = toupper(`Reserve Code`),
+         Station = substr(`Station Code`, 1, 5),
+         Longitude = as.numeric(Longitude)) |> 
+  filter(str_ends(`Station Code`, "wq")) |> 
+  relocate(Station) |> 
+  select(-`Station Code`)
+```
+
+## WQ Medians  
+
+```{r}
+wq_meds <- wq |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            yr_start_wq = min(year, na.rm = TRUE),
+            yr_end_wq = max(year, na.rm = TRUE),
+            across(c(temp_median, 
+                     spcond_median,
+                     sal_median,
+                     do_mgl_median,
+                     ph_median,
+                     turb_median),
+                   function(x) median(x, na.rm = TRUE)))
+```
+
+
+
+## NUT Medians  
+
+As of 5/3/24, two problems with these:  
+
+1.  They don't use methods to account for censoring - this is literally just the middle value. Censored values were retained, however.   
+2.  NO23 calculated value weirdness - primarily we think this only affects HUD and OWC but need to investigate further.  
+
+```{r}
+nut_meds <- nut |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            yr_start_nut = min(year, na.rm = TRUE),
+            yr_end_nut = max(year, na.rm = TRUE),
+            across(c(chla_n, 
+                     nh4f,
+                     no23f,
+                     po4f),
+                   function(x) median(x, na.rm = TRUE)))
+```
+
+
+
+## combine and write out  
+
+Join in way that keeps only stations that are in both WQ and NUT data frames.  
+
+```{r}
+all_meds <- inner_join(wq_meds,
+                       nut_meds,
+                       by = "station") |> 
+  relocate(c(yr_start_nut, yr_end_nut),
+           .after = yr_end_wq)
+```
+
+Now join all the station info too.  
+
+```{r}
+dat_out <- left_join(all_meds, 
+                     stn_info,
+                     by = c("station" = "Station")) |> 
+  select(station, `Station Name`,
+         `Reserve Code`, `Reserve Name`,
+         State,
+         Latitude, Longitude,
+         everything())
+```
+
+```{r}
+write.csv(dat_out,
+          here::here("Outputs",
+                     "WQ-NUT_overallMedians_NOTfullyQAQCd.csv"))
+```
+

@@ -1,0 +1,75 @@
+---
+title: "Figure out NO23 flagging"
+format: html
+toc: true
+toc-position: left
+echo: true
+code-fold: true
+warning: false
+message: false
+error: true
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+Read in all the nut files from our stations and see which have "SCB" in the F_NO23 field
+
+SHOOT, pre-2007 the flags are different. 
+
+We really only care about the stations we're using in analysis, so read in the trends file and only use those stations.  
+
+```{r}
+trends <- read.csv(here::here("Outputs", "calculated_trends", "long-term-trends.csv"))
+
+trend_stns <- trends |> 
+  select(station) |> 
+  filter(!str_ends(station, "met")) |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  distinct() |> 
+  unlist()
+```
+
+Loop through those stations and see if SCBs show up.  
+
+```{r}
+SCB_present <- numeric(105)
+names(SCB_present) <- trend_stns
+
+missingSBLs <- numeric(105)
+names(missingSBLs) <- trend_stns
+
+for(i in seq_along(trend_stns)){
+  st <- trend_stns[i]
+  dat <- get(load(here::here("Data", "compiled_by_stn", paste0(st, "nut.RData")))) 
+  
+  dat <- dat |> 
+    mutate(SCB = str_detect(f_no23f, "SCB"),
+           missingSBL = case_when(str_detect(f_no23f, "-4") & is.na(no23f) ~ 1,
+                                  .default = 0))
+  SCB_present[i] <- ifelse(sum(dat$SCB, na.rm = TRUE) == 0, 0, 1)
+  missingSBLs[i] <- ifelse(sum(dat$missingSBL, na.rm = TRUE) == 0, 0, 1)
+}
+```
+
+See all the stations that have SCB in the f_no23f column:  
+
+```{r}
+names(SCB_present)[SCB_present == 1]
+```
+
+```{r}
+# nocrcnut |> filter(str_detect(f_no23f, "SCB")) |> View()
+```
+
+Only OWC (that NOC station was a single time, not a consistent way they flag).    
+
+Are there that have any missing values when a -4 is present in the no23 column?  
+
+```{r}
+names(missingSBLs)[missingSBLs == 1]
+```
+
+Again, only OWC. We had to recalculate the NO23 trend anyway because of the 0 situation (which brought this possible issue to light), so I'm happy to see this isn't an issue anywhere else. Excluding censored data is not what you want to do!  
