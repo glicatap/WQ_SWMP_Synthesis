@@ -12,6 +12,7 @@ error: true
 
 ```{r}
 library(tidyverse)
+library(NADA)
 ```
 
 ```{r}
@@ -72,16 +73,97 @@ As of 5/3/24, two problems with these:
 2.  NO23 calculated value weirdness - primarily we think this only affects HUD and OWC but need to investigate further.  
 
 ```{r}
-nut_meds <- nut |> 
+# nut_meds <- nut |> 
+#   mutate(station = substr(station, 1, 5)) |> 
+#   summarize(.by = station,
+#             yr_start_nut = min(year, na.rm = TRUE),
+#             yr_end_nut = max(year, na.rm = TRUE),
+#             across(c(chla_n, 
+#                      nh4f,
+#                      no23f,
+#                      po4f),
+#                    function(x) median(x, na.rm = TRUE)))
+```
+
+### Deal with censoring  
+
+We've been assuming lognormal dist'ns for censored data all along, so wonder if we should use MLE methods for lognormal (vs. nonparametric Kaplan-Meier). Can do this with `EnvStats::eqlnormCensored` and at least for the single station I'm playing with, is pretty similar to the output of `NADA::cenfit`.  
+
+```{r}
+# test <- nut |> 
+#   filter(station == "gndbhnut")
+# 
+# test <- nut |> 
+#   filter(station == "acebbnut")
+# 
+# test_out <- enparCensored(x = test$nh4f,
+#               censored = test$nh4f_cens,
+#               censoring.side = "left")
+# test_out2 <- elnormAltCensored(x = test$nh4f,
+#               censored = test$nh4f_cens)
+# eqlnormCensored(x = test$nh4f,
+#               censored = test$nh4f_cens)$quantiles["Median"]
+# 
+# test2 <- test |> 
+#   select(nh4f, nh4f_cens) |> 
+#   mutate(nh4f_cens2 = as.logical(nh4f_cens)) |> 
+#   na.omit()
+# 
+# test_outKM1 <- censtats(test2$nh4f, test2$nh4f_cens2) # gives multiple ways of calculating, and multiple stats
+# test_outKM2 <- cenfit(test2$nh4f, test2$nh4f_cens2)  # this is a class object
+# 
+# test_outKM1$median[1] # KM median - calculated using cenfit. 
+# median(test_outKM2) # same KM median, different way of calling
+# 
+# median(cenfit(test2$po4f, test2$po4f_cens2))
+# 
+# # what would it be if we just ignored censoring
+# median(test2$po4f)
+```
+
+Using the NADA package, we have to remove NAs, but can calculate the median, mean and sd in all the ways. The NADA functions compute the mean slightly too high, so use EnvStats for mean.  
+
+NADA can handle it when there aren't any censored values (e.g. NH4 at acebbnut) but the MLE estimated median is off.
+
+How to loop??? Pull each param and censoring column, na.omit, then summarize by station, and glue it all back together....
+
+Can I write a function where I take the nutrient and its censoring column, remove NAs, and calculate the thing?  
+
+```{r}
+km_fun <- function(df, nut, cens){
+  tmp <- data.frame("param" = df[[nut]],
+                    "censoring" = df[[cens]]) 
+  if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
+  
+  tmp <- tmp |> 
+    mutate(censoring = as.logical(censoring)) |> 
+    na.omit()
+  median(cenfit(tmp$param, tmp$censoring))
+}
+
+
+# test <- filter(nut, station == "gndbhnut")  # about 53% of po4 values are censored
+# km_fun(test, "nh4f", "nh4f_cens")
+# km_fun(test, po4f, po4f_cens)
+# 
+# test <- filter(nut, station == "acebbnut")  # has no censored values
+# km_fun(test, nh4f, nh4f_cens)
+# km_fun(test, po4f, po4f_cens)
+```
+
+
+```{r}
+nut_meds_cens <- nut |> 
   mutate(station = substr(station, 1, 5)) |> 
   summarize(.by = station,
             yr_start_nut = min(year, na.rm = TRUE),
             yr_end_nut = max(year, na.rm = TRUE),
-            across(c(chla_n, 
-                     nh4f,
-                     no23f,
-                     po4f),
-                   function(x) median(x, na.rm = TRUE)))
+            chla = km_fun(.data, nut = "chla_n", cens = "chla_n_cens"),
+            nh4f = km_fun(.data, nut = "nh4f", cens = "nh4f_cens"),
+            no23f = km_fun(.data, nut = "no23f", cens = "no23f_cens"),
+            po4f = km_fun(.data, nut = "po4f", cens = "po4f_cens"))
+
+# km_fun(nut, "po4f", "po4f_cens")
 ```
 
 
@@ -92,7 +174,7 @@ Join in way that keeps only stations that are in both WQ and NUT data frames.
 
 ```{r}
 all_meds <- inner_join(wq_meds,
-                       nut_meds,
+                       nut_meds_cens,
                        by = "station") |> 
   relocate(c(yr_start_nut, yr_end_nut),
            .after = yr_end_wq)
