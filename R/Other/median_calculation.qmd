@@ -87,68 +87,54 @@ As of 5/3/24, two problems with these:
 
 ### Deal with censoring  
 
-We've been assuming lognormal dist'ns for censored data all along, so wonder if we should use MLE methods for lognormal (vs. nonparametric Kaplan-Meier). Can do this with `EnvStats::eqlnormCensored` and at least for the single station I'm playing with, is pretty similar to the output of `NADA::cenfit`.  
-
-```{r}
-# test <- nut |> 
-#   filter(station == "gndbhnut")
-# 
-# test <- nut |> 
-#   filter(station == "acebbnut")
-# 
-# test_out <- enparCensored(x = test$nh4f,
-#               censored = test$nh4f_cens,
-#               censoring.side = "left")
-# test_out2 <- elnormAltCensored(x = test$nh4f,
-#               censored = test$nh4f_cens)
-# eqlnormCensored(x = test$nh4f,
-#               censored = test$nh4f_cens)$quantiles["Median"]
-# 
-# test2 <- test |> 
-#   select(nh4f, nh4f_cens) |> 
-#   mutate(nh4f_cens2 = as.logical(nh4f_cens)) |> 
-#   na.omit()
-# 
-# test_outKM1 <- censtats(test2$nh4f, test2$nh4f_cens2) # gives multiple ways of calculating, and multiple stats
-# test_outKM2 <- cenfit(test2$nh4f, test2$nh4f_cens2)  # this is a class object
-# 
-# test_outKM1$median[1] # KM median - calculated using cenfit. 
-# median(test_outKM2) # same KM median, different way of calling
-# 
-# median(cenfit(test2$po4f, test2$po4f_cens2))
-# 
-# # what would it be if we just ignored censoring
-# median(test2$po4f)
-```
 
 Using the NADA package, we have to remove NAs, but can calculate the median, mean and sd in all the ways. The NADA functions compute the mean slightly too high, so use EnvStats for mean.  
 
-NADA can handle it when there aren't any censored values (e.g. NH4 at acebbnut) but the MLE estimated median is off.
+NADA can handle it when there aren't any censored values (e.g. NH4 at acebbnut) but the MLE estimated median is off (apparently this is due to how MLE calculates things).
 
-How to loop??? Pull each param and censoring column, na.omit, then summarize by station, and glue it all back together....
+Below is a function I wrote where I take the nutrient and its censoring column, remove NAs, and calculate the thing.  
 
-Can I write a function where I take the nutrient and its censoring column, remove NAs, and calculate the thing?  
+It uses the value of the ROS-calculated median (robust Regression on Order Statistics). MLE or Kaplan-Meier values could also be used here, but Helsel calls ROS the most flexible of the methods.  
+
+NOTE I am still dealing with exact 0s in the dataset as I'm generating this file for Carl and Dave, so in the function I am replacing any 0 with 0.01 and making sure the censoring column says 'TRUE'. (ROS won't work with exact 0s in the datset.)  
 
 ```{r}
-km_fun <- function(df, nut, cens){
+censMed_fun <- function(df, nut, cens){
   tmp <- data.frame("param" = df[[nut]],
                     "censoring" = df[[cens]]) 
+  
+  # if all values are NA, return NA
   if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
   
+  # if there aren't at least 10 values, return NA
+  if(nrow(tmp) < 10) return(NA)
+  
+  # otherwise calculate the median
   tmp <- tmp |> 
-    mutate(censoring = as.logical(censoring)) |> 
+    mutate(censoring = as.logical(censoring),
+           censoring = case_when(param == 0 ~ TRUE,
+                                 .default = censoring),
+           param = case_when(param == 0 ~ 0.01,
+                             .default = param)) |> 
     na.omit()
-  median(cenfit(tmp$param, tmp$censoring))
+  # median(cenfit(tmp$param, tmp$censoring))  # kaplan-meier
+  median(cenros(tmp$param, tmp$censoring))  # ROS
+  #  censtats(tmp$param, tmp$censoring)  # all 3 methods, for comparison - also tells % censored
 }
 
 
 # test <- filter(nut, station == "gndbhnut")  # about 53% of po4 values are censored
-# km_fun(test, "nh4f", "nh4f_cens")
-# km_fun(test, po4f, po4f_cens)
-# 
-# test <- filter(nut, station == "acebbnut")  # has no censored values
-# km_fun(test, nh4f, nh4f_cens)
-# km_fun(test, po4f, po4f_cens)
+# test <- filter(nut, station == "gndhsnut")  # po4 'dropped censored values that exceeded highest non censored value' - still comes out very close to others
+# test <- filter(nut, station == "gndblnut")  # >80% of no23 values are censored - median more similar to MLE, but not far off from K-M
+# test <- filter(nut, station == "acebbnut")  # has no censored values for nh4 or chl
+# test <- filter(nut, station == "owcbrnut")  # has exact 0s
+# test <- filter(nut, station == "tjrhpnut")  # only one row in data frame
+# censMed_fun(test, "nh4f", "nh4f_cens")
+# censMed_fun(test, "no23f", "no23f_cens")
+# censMed_fun(test, "po4f", "po4f_cens")
+# censMed_fun(test, "chla_n", "chla_n_cens")
+
+
 ```
 
 
@@ -158,12 +144,12 @@ nut_meds_cens <- nut |>
   summarize(.by = station,
             yr_start_nut = min(year, na.rm = TRUE),
             yr_end_nut = max(year, na.rm = TRUE),
-            chla = km_fun(.data, nut = "chla_n", cens = "chla_n_cens"),
-            nh4f = km_fun(.data, nut = "nh4f", cens = "nh4f_cens"),
-            no23f = km_fun(.data, nut = "no23f", cens = "no23f_cens"),
-            po4f = km_fun(.data, nut = "po4f", cens = "po4f_cens"))
+            chla = censMed_fun(.data, nut = "chla_n", cens = "chla_n_cens"),
+            nh4f = censMed_fun(.data, nut = "nh4f", cens = "nh4f_cens"),
+            no23f = censMed_fun(.data, nut = "no23f", cens = "no23f_cens"),
+            po4f = censMed_fun(.data, nut = "po4f", cens = "po4f_cens"))
 
-# km_fun(nut, "po4f", "po4f_cens")
+# censMed_fun(nut, "po4f", "po4f_cens")
 ```
 
 
