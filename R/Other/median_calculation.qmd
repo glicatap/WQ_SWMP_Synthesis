@@ -73,12 +73,12 @@ As of 5/3/24, two problems with these:
 2.  NO23 calculated value weirdness - primarily we think this only affects HUD and OWC but need to investigate further.  
 
 ```{r}
-# nut_meds <- nut |> 
-#   mutate(station = substr(station, 1, 5)) |> 
+# nut_meds <- nut |>
+#   mutate(station = substr(station, 1, 5)) |>
 #   summarize(.by = station,
 #             yr_start_nut = min(year, na.rm = TRUE),
 #             yr_end_nut = max(year, na.rm = TRUE),
-#             across(c(chla_n, 
+#             across(c(chla_n,
 #                      nh4f,
 #                      no23f,
 #                      po4f),
@@ -150,6 +150,46 @@ nut_meds_cens <- nut |>
             po4f = censMed_fun(.data, nut = "po4f", cens = "po4f_cens"))
 
 # censMed_fun(nut, "po4f", "po4f_cens")
+```
+
+
+```{r}
+## if 'nut_meds' chunk above is uncommented and run, can make some graphs to see it's really only affecting the low end (which is as it should be)  
+
+## generally the censored method medians come out lower than the 'regular' method where the fact that values are censored is ignored (also how it should be)
+
+# nut_meds_reg <- nut_meds |> 
+#   select(-yr_start_nut, -yr_end_nut) |> 
+#   pivot_longer(chla_n:po4f,
+#                names_to = "param",
+#                values_to = "regular")
+# 
+# nut_meds_censb <- nut_meds_cens |> 
+#   select(-yr_start_nut, -yr_end_nut) |> 
+#   rename(chla_n = chla) |> 
+#   pivot_longer(chla_n:po4f,
+#                names_to = "param",
+#                values_to = "censored")
+# 
+# nut_meds_comp <- full_join(nut_meds_reg, nut_meds_censb)
+# 
+# ggplot(nut_meds_comp,
+#        aes(x = censored,
+#            y = regular,
+#            col = param)) +
+#   geom_point(size = 2) +
+#   facet_wrap(~param, scales = "free")
+# 
+## zoom in on the low end
+# nut_meds_comp |> 
+#   filter(param != "chla_n") |> 
+# ggplot(aes(x = censored,
+#            y = regular,
+#            col = param)) +
+#   geom_point(size = 2) +
+#   facet_wrap(~param) +
+#   scale_x_continuous(limits = c(0, 0.05)) +
+#   scale_y_continuous(limits = c(0, 0.05))
 ```
 
 
