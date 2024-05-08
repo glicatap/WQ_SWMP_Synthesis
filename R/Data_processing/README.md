@@ -4,7 +4,7 @@ This sub-directory is for scripts to move data through the process from CDMO dow
 
 ## Structure  
 
-Because there's so much data, I've added the `Data/` folder to `.gitignore`. In earlier versions of code, the subdirectories below were in this same `Data_processing` folder; but with the final download from the CDMO on 8/30/23 (request submitted to AQS on 8/29/23; zip downloaded the next morning), I have moved subdirectories to the main `Data` folder. Data processing scripts will remain in this `Data_processing` folder, and work on files in the `Data` folder. Those subfolders are:  
+Data processing scripts are in this `R/Data_processing` folder, and work on files in the `Data` folder. Subfolders of the `Data` folder are:  
 
 -  `downloaded` - files from the AQS zip download    
 -  `compiled_by_stn` - .Rdata files for each individual station, containing all years, all parameters, and qa/qc flag columns. Empty data columns and their associated flag columns will be removed. NUT files contain only grab samples (not diel). Data frames are named as the station only; e.g. `gndbhwq`.      
@@ -53,10 +53,11 @@ The second subsets to only SWMP-required parameters and this project's acceptabl
 
 1.  `proc01_downloaded_to_compiledStns.R` - for each station, reads in and collates all files. For nutrients, only keeps grab samples (`collMethd = 1`). Removes empty columns. Generates one `.RData` file for each station.    
 2.  `proc02_compiledStns_to_QAQCdStns.R` - for each station, reads in the file and replaces data flagged/coded in ways the workgroup has agreed to discard with NAs. For nutrients, inserts a column for each parameter defining whether the data point is left-censored. Generates one `.RData` file for each station.  
-3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` - for WQ, MET, and NUT stations, aggregates to monthly values as described above.   
-4.  `proc04_QAQCdMonthly_byType.R` - Using monthly aggregated files from step 5, combines all monthly information for each type (WQ, MET, NUT) into a single file, containing all stations. Writes both `.RData` and `.csv` files for each.  
-5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - optional; for WQ and MET stations, aggregates to daily values as described above.  
-6.  `proc06_QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
+3.  `proc02b_corrections_stnNUTs.R` - for certain NUT stations, corrects issues related to NO23 calculation and/or 0s in data. Pulls the `.RData` files from the above step, re-saves them as `aaabbnut_qcUncorrected.RData`, corrects the problems, and saves the corrected data frame with the original `aaabbnut_qc.RData` name to be used in further compilation scripts below.  
+4.  `proc03_QAQCdStns_to_QAQCdMonthly.R` - for WQ, MET, and NUT stations, aggregates to monthly values as described above.   
+5.  `proc04_QAQCdMonthly_byType.R` - Using monthly aggregated files from step 5, combines all monthly information for each type (WQ, MET, NUT) into a single file, containing all stations. Writes both `.RData` and `.csv` files for each.  
+6.  `proc05_QAQCdStns_to_QAQCdDaily.R` - optional; for WQ and MET stations, aggregates to daily values as described above.  
+7.  `proc06_QAQCdDaily_to_csv.R` - generate `.csv` files from the `.RData` files above.  
 
 To write out session info from the day of processing, open an R session and run the following code. It will open all libraries used and capture the session info in a text file, in the `Data_processing` folder. The following uses the `devtools` package, which can be installed with the command `install.packages("devtools")`.     
 
@@ -80,15 +81,8 @@ Final data files were downloaded from the CDMO on 8/30/2023.
 
 1.  `proc01_downloaded_to_compiledStns.R` - 9/18/2023. Originally run on 8/30/2023 but re-run to ensure I hadn't only selected active stations, or wq + nut stations. At this point, we mean to include all stations.      
 2.  `proc02_compiledStns_to_QAQCdStns.R` - 10/16/2023; updated to remove -99 values  
+2b.  `proc02b_corrections_stnNUTs.R` - 5/8/2024; correcting NO23 calculated/censored values at OWC; replacing 0s with MDLs at several reserves. NUT compilation scripts below will need to be re-run when this is completed.  
 3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  10/16/2023; after removing -99s AND requiring at least 1 week's worth of valid data in a month before calculating stats   
 4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 10/16/2023  
 5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 10/17/2023; after removal of -99s  
 6.  `proc06_QAQCdDaily_to_csv.R` - 10/17/2023  
-
-
-## Still to-do  
-
-Some things to think about and/or do:  
-
--  any months with no data are probably just not present. Might be better to make sure all combinations of year-month for a station are present, even if a row is full of NAs. Probably should tackle this in monthly aggregation step?  
--  should we round values? Particularly means and sds can be pretty long numbers that aren't meaningful after a certain number of sig figs.  
