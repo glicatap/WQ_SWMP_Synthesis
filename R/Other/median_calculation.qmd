@@ -107,7 +107,7 @@ censMed_fun <- function(df, nut, cens){
   if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
   
   # if there aren't at least 10 values, return NA
-  if(nrow(tmp) < 10) return(NA)
+  if(nrow(tmp) < 5) return(NA)
   
   # otherwise calculate the median
   tmp <- tmp |> 
