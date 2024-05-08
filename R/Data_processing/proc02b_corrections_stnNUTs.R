@@ -45,19 +45,31 @@ for(i in seq_along(owc_fls)){
   
   
   # update the data frame
-  # FIGURE OUT HOW TO DO THIS ONLY FOR 12/17-6/19 INCLUSIVE
-  dat2 <- dat |> 
+  # first split into time periods where we need to calculate, and where we don't.
+  # do the calculation where necessary.
+  dat_toCalc <- dat |> 
+    filter(datetimestamp >= lubridate::ymd_hms("2017-12-01 00:00:00"),
+           datetimestamp <= lubridate::ymd_hms("2019-07-01 00:00:00")) |> 
     mutate(no23f = no2f + no3f,
            no23f_cens = case_when(is.na(no2f_cens + no3f_cens) ~ NA_real_,
                                   no2f_cens + no3f_cens > 0 ~ 1,
                                   .default = 0))
   
+  dat_nonCalc <- dat |> 
+    filter(!(datetimestamp %in% dat_toCalc$datetimestamp))
+  
+  
+  # then join back together and put in order.
+  dat_corrected <- bind_rows(dat_toCalc, dat_nonCalc) |> 
+    arrange(datetimestamp)
+
+  
   
   # re-save the data frame
   flnm <- paste0(stn_nm, "_qc")
-  assign(flnm, dat)
+  assign(flnm, dat_corrected)
   save(list = flnm, file = here::here("Data", "QAQCd_by_stn", 
                                       paste0(flnm, ".RData")))
   rm(list = flnm)
-  rm(dat)
+  rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
 }
