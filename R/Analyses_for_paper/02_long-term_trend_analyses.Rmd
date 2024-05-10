@@ -108,6 +108,18 @@ dat_met <- met |>
          dailyPAR_median) |> 
   mutate(sqrt_precp_total = sqrt(totprcp_total))  # SQUARE-ROOT TRANSFORM
 
+
+# need to deal with HUD NO23 situation before removing NO3 from data frame
+nut <- nut |> 
+  mutate(no23b = case_when(str_starts(station, "hud") ~ no3f,
+                           .default = no23f),
+         no23_cens_b = case_when(str_starts(station, "hud") ~ no3f_cens,
+                           .default = no23f_cens)) |> 
+  select(-no23f, -no23f_cens) |> 
+  rename(no23f = no23b,
+         no23f_cens = no23_cens_b)
+
+# now filter and select df
 dat_nut <- nut |> 
   filter(station %in% paste0(stns_wq_nut_d10, "nut")) |> 
   select(station, year, month, 
@@ -716,6 +728,9 @@ trends_met |>
 ## trend calcs  
 
 Attempting to use 12 knots for a seasonal smooth. This not possible at all stations (many are not sampled during winter) so at the ones where 12 knots causes a model error, I am allowing the model to choose the number of knots for me by setting it back to the default of k = -1. (This is all happening in the functions `run_bam_wq()` and `run_bam_nut()`).  
+
+Additionally, for HUD stations, only NO3 was measured until 2022 - no NO2, so no ability to calculate NO23. Using trend in NO3 here as proxy for NO23 at these stations. Thinking about combining NO3 and NO23 at the stations that have both (some time series end earlier than that) - because NO2 is still not measured, so presumably NO3 and NO23 are considered equivalent here. But it seems safer to only use NO3, and call it NO23 so it gets generated with the rest. This was taken care of above, during data frame filtering.  
+
 
 ```{r}
 # for testing
