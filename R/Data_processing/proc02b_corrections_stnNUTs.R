@@ -152,3 +152,70 @@ for(i in seq_along(res_fls)){
   rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
 }
 
+# NOC ----
+#' similar to NAR situation - 0s in NH4, NO23, PO4; only in 2022.
+#' MDLs are different so change that table.  
+
+res_fls <- all_stns[which(str_detect(all_stns, "noc[a-z]{2}nut_qc.RData"))]
+mdls <- list(nh4 = 0.0015,
+             no23 = 0.0008,
+             po4 = 0.0008)
+
+for(i in seq_along(res_fls)){
+  
+  stn_nm <- str_remove(res_fls[i], "_qc.RData")
+  
+  # load the data frame 
+  dat <- get(load(here::here("Data", "QAQCd_by_stn", res_fls[i])))
+  
+  
+  # save a copy of the data frame; appending "uncorrected"
+  # the next script looks for files that end in "qc.RData", so 
+  # put "uncorrected" before the . and all should still work fine after
+  flnm <- paste0(stn_nm, "_qcUncorrected")
+  assign(flnm, dat)
+  save(list = flnm, file = here::here("Data", "QAQCd_by_stn", 
+                                      paste0(flnm, ".RData")))
+  rm(list = flnm)
+  rm(list = paste0(stn_nm, "_qc"))
+  
+  
+  # update the data frame
+  # first split into time periods where we need to calculate, and where we don't.
+  # do the calculation where necessary.
+  # for MDL corrections, deal with censoring column first
+  # because then both case_whens can be based on the MDL value
+  
+  dat_toCalc <- dat |> 
+    filter(lubridate::year(datetimestamp) == 2022) |> 
+    mutate(no23f_cens = case_when(no23f < mdls$no23 ~ 1,
+                                  .default = no23f_cens),
+           no23f = case_when(no23f < mdls$no23 ~ mdls$no23,
+                             .default = no23f),
+           nh4f_cens = case_when(nh4f < mdls$nh4 ~ 1,
+                                 .default = nh4f_cens),
+           nh4f = case_when(nh4f < mdls$nh4 ~ mdls$nh4,
+                            .default = nh4f),
+           po4f_cens = case_when(po4f < mdls$po4 ~ 1,
+                                 .default = po4f_cens),
+           po4f = case_when(po4f < mdls$po4 ~ mdls$po4,
+                            .default = po4f))
+  
+  dat_nonCalc <- dat |> 
+    filter(lubridate::year(datetimestamp) != 2022)
+  
+  
+  # then join back together and put in order.
+  dat_corrected <- bind_rows(dat_toCalc, dat_nonCalc) |> 
+    arrange(datetimestamp)
+  
+  
+  
+  # re-save the data frame
+  flnm <- paste0(stn_nm, "_qc")
+  assign(flnm, dat_corrected)
+  save(list = flnm, file = here::here("Data", "QAQCd_by_stn", 
+                                      paste0(flnm, ".RData")))
+  rm(list = flnm)
+  rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
+}
