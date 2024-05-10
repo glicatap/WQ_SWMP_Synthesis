@@ -343,3 +343,22 @@ for(i in seq_along(res_fls)){
   # rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
 }
 
+
+
+# ELK neg values ----
+#' one station, NH4, 9/2012. Negative values need to be replaced by 0.0018
+#' points are already flagged below detection.
+
+load(here::here("Data", "QAQCd_by_stn", "elkapnut_qc.RData"))
+# save the version with NO23 corrections but not chl correction as "partially corrected"
+save(elkapnut_qc, file = here::here("Data", "QAQCd_by_stn",
+                                    "elkapnut_qcUncorrected.RData"))
+
+# and correct it
+elkapnut_qc <- elkapnut_qc |> 
+  mutate(nh4f = case_when(nh4f < 0 ~ 0.0018,
+                          .default = nh4f))
+
+# save back out
+save(elkapnut_qc, file = here::here("Data", "QAQCd_by_stn", "elkapnut_qc.RData"))
+rm(elkapnut_qc)

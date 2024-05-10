@@ -81,8 +81,8 @@ Final data files were downloaded from the CDMO on 8/30/2023.
 
 1.  `proc01_downloaded_to_compiledStns.R` - 9/18/2023. Originally run on 8/30/2023 but re-run to ensure I hadn't only selected active stations, or wq + nut stations. At this point, we mean to include all stations.      
 2.  `proc02_compiledStns_to_QAQCdStns.R` - 10/16/2023; updated to remove -99 values  
-2b.  `proc02b_corrections_stnNUTs.R` - 5/8/2024; correcting NO23 calculated/censored values at OWC; replacing 0s with MDLs at several reserves. NUT compilation scripts below will need to be re-run when this is completed.  
-3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  10/16/2023; after removing -99s AND requiring at least 1 week's worth of valid data in a month before calculating stats   
-4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 10/16/2023  
+2b.  `proc02b_corrections_stnNUTs.R` - 5/8/2024 & 5/10/2024; correcting NO23 calculated/censored values at OWC; replacing 0s or negative values with MDLs at several reserves. NUT compilation scripts below were re-run after this was completed.  
+3.  `proc03_QAQCdStns_to_QAQCdMonthly.R` -  5/10/2024 NUTS only, after making corrections in 2b. 10/16/2023 WQ/MET; after removing -99s AND requiring at least 1 week's worth of valid data in a month before calculating stats   
+4.  `proc04_QAQCdMonthly_to_MonthlyByType.R` - 5/10/2024 NUTs; 10/16/2023 WQ/MET.  
 5.  `proc05_QAQCdStns_to_QAQCdDaily.R` - 10/17/2023; after removal of -99s  
 6.  `proc06_QAQCdDaily_to_csv.R` - 10/17/2023  
