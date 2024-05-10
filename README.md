@@ -13,7 +13,7 @@ Sub-folders of this repository were created to provide some organization of the 
 -   `Data` - meant to contain data, although the full dataset is not committed due to its size.\
 -   `helper_files` - scripts of functions and definitions (e.g. which parameters and flags/codes to use) that are needed across sub-folders. Also contains some csv files with helpful information on sampling stations (from the CDMO dowload) and QAQC flags and codes.\
 -   `Outputs` - where files generated from analyses and visualization code will belong.\
--   `R` - code! Several subfolders:
+-   `R` - code! Several subfolders. As of 5/10/2024, key scripts used in the publishable analyses are in a folder called **`Analyses_for_publication`**. These were moved or copied from the other exploratory/process subfolders. Visualization scripts based on results may also go here.    
     -   `Data_processing` - scripts that were used to process downloaded data by combining files from a station, removing data points that did not pass various QA/QC criteria, and aggregating to daily and monthly levels.\
     -   `Long-Term_trend_analysis` - will be the subdirectory for trend scripts and tests.\
     -   `initial_explorations` - scripts that were written to visualize and explore the data before final download and processing occurred. There are additional sub-folders here for different topics, described in a separate README within this directory.
