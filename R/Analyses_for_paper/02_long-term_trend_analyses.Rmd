@@ -175,8 +175,7 @@ for(i in 1:nrow(wq_grid)){
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
                          ts_end = max(tmp$dec_date, na.rm = TRUE),
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
-                         n_points = sum(!is.na(tmp$value)),
-                         overall_median = median(tmp$value, na.rm = TRUE))
+                         n_points = sum(!is.na(tmp$value)))
   
   
   # run the model
@@ -365,8 +364,7 @@ for(i in 1:nrow(do_grid)){
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
                          ts_end = max(tmp$dec_date, na.rm = TRUE),
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
-                         n_points = sum(!is.na(tmp$value)),
-                         overall_median = median(tmp$value, na.rm = TRUE))
+                         n_points = sum(!is.na(tmp$value)))
   
   # if the below statement is true, there was an error in the model
   # and we need to do something, and move to the next item in the loop
@@ -556,8 +554,7 @@ for(i in 1:nrow(met_grid)){
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
                          ts_end = max(tmp$dec_date, na.rm = TRUE),
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
-                         n_points = sum(!is.na(tmp$value)),
-                         overall_median = median(tmp$value, na.rm = TRUE))
+                         n_points = sum(!is.na(tmp$value)))
   
   
   # run the model
@@ -748,8 +745,7 @@ for(i in 1:nrow(nut_grid)){
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
                          ts_end = max(tmp$dec_date, na.rm = TRUE),
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
-                         n_points = sum(!is.na(tmp$value)),
-                         overall_median = median(tmp$value, na.rm = TRUE))
+                         n_points = sum(!is.na(tmp$value)))
   
   
   # if the below statement is true, there was an error in the model
