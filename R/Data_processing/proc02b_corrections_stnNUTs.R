@@ -219,3 +219,127 @@ for(i in seq_along(res_fls)){
   rm(list = flnm)
   rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
 }
+
+
+# OWC chl ----
+#' just one value in 2002 - have already written out updated files for NO23
+#' so this is just an addition to one file
+
+load(here::here("Data", "QAQCd_by_stn", "owcbrnut_qc.RData"))
+# save the version with NO23 corrections but not chl correction as "partially corrected"
+save(owcbrnut_qc, file = here::here("Data", "QAQCd_by_stn",
+                             "owcbrnut_qcPartiallyCorrected.RData"))
+
+# and correct it
+owcbrnut_qc <- owcbrnut_qc |> 
+  mutate(chla_n_cens = case_when(chla_n == 0 ~ 1,
+                                 .default = chla_n_cens),
+         chla_n = case_when(chla_n == 0 ~ 0.3,
+                            .default = chla_n))
+
+# save back out
+save(owcbrnut_qc, file = here::here("Data", "QAQCd_by_stn", "owcbrnut_qc.RData"))
+rm(owcbrnut_qc)
+
+
+# WQB ----
+#' WQB has different combinations of years/parameters that are affected
+#' 2005 has all 3 nutrients, so let's start there
+#' 2019 and 2022 are NO23
+#' 2002 and 2003 are chla
+
+res_fls <- all_stns[which(str_detect(all_stns, "wqb[a-z]{2}nut_qc.RData"))]
+mdls <- list(nh4.2005 = 0.003,
+             no23.2005 = 0.001,
+             po4.2005 = 0.004,
+             no23.2019 = 0.0005,
+             no23.2022 = 0.0001,
+             chl = 0.5)
+
+
+for(i in seq_along(res_fls)){
+  
+  stn_nm <- str_remove(res_fls[i], "_qc.RData")
+  
+  # load the data frame 
+  dat <- get(load(here::here("Data", "QAQCd_by_stn", res_fls[i])))
+  
+  
+  # save a copy of the data frame; appending "uncorrected"
+  # the next script looks for files that end in "qc.RData", so 
+  # put "uncorrected" before the . and all should still work fine after
+  flnm <- paste0(stn_nm, "_qcUncorrected")
+  assign(flnm, dat)
+  save(list = flnm, file = here::here("Data", "QAQCd_by_stn", 
+                                      paste0(flnm, ".RData")))
+  rm(list = flnm)
+  rm(list = paste0(stn_nm, "_qc"))
+  
+  
+  # update the data frame
+  # first split into time periods where we need to calculate, and where we don't.
+  # do the calculation where necessary.
+  # for MDL corrections, deal with censoring column first
+  # because then both case_whens can be based on the MDL value
+  
+  # 0203 - chl only
+  dat_0203 <- dat |> 
+    filter(lubridate::year(datetimestamp) %in% c(2002, 2003)) |> 
+    mutate(chla_n_cens = case_when(chla_n < mdls$chl ~ 1,
+                                  .default = chla_n_cens),
+           chla_n = case_when(chla_n < mdls$chl ~ mdls$chl,
+                              .default = chla_n))
+  
+  # 2005 - all 3 nuts
+  dat_05 <- dat |> 
+    filter(lubridate::year(datetimestamp) == 2005) |> 
+    mutate(no23f_cens = case_when(no23f < mdls$no23.2005 ~ 1,
+                                  .default = no23f_cens),
+           no23f = case_when(no23f < mdls$no23.2005 ~ mdls$no23.2005,
+                             .default = no23f),
+           nh4f_cens = case_when(nh4f < mdls$nh4.2005 ~ 1,
+                                 .default = nh4f_cens),
+           nh4f = case_when(nh4f < mdls$nh4.2005 ~ mdls$nh4.2005,
+                            .default = nh4f),
+           po4f_cens = case_when(po4f < mdls$po4.2005 ~ 1,
+                                 .default = po4f_cens),
+           po4f = case_when(po4f < mdls$po4.2005 ~ mdls$po4.2005,
+                            .default = po4f))
+  
+  # 2019 - no23 only
+  dat_19 <- dat |> 
+    filter(lubridate::year(datetimestamp) == 2019) |> 
+    mutate(no23f_cens = case_when(no23f < mdls$no23.2019 ~ 1,
+                                  .default = no23f_cens),
+           no23f = case_when(no23f < mdls$no23.2019 ~ mdls$no23.2019,
+                             .default = no23f))
+  
+  # 2022 - no23 only  
+  dat_22 <- dat |> 
+    filter(lubridate::year(datetimestamp) == 2022) |> 
+    mutate(no23f_cens = case_when(no23f < mdls$no23.2022 ~ 1,
+                                  .default = no23f_cens),
+           no23f = case_when(no23f < mdls$no23.2022 ~ mdls$no23.2022,
+                             .default = no23f))
+  
+  # the rest
+  dat_nonCalc <- dat |> 
+    filter(!(lubridate::year(datetimestamp) %in% c(2002, 2003, 2005, 2019, 2022)))
+  
+  
+  # then join back together and put in order.
+  nrow(dat_0203) + nrow(dat_05) + nrow(dat_19) + nrow(dat_22) + nrow(dat_nonCalc) == nrow(dat)
+  dat_corrected <- bind_rows(dat_0203, dat_05, dat_19, dat_22, dat_nonCalc) |> 
+    arrange(datetimestamp)
+  
+  
+  
+  # re-save the data frame
+  flnm <- paste0(stn_nm, "_qc")
+  assign(flnm, dat_corrected)
+  save(list = flnm, file = here::here("Data", "QAQCd_by_stn", 
+                                      paste0(flnm, ".RData")))
+  rm(list = flnm)
+  # rm(dat, dat_toCalc, dat_nonCalc, dat_corrected, flnm, stn_nm)
+}
+
