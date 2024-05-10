@@ -41,7 +41,7 @@ load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyMET.RData"))
 
 ## Station selection  
 
-Only SWMP stations that started collecting data before 2013, and that were active as of the end of 2022, are represented here. Additionally, only stations that exist for BOTH WQ and NUT data types are represented.  
+Only SWMP stations that started collecting data before 2013, and that were active as of the end of 2022, are represented here [with 2 MET exceptions, noted later]. Additionally, only stations that exist for BOTH WQ and NUT data types are represented. Regarding MET stations, the LKS station's time series started in mid-2013, so it has been retained. SOS had to move a met station around 2016 - the new one is ~7km away and the two time series have been combined into a single one for our purposes. The first station's name (`soscmmet`) has been used for the combined set.  
 
 ## Data point inclusion  
 
@@ -97,7 +97,11 @@ dat_wq <- wq |>
 # may need to treat DO proportions differently from others - not gaussian, but beta
 
 dat_met <- met |> 
-  filter(station %in% paste0(stns_met_d10, "met")) |> 
+  mutate(station = case_when(station == "sostcmet" ~ "soscmmet",
+                             .default = station)) |> 
+  filter(station %in% c(paste0(stns_met_d10, "met"),
+                        "lkspomet",
+                        "soscmmet")) |> 
   select(station, year, month, 
          atemp_median,
          totprcp_total,
