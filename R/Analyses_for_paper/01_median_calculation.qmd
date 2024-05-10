@@ -67,10 +67,6 @@ wq_meds <- wq |>
 
 ## NUT Medians  
 
-As of 5/3/24, two problems with these:  
-
-1.  They don't use methods to account for censoring - this is literally just the middle value. Censored values were retained, however.   
-2.  NO23 calculated value weirdness - primarily we think this only affects HUD and OWC but need to investigate further.  
 
 ```{r}
 # nut_meds <- nut |>
@@ -96,7 +92,6 @@ Below is a function I wrote where I take the nutrient and its censoring column, 
 
 It uses the value of the ROS-calculated median (robust Regression on Order Statistics). MLE or Kaplan-Meier values could also be used here, but Helsel calls ROS the most flexible of the methods.  
 
-NOTE I am still dealing with exact 0s in the dataset as I'm generating this file for Carl and Dave, so in the function I am replacing any 0 with 0.01 and making sure the censoring column says 'TRUE'. (ROS won't work with exact 0s in the datset.)  
 
 ```{r}
 censMed_fun <- function(df, nut, cens){
@@ -222,6 +217,6 @@ dat_out <- left_join(all_meds,
 ```{r}
 write.csv(dat_out,
           here::here("Outputs",
-                     "WQ-NUT_overallMedians_NOTfullyQAQCd.csv"))
+                     "WQ-NUT_overallMedians.csv"))
 ```
 
