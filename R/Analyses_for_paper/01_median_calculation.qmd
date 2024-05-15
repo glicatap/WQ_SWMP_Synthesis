@@ -20,6 +20,8 @@ load(here::here("Data", "QAQCd_monthly_byType",
                 "SWMP_monthlyWQ.RData"))
 load(here::here("Data", "QAQCd_monthly_byType",
                 "SWMP_monthlyNUT.RData"))
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyMET.RData"))
 stn_mdat <- read_csv(here::here("helper_files",
                                 "sampling_stations.csv"))
 ```
@@ -267,13 +269,82 @@ dat_out <- left_join(all_meds,
          `Reserve Code`, `Reserve Name`,
          State,
          Latitude, Longitude,
-         everything()) |> 
-  arrange(chla_nMonths)
+         everything()) 
 ```
 
 ```{r}
 write.csv(dat_out,
           here::here("Outputs",
-                     "WQ-NUT_overallMedians_20240515.csv"))
+                     "WQ-NUT_overallMedians.csv"))
 ```
+
+
+## MET Medians  
+
+First combine the SOS stations  
+
+```{r}
+met <- met |> 
+  mutate(station = case_when(station == "sostcmet" ~ "soscmmet",
+                             .default = station)) 
+```
+
+
+```{r}
+met_meds <- met |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            yr_start_met = min(year, na.rm = TRUE),
+            yr_end_met = max(year, na.rm = TRUE),
+            across(c(atemp_median, 
+                     dailyPAR_median,
+                     totprcp_total,
+                     rh_median,
+                     bp_median,
+                     wspd_median),
+                   function(x) median(x, na.rm = TRUE)))
+
+met_nMonths <- met |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            across(c(atemp_median, 
+                     dailyPAR_median,
+                     totprcp_total,
+                     rh_median,
+                     bp_median,
+                     wspd_median),
+                   function(x) sum(!is.na(x))))
+nms <- names(met_nMonths)[2:ncol(met_nMonths)]
+nms <- str_remove(nms, "_median")
+nms <- str_remove(nms, "_total")
+nms <- paste(nms, "nMonths", sep = "_")
+names(met_nMonths)[2:ncol(met_nMonths)] <- nms
+
+
+met_nPoints <- met |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            across(c(atemp_nValid, 
+                     dailyPAR_nValid,
+                     totprcp_nValid,
+                     rh_nValid,
+                     bp_nValid,
+                     wspd_nValid),
+                   function(x) sum(x, na.rm = TRUE)))
+nms <- names(met_nPoints)[2:ncol(met_nPoints)]
+nms <- str_remove(nms, "_nValid")
+nms <- paste(nms, "nPoints", sep = "_")
+names(met_nPoints)[2:ncol(met_nPoints)] <- nms
+
+
+met_meds <- left_join(met_meds, met_nPoints, by = "station") |> 
+  left_join(met_nMonths, by = "station")
+```
+
+```{r}
+write.csv(met_meds,
+          here::here("Outputs",
+                     "MET_overallMedians.csv"))
+```
+
 
