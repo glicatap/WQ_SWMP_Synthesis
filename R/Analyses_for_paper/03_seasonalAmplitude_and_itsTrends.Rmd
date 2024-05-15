@@ -16,7 +16,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       fig.height = 5)
 ```
 
-This Rmd file is living in the `R/Long-Term_trend_analysis` directory because we are looking for changes through time in seasonal amplitude. Amplitudes were originally calculated in `R/Short-Term_seasonality/seasonality_viz` and are re-calculated here for completeness (and not having to search for output from that folder now that we are also interested in a long-term component).  
 
 ```{r}
 library(dplyr)
@@ -145,10 +144,61 @@ chl_estimates$param = "chla"
 
 all_estimates <- bind_rows(chl_estimates, do_estimates, tmp_estimates) |> 
   mutate(test = "trend in normalized seasonal amplitude")
+```
+
+Also generate summary statistics for seasonality of these parameters at each station  
+
+```{r}
+temp_meds <- tmp_annual |> 
+  unnest(cols = "data") |> 
+  summarize(.by = station,
+            medSeasAmp = median(an_normalized_amplitude, na.rm = TRUE),
+            nYears = sum(!is.na(an_normalized_amplitude))) |> 
+  mutate(parameter = "temp")
+
+do_meds <- do_annual |> 
+  unnest(cols = "data") |> 
+  summarize(.by = station,
+            medSeasAmp = median(an_normalized_amplitude, na.rm = TRUE),
+            nYears = sum(!is.na(an_normalized_amplitude))) |> 
+  mutate(parameter = "do_mgl")
+
+chl_meds <- chl_annual |> 
+  unnest(cols = "data") |> 
+  summarize(.by = station,
+            medSeasAmp = median(an_normalized_amplitude, na.rm = TRUE),
+            nYears = sum(!is.na(an_normalized_amplitude))) |> 
+  mutate(parameter = "chla")
+
+all_medians <- bind_rows(chl_meds, do_meds, temp_meds) |> 
+  relocate(parameter, .after = "station")
+```
+
+Write out
+
+```{r}
+saveRDS(all_medians, file = here::here("Outputs", 
+                                         "seasonal_amplitude_medians.rds"))
+write.csv(all_medians, file = here::here("Outputs", "seasonal_amplitude_medians.csv"))
 
 saveRDS(all_estimates, file = here::here("Outputs", "calculated_trends",
                                          "seasonal_amplitude_trends.rds"))
+write.csv(all_estimates, file = here::here("Outputs", "seasonal_amplitude_trends.csv"))
 ```
+
+
+```{r}
+ggplot(all_medians) +
+  geom_histogram(aes(x = medSeasAmp,
+                     fill = parameter),
+                 col = "gray") +
+  facet_wrap(~parameter, scales = "free") +
+  theme(legend.position = "none") +
+  labs(title = "Median Normalized Seasonal Amplitudes",
+       x = "median amplitude")
+```
+
+
 
 # Diagnostics  
 
