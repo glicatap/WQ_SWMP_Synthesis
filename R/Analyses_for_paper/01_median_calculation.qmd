@@ -104,6 +104,11 @@ wq_meds <- left_join(wq_meds, wq_nPoints, by = "station") |>
 
 ## NUT Medians  
 
+Criteria for inclusion:  
+
+-  start year doesn't equal end year  
+-  at least 12 values for every nutrient  
+
 
 ```{r}
 # nut_meds <- nut |>
@@ -247,7 +252,7 @@ nut_meds_cens <- nut |>
 
 ## combine and write out  
 
-Join in way that keeps only stations that are in both WQ and NUT data frames. Keep only stations that have different start/end years for both WQ and NUT (i.e. more than one year for WQ, and more than one year for NUT).   
+Join in way that keeps only stations that are in both WQ and NUT data frames. Keep only stations that have different start/end years for both WQ and NUT (i.e. more than one year for WQ, and more than one year for NUT). Keep only stations with at least 12 values for each nutrient.    
 
 ```{r}
 all_meds <- inner_join(wq_meds,
@@ -256,7 +261,11 @@ all_meds <- inner_join(wq_meds,
   relocate(c(yr_start_nut, yr_end_nut),
            .after = yr_end_wq) |> 
   filter(yr_end_nut != yr_start_nut,
-         yr_end_wq != yr_start_wq)
+         yr_end_wq != yr_start_wq,
+         chla_nMonths >= 12,
+         nh4f_nMonths >= 12,
+         no23_nMonths >= 12,
+         po4f_nMonths >= 12)
 ```
 
 Now join all the station info too.  
