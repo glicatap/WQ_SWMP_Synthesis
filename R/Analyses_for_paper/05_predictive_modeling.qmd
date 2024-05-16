@@ -11,6 +11,7 @@ library(MuMIn)
 library(doParallel)
 library(glmmTMB)
 library(tictoc)
+library(vegan)
 ```
 
 
@@ -23,6 +24,31 @@ dat_all <- read.csv(here::here("Outputs", "compiled_predictors.csv"))
 
 
 ## PCA on temp/PAR/maybeLatitude  
+
+```{r}
+tpl <- dat_all |> 
+  select(temp_median,
+         dailyPAR_median,
+         latitude)
+
+pca_tpl <- prcomp(tpl, scale. = TRUE)
+biplot(pca_tpl)
+pca_tpl
+summary(pca_tpl)
+autoplot(pca_tpl,
+         loadings = TRUE,
+         loadings.label = TRUE)
+
+
+pca_tp <- prcomp(tpl[, 1:2], scale. = TRUE)
+biplot(pca_tp)
+pca_tp
+summary(pca_tp)
+autoplot(pca_tp,
+         loadings = TRUE,
+         loadings.label = TRUE)
+```
+
 
 
 ## Subset for chl; center and scale predictors (not response)  
