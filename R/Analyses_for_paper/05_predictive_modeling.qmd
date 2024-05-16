@@ -1,0 +1,170 @@
+---
+title: "Predictive Modeling"
+format: html
+---
+
+# Setup  
+
+```{r}
+library(tidyverse)
+library(MuMIn)
+library(doParallel)
+library(glmmTMB)
+library(tictoc)
+```
+
+
+## Import predictors data frame  
+
+```{r}
+dat_all <- read.csv(here::here("Outputs", "compiled_predictors.csv"))
+```
+
+
+
+## PCA on temp/PAR/maybeLatitude  
+
+
+## Subset for chl; center and scale predictors (not response)  
+
+For now, only pulling water temp rather than running PCA - just trying to make sure model construction will work  
+
+```{r}
+dat_chl <- dat_all |> 
+  select(reserve, temp_trend:po4f_median,
+         precp_trend, precp_median) |> 
+  relocate(chla_trend) |> 
+  mutate(across(temp_trend:last_col(),
+                function(x) as.vector(scale(x))))
+```
+
+
+# Model  
+
+## Create global model    
+
+
+How many models will this be? How long does it take MuMIn to come up with the list, using multiple cores?  
+
+17 predictors.  
+
+
+```{r}
+tic("global model")
+dat_test <- dat_chl[, 1:12]
+formula <- paste0("chla_trend ~ ", paste(names(dat_test[3:ncol(dat_test)]), collapse = " + "), " + (1|reserve)")
+mod_test <- glmmTMB(as.formula(formula),
+                    data = dat_test)
+r.squaredGLMM(mod_test)
+toc()
+```
+
+
+## Dredge  
+
+```{r}
+# establish cluster
+cl <- makeCluster(10)  
+registerDoParallel(cl)
+```
+
+
+It seems to be keeping the random effect in all models; I don't have to force it.  
+
+```{r}
+# name models, using cluster, and time it
+options(na.action = "na.fail")
+
+tic("identify models")
+mod_subsets <- MuMIn::dredge(mod_test, eval = FALSE,
+                             cluster = cl)
+toc()
+
+# examine
+tic("examine models")
+mod_subsets2 <- lapply(mod_subsets, as.character) |> 
+  bind_rows()
+mod_subsets2 <- mod_subsets2[2, ] |> 
+  pivot_longer(1:ncol(mod_subsets2),
+               names_to = "model",
+               values_to = "call")
+toc()
+```
+
+```{r}
+# run models  
+tic("run models")
+mod_subsets <- MuMIn::dredge(mod_test, eval = TRUE,
+                             cluster = cl)
+toc()
+beepr::beep(8)
+
+# not using cluster for this call
+# times below are for # of predictors in addition to the random effect
+# 6 predictors: 14.72 seconds
+# 10 predictors: 4.4 minutes
+# if this holds, 17 predictors should take ~9.5 hours  
+# 6 predictors a second time was ~16 seconds
+# 10 predictors a second time: 4.4 minutes
+
+# even though it says it's not using the cluster, this step still runs
+# almost twice as fast when I include it as an argument
+# (at least for 6 predictors - 29s vs. 15-16s)  
+```
+
+object size when eval=TRUE for 6 predictors was 120 bytes
+for 10 predictors, also just 120 bytes
+
+[if it doubles like the # of models do, we'll have 1920 bytes for 10 and
+122,880 for 16. 122MB - RAM should be ablet to handle that]
+
+
+```{r}
+mods_best <- filter(mod_subsets,
+                    delta <= 2)
+
+top.mods <- get.models(mod_subsets, subset = delta<2)
+avgd <- model.avg(top.mods)
+avgd$coefficients
+
+summary(avgd) # gives standard errors etc.
+# Grueber et al. say it's best to report unconditional SE "as it incorporates model selection uncertainty, as opposed to standard SE which only considers sampling variance" 
+
+# importances
+sw(avgd)
+```
+
+"Full" coefficient is the 'zero method' in Grueber et al (coefficient shrinkage); 'subset' is 'natural average' method (does not create shrinkage).  
+
+
+```{r}
+tic("entire model")
+dat_test <- dat_chl
+formula <- paste0("chla_trend ~ ", paste(names(dat_test[3:ncol(dat_test)]), collapse = " + "), " + (1|reserve)")
+mod_test <- glmmTMB(as.formula(formula),
+                    data = dat_test)
+
+tic("identify models")
+mod_subsets <- MuMIn::dredge(mod_test, eval = FALSE,
+                             cluster = cl)
+toc()
+
+# examine
+tic("examine models")
+mod_subsets2 <- lapply(mod_subsets, as.character) |> 
+  bind_rows()
+mod_subsets2 <- mod_subsets2[2, ] |> 
+  pivot_longer(1:ncol(mod_subsets2),
+               names_to = "model",
+               values_to = "call")
+toc()
+toc()
+```
+
+For all 16 predictor vars, took 33 seconds to identify models and 3 seconds to pivot to be able to examine them. There are 65,536 models. Should take ~5 hrs to run them all.   
+
+```{r}
+# turn off cluster
+stopCluster(cl)
+```
+
