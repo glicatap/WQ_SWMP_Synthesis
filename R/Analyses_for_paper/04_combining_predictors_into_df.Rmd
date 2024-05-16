@@ -190,7 +190,32 @@ all_predictors <- all_predictors |>
 # Writing out  
 
 ```{r}
-write.csv(all_predictors, here::here("Data", "compiled_predictors.csv"),
+write.csv(all_predictors, here::here("Outputs", "compiled_predictors.csv"),
           row.names = FALSE,
           na = "")
 ```
+
+# DO < 2 trends  
+
+There are 5 stations where the trend for do proportion < 2 couldn't be calculated. This is the compiled data frame above, but with do < 2 added, and those 5 stations removed.  
+
+```{r}
+doLT2 <- trends_wqnutmet |> 
+  select(-X) |> 
+  mutate(reserve = substr(station, start = 1, stop = 3),
+         station = substr(station, start = 1, stop = 5)) |> 
+  filter(parameter == "do_proportion_below2") |> 
+  select(reserve, station, parameter, Slope) |> 
+  pivot_wider(id_cols = c(reserve, station),
+              names_from = parameter,
+              values_from = Slope) |> 
+  rename(do_below2_trend = do_proportion_below2) |> 
+  filter(!is.na(do_below2_trend),
+         !(station %in% remove_stns)) |> 
+  left_join(all_predictors)
+
+write.csv(doLT2, here::here("Outputs", "doLT2_compiled_predictors.csv"),
+          row.names = FALSE,
+          na = "")
+```
+
