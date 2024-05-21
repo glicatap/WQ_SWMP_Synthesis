@@ -12,6 +12,7 @@ library(doParallel)
 library(glmmTMB)
 library(tictoc)
 library(vegan)
+library(ggfortify)
 ```
 
 
@@ -51,44 +52,173 @@ autoplot(pca_tp,
 
 
 
-## Subset for chl; center and scale predictors (not response)  
+## Subset for response vars; center and scale predictors (not response)  
 
 For now, only pulling water temp rather than running PCA - just trying to make sure model construction will work  
 
 ```{r}
 dat_chl <- dat_all |> 
-  select(reserve, temp_trend:po4f_median,
-         precp_trend, precp_median) |> 
-  relocate(chla_trend) |> 
-  mutate(across(temp_trend:last_col(),
+  select(reserve,
+         chla_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(temp_median:last_col(),
                 function(x) as.vector(scale(x))))
+
+formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
 ```
 
 
-# Model  
+```{r}
+dat_domgl <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, domgl_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(temp_median:last_col(),
+                function(x) as.vector(scale(x))))
 
-## Create global model    
+formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
 
-
-How many models will this be? How long does it take MuMIn to come up with the list, using multiple cores?  
-
-17 predictors.  
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+```
 
 
 ```{r}
-tic("global model")
-dat_test <- dat_chl[, 1:12]
+dat_dopct <- dat_all |> 
+  select(reserve,
+         dopct_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, dopct_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(temp_median:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "), " + (1|reserve)")
+```
+
+
+
+Don't have do<2 in the data frame yet.... need to revise something above  
+
+```{r}
+dat_doLT2 <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, domgl_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(temp_median:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "), " + (1|reserve)")
+```
+
+# Model  
+
+## Create global models    
+
+### Chl  
+
+```{r}
+mod_chl <- glmmTMB(as.formula(formula_chl),
+                    data = dat_chl)
+performance::check_singularity(mod_chl)
+r.squaredGLMM(mod_chl)
+summary(mod_chl)
+```
+
+### DO mgl
+
+```{r}
+mod_domgl <- glmmTMB(as.formula(formula_domgl),
+                    data = dat_domgl)
+performance::check_singularity(mod_domgl)
+r.squaredGLMM(mod_domgl)
+summary(mod_domgl)
+```
+
+### DO %
+
+```{r}
+mod_dopct <- glmmTMB(as.formula(formula_dopct),
+                    data = dat_dopct)
+performance::check_singularity(mod_dopct)
+r.squaredGLMM(mod_dopct)
+summary(mod_dopct)
+```
+
+### DO < 2  
+
+```{r}
+mod_doLT2 <- glmmTMB(as.formula(formula_doLT2),
+                    data = dat_doLT2)
+performance::check_singularity(mod_doLT2)
+r.squaredGLMM(mod_doLT2)
+summary(mod_doLT2)
+```
+
+
+
+
+
+## Dredging  
+
+** everything below has eval: FALSE for the chunk** 
+
+How many models will this be? How long does it take MuMIn to come up with the list, using multiple cores?  
+
+16 predictors: 15 + r.e. of reserve.  
+
+
+```{r}
+#| eval: FALSE
+#| 
+# can subset for testing the dredging stuff below
+dat_test <- dat_chl
 formula <- paste0("chla_trend ~ ", paste(names(dat_test[3:ncol(dat_test)]), collapse = " + "), " + (1|reserve)")
 mod_test <- glmmTMB(as.formula(formula),
                     data = dat_test)
 r.squaredGLMM(mod_test)
-toc()
 ```
 
-
-## Dredge  
+ 
 
 ```{r}
+#| eval: FALSE
+#| 
 # establish cluster
 cl <- makeCluster(10)  
 registerDoParallel(cl)
@@ -98,6 +228,8 @@ registerDoParallel(cl)
 It seems to be keeping the random effect in all models; I don't have to force it.  
 
 ```{r}
+#| eval: FALSE
+#| 
 # name models, using cluster, and time it
 options(na.action = "na.fail")
 
@@ -118,6 +250,8 @@ toc()
 ```
 
 ```{r}
+#| eval: FALSE
+#| 
 # run models  
 tic("run models")
 mod_subsets <- MuMIn::dredge(mod_test, eval = TRUE,
@@ -146,6 +280,8 @@ for 10 predictors, also just 120 bytes
 
 
 ```{r}
+#| eval: FALSE
+#| 
 mods_best <- filter(mod_subsets,
                     delta <= 2)
 
@@ -164,6 +300,8 @@ sw(avgd)
 
 
 ```{r}
+#| eval: FALSE
+#| 
 tic("entire model")
 dat_test <- dat_chl
 formula <- paste0("chla_trend ~ ", paste(names(dat_test[3:ncol(dat_test)]), collapse = " + "), " + (1|reserve)")
@@ -190,6 +328,8 @@ toc()
 For all 16 predictor vars, took 33 seconds to identify models and 3 seconds to pivot to be able to examine them. There are 65,536 models. Should take ~5 hrs to run them all.   
 
 ```{r}
+#| eval: FALSE
+#| 
 # turn off cluster
 stopCluster(cl)
 ```
