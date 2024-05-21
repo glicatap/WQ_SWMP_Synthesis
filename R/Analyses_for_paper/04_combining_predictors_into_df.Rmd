@@ -20,7 +20,8 @@ library(tidyverse)
 
 # parameters and columns to keep
 params_wq <- c("temp_median", "spcond_median", 
-               "turb_median", "do_mgl_median")
+               "turb_median", "do_mgl_median",
+               "do_pct_median")
 params_nut <- c("chla_n", "chla_n_cens",
                 "nh4f", "nh4f_cens",
                 "no23f", "no23f_cens",
@@ -28,7 +29,7 @@ params_nut <- c("chla_n", "chla_n_cens",
 params_met <- c("totprcp_total",
                 "dailyPAR_median")
 params_trends <- c("temp_median", "spcond_median", "turb_median",
-                   "do_mgl_median",
+                   "do_mgl_median", "do_pct_median",
                    "chla_n", "po4f", "nh4f", "no23f",
                    "dailyPAR_median",
                    "sqrt_precp_total")
@@ -121,7 +122,7 @@ trnds <- trends_wqnutmet |>
 # pivot wider, to one row per station
 trnds_water <- trnds |> 
   filter(parameter %in% c("temp_trend", "spcond_trend", "turb_trend",
-                          "do_mgl_trend",
+                          "do_mgl_trend", "do_pct_trend",
                           "chla_trend", "po4f_trend", "nh4f_trend",
                           "no23f_trend")) |> 
   pivot_wider(id_cols = c(reserve, station),
@@ -144,6 +145,7 @@ medians_wqnut <- medians_wqnut |>
          temp_median,
          spcond_median,
          domgl_median = do_mgl_median,
+         dopct_median = do_pct_median, 
          turb_median,
          chla_median = chla,
          nh4f_median = nh4f,
