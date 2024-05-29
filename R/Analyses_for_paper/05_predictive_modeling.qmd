@@ -1,6 +1,14 @@
 ---
 title: "Predictive Modeling"
-format: html
+format: 
+  html:
+    toc: true
+    code-fold: true
+warning: false
+message: false
+error: true
+embed-resources: true
+
 ---
 
 # Setup  
@@ -20,6 +28,7 @@ library(ggfortify)
 
 ```{r}
 dat_all <- read.csv(here::here("Outputs", "compiled_predictors.csv"))
+preds_doLT2 <- read.csv(here::here("Outputs", "doLT2_compiled_predictors.csv"))
 ```
 
 
@@ -52,20 +61,94 @@ autoplot(pca_tp,
 
 
 
-## Subset for response vars; center and scale predictors (not response)  
+## Subset for response vars; transform; center and scale predictors (not response)  
 
 For now, only pulling water temp rather than running PCA - just trying to make sure model construction will work  
+
+Natural-log transforming nutrient medians and turbidity, to ensure linearity of effects and stabilize variance.  
+
+Centering and standardizing (1SD) predictors to make sure model converges and aid in relative interpretation (comparing effect sizes among variables on very different scales); once we have a top model set/averaged model, we can back-transform and interpret slopes in their raw units.  
+
+
+```{r}
+# in previous modeling, log-transformed nutrient and turb medians only
+# had made histograms at some point
+dat_all2 <- dat_all |> 
+  mutate(across(c(chla_median,
+                  nh4f_median,
+                  no23f_median,
+                  po4f_median,
+                  turb_median),
+                function(x) log(x))) |> 
+  rename(turb_median.log = turb_median,
+         chla_median.log = chla_median,
+         nh4_median.log = nh4f_median,
+         no23_median.log = no23f_median,
+         po4_median.log = po4f_median)
+
+
+
+preds_doLT2 <- preds_doLT2 |> 
+  mutate(across(c(chla_median,
+                  nh4f_median,
+                  no23f_median,
+                  po4f_median,
+                  turb_median),
+                function(x) log(x))) |> 
+  rename(turb_median.log = turb_median,
+         chla_median.log = chla_median,
+         nh4_median.log = nh4f_median,
+         no23_median.log = no23f_median,
+         po4_median.log = po4f_median)
+```
+
+```{r}
+#| eval: false
+
+windows()
+
+dat_all |> 
+  select(station, do_pct_trend:last_col()) |> 
+  pivot_longer(-station,
+               names_to = "param",
+               values_to = "value") |> 
+  ggplot(aes(x = value,
+             fill = param)) +
+  geom_histogram(bins = 30,
+                 col = "gray40") +
+  facet_wrap(~param, scales = "free")
+
+
+dat_all2 |> 
+  select(station, do_pct_trend:last_col()) |> 
+  pivot_longer(-station,
+               names_to = "param",
+               values_to = "value") |> 
+  ggplot(aes(x = value,
+             fill = param)) +
+  geom_histogram(bins = 30,
+                 col = "gray40") +
+  facet_wrap(~param, scales = "free")
+
+# transformed vars look much better
+```
+
+```{r}
+dat_all <- dat_all2
+```
+
+
 
 ```{r}
 dat_chl <- dat_all |> 
   select(reserve,
          chla_trend,
          # wq medians
-         temp_median, spcond_median, turb_median,
+         temp_median, spcond_median, turb_median.log,
          # wq trends
          temp_trend, spcond_trend, turb_trend,
          # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
          nh4f_trend, no23f_trend, po4f_trend,
          # met
@@ -82,11 +165,11 @@ dat_domgl <- dat_all |>
   select(reserve,
          domgl_trend,
          # wq medians
-         temp_median, spcond_median, turb_median, domgl_median,
+         temp_median, spcond_median, turb_median.log, domgl_median,
          # wq trends
          temp_trend, spcond_trend, turb_trend,
          # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
          chla_trend, nh4f_trend, no23f_trend, po4f_trend,
          # met
@@ -105,13 +188,13 @@ formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat
 ```{r}
 dat_dopct <- dat_all |> 
   select(reserve,
-         dopct_trend,
+         dopct_trend = do_pct_trend,
          # wq medians
-         temp_median, spcond_median, turb_median, dopct_median,
+         temp_median, spcond_median, turb_median.log, dopct_median,
          # wq trends
          temp_trend, spcond_trend, turb_trend,
          # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
          chla_trend, nh4f_trend, no23f_trend, po4f_trend,
          # met
@@ -120,22 +203,21 @@ dat_dopct <- dat_all |>
                 function(x) as.vector(scale(x))))
 
 formula_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "), " + (1|reserve)")
+
+formula_fixed_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "))
 ```
 
 
-
-Don't have do<2 in the data frame yet.... need to revise something above  
-
 ```{r}
-dat_doLT2 <- dat_all |> 
+dat_doLT2 <- preds_doLT2 |> 
   select(reserve,
-         domgl_trend,
+         doLT2_trend = do_below2_trend,
          # wq medians
-         temp_median, spcond_median, turb_median, domgl_median,
+         temp_median, spcond_median, turb_median.log, domgl_median,
          # wq trends
          temp_trend, spcond_trend, turb_trend,
          # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
          chla_trend, nh4f_trend, no23f_trend, po4f_trend,
          # met
@@ -144,9 +226,11 @@ dat_doLT2 <- dat_all |>
                 function(x) as.vector(scale(x))))
 
 formula_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "), " + (1|reserve)")
+
+formula_fixed_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "))
 ```
 
-# Model  
+# Models - centered and scaled    
 
 ## Create global models    
 
@@ -160,13 +244,24 @@ r.squaredGLMM(mod_chl)
 summary(mod_chl)
 ```
 
+Marginal r2 = 0.2877  
+Cond'l r2 = 0.7498  
+
+
 ### DO mgl
 
 ```{r}
 mod_domgl <- glmmTMB(as.formula(formula_domgl),
                     data = dat_domgl)
 performance::check_singularity(mod_domgl)
-r.squaredGLMM(mod_domgl)
+
+
+# drop random factor due to singular fit
+mod_domgl <- lm(as.formula(formula_fixed_domgl),
+                data = dat_domgl)
+performance::check_singularity(mod_domgl)
+
+summary(mod_domgl)$r.squared; summary(mod_domgl)$adj.r.squared
 summary(mod_domgl)
 ```
 
@@ -176,7 +271,13 @@ summary(mod_domgl)
 mod_dopct <- glmmTMB(as.formula(formula_dopct),
                     data = dat_dopct)
 performance::check_singularity(mod_dopct)
-r.squaredGLMM(mod_dopct)
+
+# drop random factor due to singular fit
+mod_dopct <- lm(as.formula(formula_fixed_dopct),
+                data = dat_dopct)
+performance::check_singularity(mod_dopct)
+
+summary(mod_dopct)$r.squared; summary(mod_dopct)$adj.r.squared
 summary(mod_dopct)
 ```
 
@@ -186,11 +287,184 @@ summary(mod_dopct)
 mod_doLT2 <- glmmTMB(as.formula(formula_doLT2),
                     data = dat_doLT2)
 performance::check_singularity(mod_doLT2)
-r.squaredGLMM(mod_doLT2)
+
+# drop random factor due to singular fit
+mod_doLT2 <- lm(as.formula(formula_fixed_doLT2),
+                data = dat_doLT2)
+performance::check_singularity(mod_doLT2)
+
+summary(mod_doLT2)$r.squared; summary(mod_doLT2)$adj.r.squared
 summary(mod_doLT2)
 ```
 
 
+# Un-scaled modeling  
+
+
+## Subset for response vars  
+
+For now, only pulling water temp rather than running PCA - just trying to make sure model construction will work  
+
+```{r}
+dat_chl <- dat_all |> 
+  select(reserve,
+         chla_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend)
+
+formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
+```
+
+
+```{r}
+dat_domgl <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, domgl_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) 
+
+formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+```
+
+
+```{r}
+dat_dopct <- dat_all |> 
+  select(reserve,
+         dopct_trend = do_pct_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, dopct_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) 
+
+formula_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "), " + (1|reserve)")
+
+formula_fixed_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "))
+```
+
+
+```{r}
+dat_doLT2 <- preds_doLT2 |> 
+  select(reserve,
+         doLT2_trend = do_below2_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median, domgl_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median, nh4f_median, no23f_median, po4f_median,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend)
+
+formula_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "), " + (1|reserve)")
+
+formula_fixed_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "))
+```
+
+
+## Create global models    
+
+### Chl  
+
+```{r}
+mod_chl <- glmmTMB(as.formula(formula_chl),
+                    data = dat_chl)
+performance::check_singularity(mod_chl)
+r.squaredGLMM(mod_chl)
+summary(mod_chl)
+```
+
+Marginal r2 = 0.2877  
+Cond'l r2 = 0.7498 
+
+centering/scaling didn't change..... interesting  
+
+
+### DO mgl
+
+```{r}
+mod_domgl <- glmmTMB(as.formula(formula_domgl),
+                    data = dat_domgl)
+performance::check_singularity(mod_domgl)
+
+
+# drop random factor due to singular fit
+mod_domgl <- lm(as.formula(formula_fixed_domgl),
+                data = dat_domgl)
+performance::check_singularity(mod_domgl)
+
+summary(mod_domgl)$r.squared; summary(mod_domgl)$adj.r.squared
+summary(mod_domgl)
+```
+
+### DO %
+
+```{r}
+mod_dopct <- glmmTMB(as.formula(formula_dopct),
+                    data = dat_dopct)
+performance::check_singularity(mod_dopct)
+
+# drop random factor due to singular fit
+mod_dopct <- lm(as.formula(formula_fixed_dopct),
+                data = dat_dopct)
+performance::check_singularity(mod_dopct)
+
+summary(mod_dopct)$r.squared; summary(mod_dopct)$adj.r.squared
+summary(mod_dopct)
+```
+
+### DO < 2  
+
+```{r}
+mod_doLT2 <- glmmTMB(as.formula(formula_doLT2),
+                    data = dat_doLT2)
+performance::check_singularity(mod_doLT2)
+
+# drop random factor due to singular fit
+mod_doLT2 <- lm(as.formula(formula_fixed_doLT2),
+                data = dat_doLT2)
+performance::check_singularity(mod_doLT2)
+
+summary(mod_doLT2)$r.squared; summary(mod_doLT2)$adj.r.squared
+summary(mod_doLT2)
+```
+
+
+
+
+
+
+
+
+
+# Dredging  
 
 
 

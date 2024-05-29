@@ -1,0 +1,128 @@
+---
+title: "Summary of long-term trends"
+format: html
+toc: true
+toc-position: left
+echo: true
+code-fold: true
+warning: false
+message: false
+error: true
+fig-height: 7
+fig-width: 8
+---
+
+# Setup  
+
+```{r}
+library(tidyverse)
+```
+
+
+Read in the output from `02_long-term-trend__calculation_analyses.Rmd` - this file has all the standard errors, p-values, and everything else that didn't get incorporated into the `compiled predictors` data frame.  
+
+```{r}
+trnds <- read.csv(here::here("Outputs", "calculated_trends",
+                    "long-term-trends.csv"))
+```
+
+Remove certain stations; those below are removed during data frame combining.    
+
+```{r}
+# stations we'll remove due to being too deep or problematic in some other way
+# but where trends were mostly calculated, so we'll keep them until the end
+remove_stns <- c("pdbgd", "kachd", "kacsd", "sfbfm")
+
+# need to affix wq and nut to them though  
+remove_stns <- c(paste0(remove_stns, "wq"), paste0(remove_stns, "nut"))
+
+trnds <- trnds |> 
+  filter(!(station %in% remove_stns))
+```
+
+
+
+```{r}
+#| eval: false
+
+
+# See if any reserves have more than one met station
+# they don't, so don't need to evaluate this chunk
+# keeping it to document that we checked
+trnds |> 
+  select(station) |> 
+  filter(str_ends(station, "met")) |> 
+  distinct() |> 
+  janitor::tabyl(station)
+```
+
+
+# Histograms and numerical summary  
+
+```{r}
+ggplot(trnds,
+       aes(x = Slope,
+           fill = sig_trend)) +
+  geom_histogram(col = "gray40",
+                 alpha = 0.8,
+                 bins = 30) +
+  facet_wrap(~parameter,
+             scales = "free") +
+  geom_vline(xintercept = 0,
+             linewidth = 1) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(title = "Histograms of slope (change/yr) for each parameter",
+       fill = "p < 0.05?")
+```
+
+
+```{r}
+trnds_summ <- trnds |> 
+  filter(!is.na(Slope)) |> 
+  summarize(.by = parameter,
+            n = n(),
+            median_slope = median(Slope),
+            iqr_slope = IQR(Slope),
+            mean_slope = mean(Slope),
+            sd_slope = sd(Slope),
+            quantiles = list(round(quantile(Slope), 4))) |> 
+  mutate(across(median_slope:sd_slope,
+                function(x) round(x, 4)))
+```
+
+```{r}
+DT::datatable(trnds_summ)
+```
+
+
+# Ordered slope plots  
+
+```{r}
+p <- trnds |>
+  arrange(parameter, Slope, station) |> 
+  mutate(stparm = paste0(station, parameter)) |> 
+  ggplot(aes(y = forcats::fct_inorder(stparm), x = Slope)) +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high,
+                      col = sig_trend),
+                  alpha = 0.8) +
+  geom_vline(xintercept = 0) +
+  facet_wrap(~parameter, scales = "free") +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() +
+  labs(title = paste("slopes for all stations"),
+       subtitle = "sorted from lowest to highest",
+       x = "slope estimate and 95% ci",
+       y = "",
+       col = "p < 0.05?") +
+  theme(legend.position = "bottom")
+
+p +
+  theme(axis.text.y = element_blank())
+
+p +
+  coord_flip() +
+  theme(axis.text.x = element_blank())
+```
+
