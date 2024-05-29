@@ -10,8 +10,8 @@ WQ,do_proportion_below5,do_proportion_below5,proportion of dissolved oxygen read
 MET,atemp_median,atemp_median,monthly median air temperature,degrees C,none,gaussian,degrees C/yr
 MET,sqrt_prcp_total,totprcp_total,total monthly precipitation,mm,sqrt,gaussian,sqrt(mm)/yr
 MET,dailyPAR_median,dailyPAR_median,monthly median of daily-total photosynthetically active radiation,mmol/(m^2),none,gaussian,mmol/(m^2)/yr
-NUT,chla_n,chla_n,chlorophyll a,ug/L,log10,cnorm,log10(ug/L)/yr
-NUT,po4f,po4f,dissolved orthophosphate,mg/L,log10,cnorm,log10(mg/L)/yr
-NUT,nh4f,nh4f,dissolved ammonium,mg/L,log10,cnorm,log10(mg/L)/yr
-NUT,no23f,no23f,dissolved nitrite + nitrate,mg/L,log10,cnorm,log10(mg/L)/yr
+NUT,chla_n,chla_n,chlorophyll a,ug/L,natural log,cnorm,log(ug/L)/yr; can be interpreted as approx proportional change
+NUT,po4f,po4f,dissolved orthophosphate,mg/L,natural log,cnorm,log(mg/L)/yr; can be interpreted as approx proportional change
+NUT,nh4f,nh4f,dissolved ammonium,mg/L,natural log,cnorm,log(mg/L)/yr; can be interpreted as approx proportional change
+NUT,no23f,no23f,dissolved nitrite + nitrate,mg/L,natural log,cnorm,log(mg/L)/yr; can be interpreted as approx proportional change
 NUT,DIN_to_DIP,DIN_to_DIP,ratio of dissolved inorganic nitrogen (nh4f + no23f) to dissolved inorganic phosphorus (po4f),,,,

@@ -7,6 +7,8 @@ output:
 date: "`r Sys.Date()`"
 ---
 
+re-run 5/29/24 after using natural-log transformation on nutrients for trends (rather than log10)  
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,

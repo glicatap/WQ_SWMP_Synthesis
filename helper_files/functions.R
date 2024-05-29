@@ -322,7 +322,8 @@ subset_df <- function(type, main_df, station, parameter){
              "value" = all_of({{parameter}}))
   }
   # nut - grab stn, year, month, parameter, and censored column
-  # then log10-transform nutrient, and create a censored column for lognut 
+  # then log-transform nutrient, and create a censored column for lognut 
+  # as of 5/29/2024 this is natural-log, not log10  
   # will work with mgcv's gam functions
   if(type == "nut"){
     cens_col <- paste0(parameter, "_cens")
@@ -331,7 +332,7 @@ subset_df <- function(type, main_df, station, parameter){
       select(station, year, month,
              "value" = all_of({{parameter}}),
              "cens" = all_of({{cens_col}})) |> 
-      mutate(lognut = log10(value),
+      mutate(lognut = log(value),
              cens_lognut = case_when(cens == 0 ~ lognut,    # extra censoring column for gam
                                      cens == 1 ~ -Inf))
     # also create response matrix column for mgcv gam functions

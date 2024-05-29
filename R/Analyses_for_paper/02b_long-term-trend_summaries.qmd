@@ -1,16 +1,22 @@
 ---
 title: "Summary of long-term trends"
-format: html
-toc: true
-toc-position: left
+subtitle: "Using trends of log-transformed nutrients - not log10"
+date: today
+format: 
+  html:
+    toc: true
+    toc-location: left
+    code-fold: true
+    embed-resources: true
 echo: true
-code-fold: true
 warning: false
 message: false
 error: true
 fig-height: 7
 fig-width: 8
 ---
+
+As of 5/29/2024, calculating trends on natural-log transformed nutrients, so that (per Gelman et al. 2021, "Regression and Other Stories") coefficients can be interpreted as "approximate proportional differences; with a coefficient of 0.05, a difference of 1 in x corresponds to an approximate 5% difference in y, and so forth."  
 
 # Setup  
 
