@@ -6,16 +6,16 @@ To be filled in later
 
 The final dataset used in this project was downloaded from the CDMO through the [Advanced Query System, Zip download option](https://cdmo.baruch.sc.edu/aqs/zips.cfm "link to AQS zip download page") on 8/29/2023. 'All Reserves and Stations' was selected. The date range selected was 2002 - 2022. The downloaded zip file was 1.6 GB.
 
-## Repository Organization
+## Repository Organization  
 
-Sub-folders of this repository were created to provide some organization of the different coding needs for the project. Current sub-folders are:
+Sub-folders of this repository were created to provide some organization of the different coding needs for the project. Most sub-folders have a README with more detail. Current sub-folders are:
 
--   `Data` - meant to contain data, although the full dataset is not committed due to its size.\
--   `helper_files` - scripts of functions and definitions (e.g. which parameters and flags/codes to use) that are needed across sub-folders. Also contains some csv files with helpful information on sampling stations (from the CDMO dowload) and QAQC flags and codes.\
--   `Outputs` - where files generated from analyses and visualization code will belong.\
--   `R` - code! Several subfolders. As of 5/10/2024, key scripts used in the publishable analyses are in a folder called **`Analyses_for_publication`**. These were moved or copied from the other exploratory/process subfolders. Visualization scripts based on results may also go here.    
-    -   `Data_processing` - scripts that were used to process downloaded data by combining files from a station, removing data points that did not pass various QA/QC criteria, and aggregating to daily and monthly levels.\
-    -   `Long-Term_trend_analysis` - will be the subdirectory for trend scripts and tests.\
+-   `Data` - meant to contain data, although the full dataset is not committed due to its size. Described well by the [Data Processing readme](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Data_processing#readme).   
+-   `helper_files` - scripts of functions and definitions (e.g. which parameters and flags/codes to use) that are needed across sub-folders. Also contains some csv files with helpful information on sampling stations (from the CDMO dowload) and QAQC flags and codes.  
+-   `Outputs` - files generated from analyses and visualization code. This includes calculated trends, predictive model outputs, and visualizations. [Outputs readme](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#readme)    
+-   `R` - code! Several subfolders. As of 5/10/2024, key scripts used in the publishable analyses are in a folder called **`Analyses_for_publication`**. These were moved or copied from the other exploratory/process subfolders.     
+    -   `Data_processing` - scripts that were used to process downloaded data by combining files from a station, removing data points that did not pass various QA/QC criteria, and aggregating to daily and monthly levels. [Data Processing readme](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Data_processing#readme)    
+    -   `Long-Term_trend_analysis` - originally the subdirectory for trend scripts and tests.  
     -   `initial_explorations` - scripts that were written to visualize and explore the data before final download and processing occurred. There are additional sub-folders here for different topics, described in a separate README within this directory.
 
 ## Compilation of details and additional READMEs
@@ -31,11 +31,11 @@ While working on code, I have generally tried to keep detailed READMEs in the fo
     -   [QAQCd files by station](https://uwmadison.box.com/s/aebc6s72u5q5y9bcgbtn74qknj78j2s5) - data files; one .RData file per station, with all years combined and only approved data points retained.  
     -   [Aggregated by month](https://uwmadison.box.com/s/7krz7h6zi4qcpdke0mmvyxppqfjvtz4e) and data type (WQ/MET/NUT); only approved data points retained.    
     -   Aggregated by day (WQ/MET only): [.RData format](https://uwmadison.box.com/s/6lzq2nxaf2uiyqwov96dn0fi9pcplk2l) / [.csv format](https://uwmadison.box.com/s/0xhk0fopoqsgrenj0nx4102e3f9ybzdx)  
--   [Explanation of long-term trend calculations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs/calculated_trends#explanation-of-trend-calculations) (in /Outputs/calculated_trends README)  
-    -   [Calculated trends file](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/calculated_trends/long-term-trends.csv) - in Outputs/calculated_trends folder      
-    -   [Data dictionary](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/calculated_trends/data_dictionary_trend_parameters.csv) for csv that explains parameters, measurements, transformations, and model specifications    
-    -   [Data dictionary](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/calculated_trends/data_dictionary_trend_analyses.csv) for csv that contains output of trend analyses  
--   Overall medians: [WQ/NUT stations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/WQ-NUT_overallMedians.csv); [MET stations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/MET_overallMedians.csv). Nutrient medians were calculated using robust regression on order statistics (ROS) in order to account for censored data, via the `NADA` R package.    
--   Seasonality:  [Median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/seasonal_amplitude_medians.csv); [Trends in median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/seasonal_amplitude_trends.csv)  
--   [Compiled predictors for chla/domgl](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/compiled_predictors.csv) csv - includes long-term trend outputs from above, as well as medians. When other predictor values are obtained, they will be added.  
--   [Compiled predictors for do<2mgl](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/doLT2_compiled_predictors.csv) csv - includes long-term trend for proportion of DO readings < 2, as well as all other trends and predictors. This is a separate file because there are 5 fewer stations where this could be calculated than the rest. When other predictor values are obtained, they will be added.
+-   [Explanation of long-term trend calculations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#explanation-of-trend-calculations) (in the Outputs readme)  
+    -   [Calculated trends file](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/02_calculated_long-term-trends/long-term-trends.csv) - in Outputs/02_calculated_long-term-trends folder      
+    -   [Data dictionary](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/02_calculated_long-term-trends/data_dictionary_trend_parameters.csv) for csv that explains parameters, measurements, transformations, and model specifications    
+    -   [Data dictionary](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/02_calculated_long-term-trends/data_dictionary_trend_parameters.csv) for csv that contains output of trend analyses  
+-   Overall medians: [WQ/NUT stations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/01_calculated_medians/WQ-NUT_overallMedians.csv); [MET stations](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/01_calculated_medians/MET_overallMedians.csv). Nutrient medians were calculated using robust regression on order statistics (ROS) in order to account for censored data, via the `NADA` R package.    
+-   Seasonality:  [Median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/03_calculated_seasonality/seasonal_amplitude_medians.csv); [Trends in median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/03_calculated_seasonality/seasonal_amplitude_trends.csv)  
+-   [Compiled predictors for chla/domgl](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/04_compiled_predictors/compiled_predictors.csv) csv - includes long-term trend outputs from above, as well as medians. When other predictor values are obtained, they will be added.  
+-   [Compiled predictors for do<2mgl](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/04_compiled_predictors/doLT2_compiled_predictors.csv) csv - includes long-term trend for proportion of DO readings < 2, as well as all other trends and predictors. This is a separate file because there are 5 fewer stations where this could be calculated than the rest. When other predictor values are obtained, they will be added.
