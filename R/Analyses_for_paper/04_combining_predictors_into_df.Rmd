@@ -50,21 +50,31 @@ Read in the previously calculated things. Only keep key parameters (and medians)
 ```{r load-data}
 # medians
 # wq/nut
-medians_wqnut <- read.csv(here::here("Outputs", "WQ-NUT_overallMedians.csv"))
+medians_wqnut <- read.csv(here::here("Outputs", 
+                                     "01_calculated_medians",
+                                     "WQ-NUT_overallMedians.csv"))
 
 # met
-medians_met <- read.csv(here::here("Outputs", "MET_overallMedians.csv"))
+medians_met <- read.csv(here::here("Outputs", 
+                                   "01_calculated_medians",
+                                   "MET_overallMedians.csv"))
 
 # seasonal amplitude
-medians_seasonality <- read.csv(here::here("Outputs", "seasonal_amplitude_medians.csv"))
+medians_seasonality <- read.csv(here::here("Outputs", 
+                                           "03_calculated_seasonality",
+                                           "seasonal_amplitude_medians.csv"))
 
 
 # long-term trends
 # wq/nut/met
-trends_wqnutmet <- read.csv(here::here("Outputs", "calculated_trends", "long-term-trends.csv"))
+trends_wqnutmet <- read.csv(here::here("Outputs", 
+                                       "02_calculated_long-term-trends",
+                                       "long-term-trends.csv"))
 
 # seasonal amplitude
-trends_seasonality <- read.csv(here::here("Outputs", "seasonal_amplitude_medians.csv"))
+trends_seasonality <- read.csv(here::here("Outputs", 
+                                          "03_calculated_seasonality",
+                                          "seasonal_amplitude_trends.csv"))
 
 
 # station info
@@ -194,7 +204,9 @@ all_predictors <- all_predictors |>
 # Writing out  
 
 ```{r}
-write.csv(all_predictors, here::here("Outputs", "compiled_predictors.csv"),
+write.csv(all_predictors, here::here("Outputs", 
+                                     "04_compiled_predictors",
+                                     "compiled_predictors.csv"),
           row.names = FALSE,
           na = "")
 ```
@@ -218,7 +230,9 @@ doLT2 <- trends_wqnutmet |>
          !(station %in% remove_stns)) |> 
   left_join(all_predictors)
 
-write.csv(doLT2, here::here("Outputs", "doLT2_compiled_predictors.csv"),
+write.csv(doLT2, here::here("Outputs", 
+                            "04_compiled_predictors",
+                            "doLT2_compiled_predictors.csv"),
           row.names = FALSE,
           na = "")
 ```

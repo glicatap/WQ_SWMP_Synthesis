@@ -10,6 +10,8 @@ message: false
 error: true
 ---
 
+Updated output folders 6/3/24.    
+
 ```{r}
 library(tidyverse)
 library(NADA)
@@ -287,6 +289,7 @@ dat_out <- left_join(all_meds,
 ```{r}
 write.csv(dat_out,
           here::here("Outputs",
+                     "01_calculated_medians",
                      "WQ-NUT_overallMedians.csv"))
 ```
 
@@ -356,6 +359,7 @@ met_meds <- left_join(met_meds, met_nPoints, by = "station") |>
 ```{r}
 write.csv(met_meds,
           here::here("Outputs",
+                     "01_calculated_medians",
                      "MET_overallMedians.csv"))
 ```
 

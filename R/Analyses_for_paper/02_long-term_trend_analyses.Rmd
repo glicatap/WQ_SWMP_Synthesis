@@ -7,6 +7,8 @@ output:
 date: "`r Sys.Date()`"
 ---
 
+6/4/24 updated output folders. Did not re-run; changed locations in this .rmd file but simply moved earlier files due to run time.  
+
 As of 5/29/2024, calculating trends on natural-log transformed nutrients, so that (per Gelman et al. 2021, "Regression and Other Stories") coefficients can be interpreted as "approximate proportional differences; with a coefficient of 0.05, a difference of 1 in x corresponds to an approximate 5% difference in y, and so forth." This was accomplished via the `subset_df()` function in the file `helper_files/functions.R`.    
 
 ```{r setup, include=FALSE}
@@ -616,7 +618,7 @@ for(i in 1:nrow(met_grid)){
   if(exists("bam_out")){
     
     # save the entire bam object, including autocorrelation info
-    file_out <- here::here("Outputs", "calculated_trends", "bam_outputs",
+    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs",
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
@@ -924,12 +926,12 @@ trends_nut |>
 
 ```{r}
 save(trends_df, trends_met, trends_nut, file = here::here("Outputs", 
-                                              "calculated_trends",
+                                              "02_calculated_long-term-trends",
                                               "long-term-trends.RData"))
 
 trends_all <- bind_rows(trends_df, trends_met, trends_nut)
 write.csv(trends_all, file = here::here("Outputs",
-                                        "calculated_trends",
+                                        "02_calculated_long-term-trends",
                                         "long-term-trends.csv"))
 ```
 

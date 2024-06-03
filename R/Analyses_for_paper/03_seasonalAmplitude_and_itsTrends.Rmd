@@ -38,7 +38,7 @@ wq <- wq |>
 ```{r}
 # we really only want to use stations where we've already calculated long-term trends
 # so read those in too and subset the main data frames
-load(here::here("Outputs", "calculated_trends", "long-term-trends.RData"))
+load(here::here("Outputs", "02_calculated_long-term-trends", "long-term-trends.RData"))
 
 # station names so far are the long form (wq and nut at ends)
 wq <- filter(wq, station %in% trends_df$station)
@@ -178,12 +178,18 @@ Write out
 
 ```{r}
 saveRDS(all_medians, file = here::here("Outputs", 
-                                         "seasonal_amplitude_medians.rds"))
-write.csv(all_medians, file = here::here("Outputs", "seasonal_amplitude_medians.csv"))
+                                       "03_calculated_seasonality",
+                                       "seasonal_amplitude_medians.rds"))
+write.csv(all_medians, file = here::here("Outputs",
+                                         "03_calculated_seasonality",
+                                         "seasonal_amplitude_medians.csv"))
 
-saveRDS(all_estimates, file = here::here("Outputs", "calculated_trends",
+saveRDS(all_estimates, file = here::here("Outputs",  
+                                         "03_calculated_seasonality",
                                          "seasonal_amplitude_trends.rds"))
-write.csv(all_estimates, file = here::here("Outputs", "seasonal_amplitude_trends.csv"))
+write.csv(all_estimates, file = here::here("Outputs", 
+                                           "03_calculated_seasonality",
+                                           "seasonal_amplitude_trends.csv"))
 ```
 
 

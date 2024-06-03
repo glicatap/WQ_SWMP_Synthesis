@@ -28,7 +28,7 @@ library(tidyverse)
 Read in the output from `02_long-term-trend__calculation_analyses.Rmd` - this file has all the standard errors, p-values, and everything else that didn't get incorporated into the `compiled predictors` data frame.  
 
 ```{r}
-trnds <- read.csv(here::here("Outputs", "calculated_trends",
+trnds <- read.csv(here::here("Outputs", "02_calculated_long-term-trends",
                     "long-term-trends.csv"))
 ```
 
