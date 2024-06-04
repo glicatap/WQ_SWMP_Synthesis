@@ -1,0 +1,67 @@
+---
+title: "Translating nutrient trends to %/year"
+date: today
+format: 
+    html:
+        toc: true
+        toc-location: left
+        code-fold: true
+        embed-resources: true
+warning: false
+message: false
+error: true
+---
+
+Long-term trends were calculated on the natural log of nutrient concentrations. So in output files (and as inputs into predictive models), the units for "trend" and CIs are "log(units)/year". For graphing and discussion, it is easier to understand a percent change per year, so in this file, the back-transformations are made.  
+
+# Data Import  
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+trends_in <- here::here("Outputs",
+                        "02_calculated_long-term-trends",
+                        "long-term-trends.csv")
+
+nut_trends_out <- here::here("Outputs",
+                        "02_calculated_long-term-trends",
+                        "NUT_trends_back-transformed.csv")
+```
+
+```{r}
+trnds <- read.csv(trends_in)
+```
+
+```{r}
+trnds2 <- trnds |> 
+  filter(parameter %in% c("chla_n",
+                          "nh4f",
+                          "no23f",
+                          "po4f")) |> 
+  select(station,
+         param = parameter,
+         trend_in_log = Slope,
+         ciLow_trend = conf.low,
+         ciHigh_trend = conf.high,
+         p_trend = p.value,
+         sig_seasonality)
+
+trnds3 <- trnds2 |> 
+  mutate(trend_multiplicative = round(exp(trend_in_log), 4),
+         trend_pctPerYear = (trend_multiplicative - 1) * 100,
+         ciLow_pctPerYear = (round(exp(ciLow_trend), 4) - 1) * 100,
+         ciHigh_pctPerYear = (round(exp(ciHigh_trend), 4) - 1) * 100)
+  
+```
+
+# Export  
+
+```{r}
+write.csv(trnds3,
+          nut_trends_out,
+          na = "",
+          row.names = FALSE)
+```
+
