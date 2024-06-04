@@ -1,0 +1,100 @@
+---
+title: "Adding info from SWMP CLUE and VIMS Clustering to compiled predictors"
+date: today
+format: 
+    html:
+        toc: true
+        toc-location: left
+        code-fold: true
+        embed-resources: true
+warning: false
+message: false
+error: true
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+# Set up import and export paths  
+
+```{r}
+# compiled data frames, in and out
+comp_in <- here::here("Outputs", "04_compiled_predictors",
+                      "compiled_predictors.csv")
+comp_doLT2_in <- here::here("Outputs", "04_compiled_predictors",
+                      "doLT2_compiled_predictors.csv")
+
+comp_out <- here::here("Outputs", "04_compiled_predictors",
+                      "compiled_predictors_withExternalInfo.csv")
+comp_doLT2_out <- here::here("Outputs", "04_compiled_predictors",
+                      "doLT2_compiled_predictors_withExternalInfo.csv")
+
+# external info to import
+clue_in <- here::here("Data", "Copy of SWMP CLUE_All Site Classification_Mar2022_for review.xlsx")
+
+clusters_in <- here::here("Outputs", "01b_median-clustering-DP-CF",
+                          "swmp_clstr_med_pc.csv")
+```
+
+# Import and prep external info  
+
+Trim station names; when Ecoregion isn't present insert NERR_Bioregion (Great Lakes sites), subset  
+
+```{r}
+clue <- read_xlsx(clue_in,
+                  skip = 1)
+clue2 <- clue |> 
+  mutate(StationCode = tolower(StationCode),
+         StationCode = substr(StationCode, 1, 5),
+         Ecoregion = case_when(is.na(Ecoregion) ~ NERR_BioRegion,
+                               .default = Ecoregion)) |> 
+  select(station = StationCode,
+         StationName,
+         Ecoregion:PrimaryWaterSource,
+         BioticSetting:BioticSubclass,
+         Dev_TotalArea:Imp_pctLand
+         )
+```
+
+
+```{r}
+clusters <- read.csv(clusters_in) |> 
+  select(station = code,
+         cluster)
+```
+
+
+
+# Import compiled data frames and join  
+
+```{r}
+comp <- read.csv(comp_in)
+comp_doLT2 <- read.csv(comp_doLT2_in)
+
+comp_joined <- comp |> 
+  left_join(clue2, by = "station") |> 
+  left_join(clusters, by = "station")
+
+comp_doLT2_joined <- comp_doLT2 |> 
+  left_join(clue2, by = "station") |> 
+  left_join(clusters, by = "station")
+```
+
+
+# Export  
+
+```{r}
+write.csv(comp_joined,
+          comp_out,
+          na = "",
+          row.names = FALSE)
+
+write.csv(comp_doLT2_joined,
+          comp_doLT2_out,
+          na = "",
+          row.names = FALSE)
+```
+
+

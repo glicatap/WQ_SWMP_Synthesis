@@ -1,0 +1,209 @@
+---
+title: "Calculations of medians and their quantiles"
+format: html
+toc: true
+toc-position: left
+echo: true
+code-fold: true
+warning: false
+message: false
+error: true
+---
+
+Updated output folders 6/3/24. 
+
+Based on 01_median_calculation.qmd, but I've realized I also want to know the quantiles of the monthly median for each station.  
+
+```{r}
+library(tidyverse)
+library(NADA)
+```
+
+```{r}
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyWQ.RData"))
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyNUT.RData"))
+load(here::here("Data", "QAQCd_monthly_byType",
+                "SWMP_monthlyMET.RData"))
+stn_mdat <- read_csv(here::here("helper_files",
+                                "sampling_stations.csv"))
+```
+
+## Station Information  
+
+```{r}
+# pull relevant station info for combining
+# limit to wq stations because only using wq/nut combinations
+stn_info <- stn_mdat |> 
+  select(`Station Code`,
+         `Station Name`,
+         Latitude,
+         Longitude,
+         State,
+         `Reserve Name`,
+         "Reserve Code" = `NERR Site ID`) |> 
+  mutate(State = toupper(State),
+         `Reserve Code` = toupper(`Reserve Code`),
+         Station = substr(`Station Code`, 1, 5),
+         Longitude = as.numeric(Longitude)) |> 
+  filter(str_ends(`Station Code`, "wq")) |> 
+  relocate(Station) |> 
+  select(-`Station Code`)
+```
+
+## WQ Medians  
+
+```{r}
+quantile_df <- function(x){
+  data.frame("value" = quantile(x, na.rm = TRUE,
+                                probs = c(0, 0.05, 0.1,
+                                          0.25, 0.5, 0.75,
+                                          0.90, 0.95, 1))) |> 
+    rownames_to_column("quantile")
+}
+
+
+wq_meds <- wq |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            across(c(temp_median, 
+                     spcond_median,
+                     sal_median,
+                     do_mgl_median,
+                     do_pct_median,
+                     ph_median,
+                     turb_median),
+                   function(x) list(quantile_df(x))))
+
+wq_medsAndQuantiles <- wq_meds |> 
+  unnest(c(temp_median, spcond_median, sal_median,
+           do_mgl_median, do_pct_median,
+           ph_median, turb_median),
+         names_sep = ".") |> 
+  rename(quantile = temp_median.quantile) |> 
+  select(-all_of(ends_with(".quantile")))
+
+wq_medsAndQuantiles_forGraphing <- wq_medsAndQuantiles |> 
+  pivot_longer(-c(station, quantile),
+               names_to = "param",
+               values_to = "value") |> 
+  mutate(param = str_remove(param, "_median.value"),
+         quantile = paste0("p_", quantile),
+         quantile = str_remove(quantile, "%")) |> 
+  pivot_wider(names_from = quantile,
+              values_from = value)
+  
+```
+
+
+
+## NUT Medians  
+
+Criteria for inclusion:  
+
+-  start year doesn't equal end year  
+-  at least 12 values for every nutrient  
+
+
+### Deal with censoring  
+
+
+using ROS
+
+
+```{r}
+censqtl_fun <- function(df, nut, cens){
+  tmp <- data.frame("param" = df[[nut]],
+                    "censoring" = df[[cens]]) 
+  
+  # if all values are NA, return NA
+  if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
+  
+  # if there aren't at least 10 values, return NA
+  if(nrow(tmp) < 5) return(NA)
+  
+  # otherwise calculate the quantiles
+  tmp <- tmp |> 
+    mutate(censoring = as.logical(censoring),
+           censoring = case_when(param == 0 ~ TRUE,
+                                 .default = censoring),
+           param = case_when(param == 0 ~ 0.01,
+                             .default = param)) |> 
+    na.omit()
+  
+  out <- cenros(tmp$param, tmp$censoring)  # ROS
+  out <- data.frame("value" = quantile(out)) |> 
+    rownames_to_column("quantile")
+  return(out)
+}
+
+```
+
+Substitute NO3 for NO23 for the HUD stations.  
+
+```{r}
+# copied from when I inserted this into 02_long-term_trend_analyses.Rmd
+nut <- nut |> 
+  mutate(no23b = case_when(str_starts(station, "hud") ~ no3f,
+                           .default = no23f),
+         no23_cens_b = case_when(str_starts(station, "hud") ~ no3f_cens,
+                           .default = no23f_cens)) |> 
+  select(-no23f, -no23f_cens) |> 
+  rename(no23f = no23b,
+         no23f_cens = no23_cens_b)
+```
+
+
+```{r}
+nut_meds_cens <- nut |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            chla = list(censqtl_fun(.data, nut = "chla_n", cens = "chla_n_cens")),
+            nh4f = list(censqtl_fun(.data, nut = "nh4f", cens = "nh4f_cens")),
+            no23f = list(censqtl_fun(.data, nut = "no23f", cens = "no23f_cens")),
+            po4f = list(censqtl_fun(.data, nut = "po4f", cens = "po4f_cens"))
+            )
+```
+
+```{r}
+nut_medsAndQuantiles <- nut_meds_cens |> 
+  unnest(c(chla, nh4f, no23f, po4f),
+         names_sep = ".") |> 
+  rename(quantile = chla.quantile) |> 
+  select(-all_of(ends_with(".quantile")))
+
+nut_medsAndQuantiles_forGraphing <- nut_medsAndQuantiles |> 
+  pivot_longer(-c(station, quantile),
+               names_to = "param",
+               values_to = "value") |> 
+  mutate(param = str_remove(param, ".value"),
+         quantile = paste0("p_", quantile),
+         quantile = str_remove(quantile, "%")) |> 
+  pivot_wider(names_from = quantile,
+              values_from = value) |> 
+  select(-p_NA)
+```
+
+
+
+## combine and write out  
+
+```{r}
+wq_nut_medsAndQuantiles <- bind_rows(wq_medsAndQuantiles_forGraphing,
+                                     nut_medsAndQuantiles_forGraphing) |> 
+  select(station, param, 
+         p_0, p_5, p_10,
+         p_25, p_50, p_75,
+         p_90, p_95, p_100)
+```
+
+
+```{r}
+write.csv(wq_nut_medsAndQuantiles,
+          here::here("Outputs",
+                     "01_calculated_medians",
+                     "WQ-NUT_overallMediansAndQuantiles.csv"),
+          na = "",
+          row.names = FALSE)
+```
