@@ -119,7 +119,192 @@ pal <- as.vector(color("muted")(9))
 pal <- c(pal, pal)
 ```
 
-# About the graphs  
+
+# Ordered slope plots  
+
+```{r}
+ordered_slopes <- all |>
+  mutate(trend = case_when(param %in% c("chla", "nh4f", "no23f", "po4f") ~ trend_in_log,
+                           .default = trend),
+         param = case_when(param %in% c("chla", "nh4f", "no23f", "po4f") ~ paste0("log.", param),
+                           .default = param),
+         sig_trend = case_when(p_trend < 0.05 ~ "yes",
+                               .default = "no")
+         ) |> 
+  arrange(param, trend, station) |> 
+  mutate(stparm = paste0(station, param))
+```
+
+
+## Colored by significance of slope  
+
+```{r}
+#| fig-width: 6
+#| fig-height: 7
+
+p <- 
+  ggplot(ordered_slopes, 
+         aes(y = forcats::fct_inorder(stparm), x = trend)) +
+  geom_pointrange(aes(xmin = ciLow_trend, xmax = ciHigh_trend,
+                      col = sig_trend),
+                  alpha = 0.8) +
+  geom_vline(xintercept = 0) +
+  facet_wrap(~param, scales = "free") +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() +
+  labs(title = paste("slopes for all stations"),
+       subtitle = "sorted from lowest to highest",
+       x = "slope estimate and 95% ci",
+       y = "",
+       col = "p < 0.05?") +
+  theme(legend.position = "bottom")
+
+p +
+  theme(axis.text.y = element_blank())
+
+```
+
+
+## Colored by Ecoregion  
+
+```{r}
+#| fig-width: 6
+
+p2 <-   ggplot(ordered_slopes, 
+         aes(y = forcats::fct_inorder(stparm), x = trend)) +
+  geom_pointrange(aes(xmin = ciLow_trend, xmax = ciHigh_trend,
+                      col = Ecoregion,
+                      shape = Ecoregion),
+                  alpha = 0.8) +
+  geom_vline(xintercept = 0) +
+  facet_wrap(~param, scales = "free") +
+  theme_bw() +
+  scale_color_manual(values = pal) +
+  scale_shape_manual(values = shps) +
+  labs(title = paste("slopes for all stations"),
+       subtitle = "sorted from lowest to highest",
+       x = "slope estimate and 95% ci",
+       y = "") +
+  theme(legend.position = "bottom")
+
+p2 +
+  theme(axis.text.y = element_blank(),
+        legend.text = element_text(size = rel(0.7)),
+        legend.title.position = "top") +
+  guides(col = guide_legend(byrow = TRUE,
+                            ncol = 3))
+  
+```
+
+### One parameter at a time  
+
+```{r}
+#| fig-width: 7
+#| fig-height: 8
+
+params <- unique(ordered_slopes$param)
+
+for(i in seq_along(params)){
+  parm = params[i]
+  sub_dat <- filter(ordered_slopes, param == parm)
+  
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = Ecoregion,
+                        shape = Ecoregion)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = fct_inorder(station),
+                        x = trend,
+                        xmin = ciLow_trend,
+                        xmax = ciHigh_trend)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(title = parm,
+         y = NULL,
+         x = "trend") +
+    theme_bw() +
+    theme(legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.8))) 
+  
+  
+  print(p_trnds)
+}
+
+```
+
+
+
+## Colored by cluster  
+
+```{r}
+#| fig-width: 6
+#| fig-height: 7
+
+p3 <-   ggplot(ordered_slopes, 
+         aes(y = forcats::fct_inorder(stparm), x = trend)) +
+  geom_pointrange(aes(xmin = ciLow_trend, xmax = ciHigh_trend,
+                      col = cluster),
+                  alpha = 0.8) +
+  geom_vline(xintercept = 0) +
+  facet_wrap(~param, scales = "free") +
+  theme_bw() +
+  scale_color_muted() +
+  labs(title = paste("slopes for all stations"),
+       subtitle = "sorted from lowest to highest",
+       x = "slope estimate and 95% ci",
+       y = "") +
+  theme(legend.position = "bottom")
+
+p3 +
+  theme(axis.text.y = element_blank())
+
+```
+
+### One parameter at a time  
+
+```{r}
+#| fig-width: 5
+#| fig-height: 8
+
+
+params <- unique(ordered_slopes$param)
+
+for(i in seq_along(params)){
+  parm = params[i]
+  sub_dat <- filter(ordered_slopes, param == parm)
+  
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = cluster,
+                        shape = cluster)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = fct_inorder(station),
+                        x = trend,
+                        xmin = ciLow_trend,
+                        xmax = ciHigh_trend)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(title = parm,
+         y = NULL,
+         x = "trend") +
+    theme_bw() +
+    theme(legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.8))) 
+  
+  
+  print(p_trnds)
+}
+
+```
+
+
+# Ordered station plots  
 
 Bars around points indicate:  
 
@@ -130,6 +315,253 @@ Vertical lines on plots indicate:
 
 -  left panel: overall median  
 -  right panel: trend of 0 (no trend)  
+
+
+**If you only look at one set of graphs, look at the first batch - organized within Ecoregion, colored by Ecoregion.** I think these are the most appealing, but created other versions because I thought people would ask what they'd look like.  
+
+
+# Stations ordered within Ecoregion  
+
+Stations are ordered by Ecoregion, followed by Reserve, then Station.  
+
+## Colored by Ecoregion  
+
+### WQ  
+
+```{r}
+wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
+
+for(i in seq_along(wq_parms)){
+  parm = wq_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = Ecoregion,
+                       shape = Ecoregion)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = Ecoregion,
+                        shape = Ecoregion)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend,
+                        xmin = ciLow_trend,
+                        xmax = ciHigh_trend)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (measurement units/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          legend.title.position = 'top',
+          legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.9))) &
+    guides(col = guide_legend(byrow = TRUE,
+                              ncol = 3))
+  
+  
+  print(p_out)
+}
+
+```
+
+### NUT  
+
+```{r}
+nut_parms <- c("chla", "nh4f", "no23f", "po4f")
+
+for(i in seq_along(nut_parms)){
+  parm = nut_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = Ecoregion,
+                       shape = Ecoregion)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_x_log10() +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = Ecoregion,
+                        shape = Ecoregion)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend_pctPerYear,
+                        xmin = ciLow_pctPerYear,
+                        xmax = ciHigh_pctPerYear)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (% change/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          legend.title.position = 'top',
+          legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.9))) &
+    guides(col = guide_legend(byrow = TRUE,
+                              ncol = 3))
+  
+  
+  print(p_out)
+}
+
+```
+
+## Colored by cluster  
+
+### WQ  
+
+
+```{r}
+wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
+
+for(i in seq_along(wq_parms)){
+  parm = wq_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = cluster,
+                       shape = cluster)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = cluster,
+                        shape = cluster)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend,
+                        xmin = ciLow_trend,
+                        xmax = ciHigh_trend)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (measurement units/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          axis.text.y = element_text(size = rel(0.9)))
+  
+  
+  print(p_out)
+}
+
+```
+
+### NUT  
+
+```{r}
+nut_parms <- c("chla", "nh4f", "no23f", "po4f")
+
+for(i in seq_along(nut_parms)){
+  parm = nut_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = cluster,
+                       shape = cluster)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_x_log10() +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = cluster,
+                        shape = cluster)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend_pctPerYear,
+                        xmin = ciLow_pctPerYear,
+                        xmax = ciHigh_pctPerYear)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (% change/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          axis.text.y = element_text(size = rel(0.9)))
+  
+  
+  print(p_out)
+}
+
+```
+
+
+
+
 
 # Stations ordered alphabetically  
 
@@ -377,243 +809,4 @@ for(i in seq_along(nut_parms)){
 
 
 
-
-# Stations ordered within Ecoregion  
-
-Stations are ordered by Ecoregion, followed by Reserve, then Station.  
-
-## Colored by Ecoregion  
-
-### WQ  
-
-```{r}
-wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
-
-for(i in seq_along(wq_parms)){
-  parm = wq_parms[i]
-  sub_dat <- filter(all, param == parm)
-  
-  
-  p_meds <- ggplot(sub_dat,
-                   aes(col = Ecoregion,
-                       shape = Ecoregion)) +
-    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = p_50,
-                        xmin = p_25,
-                        xmax = p_75)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "monthly median")
-  
-  p_trnds <- ggplot(sub_dat,
-                    aes(col = Ecoregion,
-                        shape = Ecoregion)) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = trend,
-                        xmin = ciLow_trend,
-                        xmax = ciHigh_trend)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "trend (measurement units/yr)")
-  
-  
-  p_out <- p_meds + p_trnds +
-    plot_annotation(title = parm,
-                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
-    plot_layout(guides = 'collect',
-                axes = 'collect') &
-    theme_bw() &
-    theme(legend.position = 'bottom',
-          legend.title.position = 'top',
-          legend.margin = margin(0, 0, 0, 0),
-          legend.text = element_text(size = rel(0.7)),
-          legend.key.spacing.y = unit(0.2, "pt"),
-          axis.text.y = element_text(size = rel(0.9))) &
-    guides(col = guide_legend(byrow = TRUE,
-                              ncol = 3))
-  
-  
-  print(p_out)
-}
-
-```
-
-### NUT  
-
-```{r}
-nut_parms <- c("chla", "nh4f", "no23f", "po4f")
-
-for(i in seq_along(nut_parms)){
-  parm = nut_parms[i]
-  sub_dat <- filter(all, param == parm)
-  
-  
-  p_meds <- ggplot(sub_dat,
-                   aes(col = Ecoregion,
-                       shape = Ecoregion)) +
-    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = p_50,
-                        xmin = p_25,
-                        xmax = p_75)) +
-    scale_x_log10() +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "monthly median")
-  
-  p_trnds <- ggplot(sub_dat,
-                    aes(col = Ecoregion,
-                        shape = Ecoregion)) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = trend_pctPerYear,
-                        xmin = ciLow_pctPerYear,
-                        xmax = ciHigh_pctPerYear)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "trend (% change/yr)")
-  
-  
-  p_out <- p_meds + p_trnds +
-    plot_annotation(title = parm,
-                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
-    plot_layout(guides = 'collect',
-                axes = 'collect') &
-    theme_bw() &
-    theme(legend.position = 'bottom',
-          legend.title.position = 'top',
-          legend.margin = margin(0, 0, 0, 0),
-          legend.text = element_text(size = rel(0.7)),
-          legend.key.spacing.y = unit(0.2, "pt"),
-          axis.text.y = element_text(size = rel(0.9))) &
-    guides(col = guide_legend(byrow = TRUE,
-                              ncol = 3))
-  
-  
-  print(p_out)
-}
-
-```
-
-## Colored by cluster  
-
-### WQ  
-
-
-```{r}
-wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
-
-for(i in seq_along(wq_parms)){
-  parm = wq_parms[i]
-  sub_dat <- filter(all, param == parm)
-  
-  
-  p_meds <- ggplot(sub_dat,
-                   aes(col = cluster,
-                       shape = cluster)) +
-    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = p_50,
-                        xmin = p_25,
-                        xmax = p_75)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "monthly median")
-  
-  p_trnds <- ggplot(sub_dat,
-                    aes(col = cluster,
-                        shape = cluster)) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = trend,
-                        xmin = ciLow_trend,
-                        xmax = ciHigh_trend)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "trend (measurement units/yr)")
-  
-  
-  p_out <- p_meds + p_trnds +
-    plot_annotation(title = parm,
-                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
-    plot_layout(guides = 'collect',
-                axes = 'collect') &
-    theme_bw() &
-    theme(legend.position = 'bottom',
-          axis.text.y = element_text(size = rel(0.9)))
-  
-  
-  print(p_out)
-}
-
-```
-
-### NUT  
-
-```{r}
-nut_parms <- c("chla", "nh4f", "no23f", "po4f")
-
-for(i in seq_along(nut_parms)){
-  parm = nut_parms[i]
-  sub_dat <- filter(all, param == parm)
-  
-  
-  p_meds <- ggplot(sub_dat,
-                   aes(col = cluster,
-                       shape = cluster)) +
-    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = p_50,
-                        xmin = p_25,
-                        xmax = p_75)) +
-    scale_x_log10() +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "monthly median")
-  
-  p_trnds <- ggplot(sub_dat,
-                    aes(col = cluster,
-                        shape = cluster)) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    geom_pointrange(aes(y = stn_factor,
-                        x = trend_pctPerYear,
-                        xmin = ciLow_pctPerYear,
-                        xmax = ciHigh_pctPerYear)) +
-    scale_color_manual(values = pal) +
-    scale_shape_manual(values = shps) +
-    labs(y = NULL,
-         x = "trend (% change/yr)")
-  
-  
-  p_out <- p_meds + p_trnds +
-    plot_annotation(title = parm,
-                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
-    plot_layout(guides = 'collect',
-                axes = 'collect') &
-    theme_bw() &
-    theme(legend.position = 'bottom',
-          axis.text.y = element_text(size = rel(0.9)))
-  
-  
-  print(p_out)
-}
-
-```
 
