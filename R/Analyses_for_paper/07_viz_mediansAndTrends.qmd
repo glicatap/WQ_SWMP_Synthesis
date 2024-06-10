@@ -1,5 +1,6 @@
 ---
 title: "Visualization of WQ/NUT medians, trends, and the uncertainty in each"
+output-file: "Viz_mediansAndTrends_simplified.html"
 date: today
 format: 
     html:
@@ -165,10 +166,13 @@ p +
 ```
 
 
-## Colored by Ecoregion  
 
 ```{r}
+#| eval: false
 #| fig-width: 6
+
+## Colored by Ecoregion  
+
 
 p2 <-   ggplot(ordered_slopes, 
          aes(y = forcats::fct_inorder(stparm), x = trend)) +
@@ -196,11 +200,15 @@ p2 +
   
 ```
 
-### One parameter at a time  
+
 
 ```{r}
+#| eval: false
 #| fig-width: 7
 #| fig-height: 8
+
+### One parameter at a time  
+# colored by Ecoregion
 
 params <- unique(ordered_slopes$param)
 
@@ -240,6 +248,7 @@ for(i in seq_along(params)){
 ## Colored by cluster  
 
 ```{r}
+#| eval: false
 #| fig-width: 6
 #| fig-height: 7
 
@@ -267,7 +276,7 @@ p3 +
 
 ```{r}
 #| fig-width: 5
-#| fig-height: 8
+#| fig-height: 7
 
 
 params <- unique(ordered_slopes$param)
@@ -447,12 +456,15 @@ for(i in seq_along(nut_parms)){
 
 ```
 
-## Colored by cluster  
 
-### WQ  
 
 
 ```{r}
+#| eval: false 
+#| 
+## Colored by cluster  
+
+### WQ  
 wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
 
 for(i in seq_along(wq_parms)){
@@ -504,9 +516,12 @@ for(i in seq_along(wq_parms)){
 
 ```
 
-### NUT  
+
 
 ```{r}
+#| eval: false
+#| 
+### NUT  
 nut_parms <- c("chla", "nh4f", "no23f", "po4f")
 
 for(i in seq_along(nut_parms)){
@@ -691,9 +706,21 @@ for(i in seq_along(nut_parms)){
 ```
 
 
-## Colored by cluster  
+# Ordered by median; Colored by cluster  
 
 From Dave and Carl's clustering  
+
+```{r}
+ordered_medians <- all |>
+  mutate(trend = case_when(param %in% c("chla", "nh4f", "no23f", "po4f") ~ trend_in_log,
+                           .default = trend),
+         sig_trend = case_when(p_trend < 0.05 ~ "yes",
+                               .default = "no")
+         ) |> 
+  arrange(param, p_50, station) |> 
+  mutate(stparm = paste0(station, param))
+```
+
 
 
 ### WQ  
@@ -703,7 +730,7 @@ wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
 
 for(i in seq_along(wq_parms)){
   parm = wq_parms[i]
-  sub_dat <- filter(all, param == parm)
+  sub_dat <- filter(ordered_medians, param == parm)
   
   
   p_meds <- ggplot(sub_dat,
@@ -711,7 +738,7 @@ for(i in seq_along(wq_parms)){
                        shape = cluster)) +
     geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
                col = "gray40") +
-    geom_pointrange(aes(y = station,
+    geom_pointrange(aes(y = fct_inorder(station),
                         x = p_50,
                         xmin = p_25,
                         xmax = p_75)) +
@@ -725,7 +752,7 @@ for(i in seq_along(wq_parms)){
                         shape = cluster)) +
     geom_vline(xintercept = 0,
                col = "gray40") +
-    geom_pointrange(aes(y = station,
+    geom_pointrange(aes(y = fct_inorder(station),
                         x = trend,
                         xmin = ciLow_trend,
                         xmax = ciHigh_trend)) +
@@ -759,7 +786,7 @@ nut_parms <- c("chla", "nh4f", "no23f", "po4f")
 
 for(i in seq_along(nut_parms)){
   parm = nut_parms[i]
-  sub_dat <- filter(all, param == parm)
+  sub_dat <- filter(ordered_medians, param == parm)
   
   
   p_meds <- ggplot(sub_dat,
@@ -767,7 +794,7 @@ for(i in seq_along(nut_parms)){
                        shape = cluster)) +
     geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
                col = "gray40") +
-    geom_pointrange(aes(y = station,
+    geom_pointrange(aes(y = fct_inorder(station),
                         x = p_50,
                         xmin = p_25,
                         xmax = p_75)) +
@@ -782,7 +809,7 @@ for(i in seq_along(nut_parms)){
                         shape = cluster)) +
     geom_vline(xintercept = 0,
                col = "gray40") +
-    geom_pointrange(aes(y = station,
+    geom_pointrange(aes(y = fct_inorder(station),
                         x = trend_pctPerYear,
                         xmin = ciLow_pctPerYear,
                         xmax = ciHigh_pctPerYear)) +
