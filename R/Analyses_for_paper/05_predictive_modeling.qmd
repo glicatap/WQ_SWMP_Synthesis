@@ -27,8 +27,12 @@ library(ggfortify)
 ## Import predictors data frame  
 
 ```{r}
-dat_all <- read.csv(here::here("Outputs", "compiled_predictors.csv"))
-preds_doLT2 <- read.csv(here::here("Outputs", "doLT2_compiled_predictors.csv"))
+dat_all <- read.csv(here::here("Outputs", 
+                               "04_compiled_predictors", 
+                               "compiled_predictors.csv"))
+preds_doLT2 <- read.csv(here::here("Outputs", 
+                                   "04_compiled_predictors",
+                                   "doLT2_compiled_predictors.csv"))
 ```
 
 
@@ -116,7 +120,8 @@ dat_all |>
              fill = param)) +
   geom_histogram(bins = 30,
                  col = "gray40") +
-  facet_wrap(~param, scales = "free")
+  facet_wrap(~param, scales = "free") +
+  theme(legend.position = "none")
 
 
 dat_all2 |> 
@@ -140,6 +145,9 @@ dat_all <- dat_all2
 
 
 ```{r}
+# pick the specific predictors we've agreed on
+# center and scale all but response
+
 dat_chl <- dat_all |> 
   select(reserve,
          chla_trend,
@@ -161,6 +169,9 @@ formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), co
 
 
 ```{r}
+# pick the specific predictors we've agreed on
+# center and scale all but response
+
 dat_domgl <- dat_all |> 
   select(reserve,
          domgl_trend,
@@ -182,6 +193,32 @@ formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl
 # generate formula without random effect
 # due to singular fit when including random effect
 formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+```
+
+```{r}
+# remove do median from model to see if it helps with the VIFs
+dat_domgl2 <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # wq medians
+         temp_median, spcond_median, turb_median.log, 
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(temp_median:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "), " + (1|reserve)")
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "))
+
 ```
 
 
@@ -232,7 +269,7 @@ formula_fixed_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat
 
 # Models - centered and scaled    
 
-## Create global models    
+## Create and evaluate global models    
 
 ### Chl  
 
@@ -244,8 +281,62 @@ r.squaredGLMM(mod_chl)
 summary(mod_chl)
 ```
 
-Marginal r2 = 0.2877  
-Cond'l r2 = 0.7498  
+Marginal r2 = 0.268  
+Cond'l r2 = 0.690  
+
+
+#### Evaluate diagnostics  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_chl
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+# VIFs look fine
+
+
+# we'll look at other plots ourselves
+
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$frame[2:ncol(mod$frame)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+plot(hist(resids, breaks = 20))
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+boxplot(resids ~ preds_df$reserve)
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
 
 
 ### DO mgl
@@ -265,6 +356,84 @@ summary(mod_domgl)$r.squared; summary(mod_domgl)$adj.r.squared
 summary(mod_domgl)
 ```
 
+
+```{r}
+# the version without median do as a predictor
+mod_domgl2 <- glmmTMB(as.formula(formula_domgl2),
+                    data = dat_domgl2)
+performance::check_singularity(mod_domgl2)
+
+
+# drop random factor due to singular fit
+mod_domgl2 <- lm(as.formula(formula_fixed_domgl2),
+                data = dat_domgl2)
+performance::check_singularity(mod_domgl2)
+
+summary(mod_domgl2)$r.squared; summary(mod_domgl2)$adj.r.squared
+summary(mod_domgl2)
+
+mod = mod_domgl2 
+# for the evaluation chunk below
+# it does generally look a lot better when we don't include it
+# only moderate vif is no23 median, at 5.28
+# temp and DO are really interacting
+```
+
+
+#### Evaluate diagnostics  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_domgl
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# what are those VIFs
+sort(car::vif(mod), decreasing = TRUE)
+# temp, do, no23 medians.
+
+
+# we'll look at other plots ourselves
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
+
 ### DO %
 
 ```{r}
@@ -279,6 +448,62 @@ performance::check_singularity(mod_dopct)
 
 summary(mod_dopct)$r.squared; summary(mod_dopct)$adj.r.squared
 summary(mod_dopct)
+```
+
+
+#### Evaluate diagnostics  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_dopct
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# what are those VIFs
+sort(car::vif(mod), decreasing = TRUE)
+# no23 is the moderate one, turb, temp, and spcond behind it
+
+
+# we'll look at other plots ourselves
+
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
 ```
 
 ### DO < 2  
@@ -296,6 +521,62 @@ performance::check_singularity(mod_doLT2)
 summary(mod_doLT2)$r.squared; summary(mod_doLT2)$adj.r.squared
 summary(mod_doLT2)
 ```
+
+#### Evaluate diagnostics  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_doLT2
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# I do not like the posterior predictive check for doLT2 at all
+# there are a few moderate VIFs too
+sort(car::vif(mod), decreasing = TRUE)
+# temp and DO medians, no23 median. turb and po4 medians are around 4.
+
+
+# we'll look at other plots ourselves
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+# THIS PART IS DIFFERENT FOR lm vs glmmTMB
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
 
 
 # Un-scaled modeling  
