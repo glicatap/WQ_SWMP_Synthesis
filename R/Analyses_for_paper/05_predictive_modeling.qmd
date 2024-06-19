@@ -345,9 +345,9 @@ par(op)
 mod_domgl <- glmmTMB(as.formula(formula_domgl),
                     data = dat_domgl)
 performance::check_singularity(mod_domgl)
+summary(mod_domgl)$varcor
 
-
-# drop random factor due to singular fit
+# drop random factor due to singular fit and extremely low variance in random effect
 mod_domgl <- lm(as.formula(formula_fixed_domgl),
                 data = dat_domgl)
 performance::check_singularity(mod_domgl)
@@ -362,7 +362,7 @@ summary(mod_domgl)
 mod_domgl2 <- glmmTMB(as.formula(formula_domgl2),
                     data = dat_domgl2)
 performance::check_singularity(mod_domgl2)
-
+summary(mod_domgl2)$varcor
 
 # drop random factor due to singular fit
 mod_domgl2 <- lm(as.formula(formula_fixed_domgl2),
@@ -579,197 +579,7 @@ par(op)
 
 
 
-# Un-scaled modeling  
 
-
-## Subset for response vars  
-
-For now, only pulling water temp rather than running PCA - just trying to make sure model construction will work  
-
-```{r}
-dat_chl <- dat_all |> 
-  select(reserve,
-         chla_trend,
-         # wq medians
-         temp_median, spcond_median, turb_median,
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
-         # nut trends
-         nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend)
-
-formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
-```
-
-
-```{r}
-dat_domgl <- dat_all |> 
-  select(reserve,
-         domgl_trend,
-         # wq medians
-         temp_median, spcond_median, turb_median, domgl_median,
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend) 
-
-formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
-
-# generate formula without random effect
-# due to singular fit when including random effect
-formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
-```
-
-
-```{r}
-dat_dopct <- dat_all |> 
-  select(reserve,
-         dopct_trend = do_pct_trend,
-         # wq medians
-         temp_median, spcond_median, turb_median, dopct_median,
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend) 
-
-formula_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "), " + (1|reserve)")
-
-formula_fixed_dopct <- paste0("dopct_trend ~ ", paste(names(dat_dopct[3:ncol(dat_dopct)]), collapse = " + "))
-```
-
-
-```{r}
-dat_doLT2 <- preds_doLT2 |> 
-  select(reserve,
-         doLT2_trend = do_below2_trend,
-         # wq medians
-         temp_median, spcond_median, turb_median, domgl_median,
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median, nh4f_median, no23f_median, po4f_median,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend)
-
-formula_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "), " + (1|reserve)")
-
-formula_fixed_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "))
-```
-
-
-## Create global models    
-
-### Chl  
-
-```{r}
-mod_chl <- glmmTMB(as.formula(formula_chl),
-                    data = dat_chl)
-performance::check_singularity(mod_chl)
-r.squaredGLMM(mod_chl)
-summary(mod_chl)
-```
-
-Marginal r2 = 0.2877  
-Cond'l r2 = 0.7498 
-
-centering/scaling didn't change..... interesting  
-
-
-### DO mgl
-
-```{r}
-mod_domgl <- glmmTMB(as.formula(formula_domgl),
-                    data = dat_domgl)
-performance::check_singularity(mod_domgl)
-
-
-# drop random factor due to singular fit
-mod_domgl <- lm(as.formula(formula_fixed_domgl),
-                data = dat_domgl)
-performance::check_singularity(mod_domgl)
-
-summary(mod_domgl)$r.squared; summary(mod_domgl)$adj.r.squared
-summary(mod_domgl)
-```
-
-### DO %
-
-```{r}
-mod_dopct <- glmmTMB(as.formula(formula_dopct),
-                    data = dat_dopct)
-performance::check_singularity(mod_dopct)
-
-# drop random factor due to singular fit
-mod_dopct <- lm(as.formula(formula_fixed_dopct),
-                data = dat_dopct)
-performance::check_singularity(mod_dopct)
-
-summary(mod_dopct)$r.squared; summary(mod_dopct)$adj.r.squared
-summary(mod_dopct)
-```
-
-### DO < 2  
-
-```{r}
-mod_doLT2 <- glmmTMB(as.formula(formula_doLT2),
-                    data = dat_doLT2)
-performance::check_singularity(mod_doLT2)
-
-# drop random factor due to singular fit
-mod_doLT2 <- lm(as.formula(formula_fixed_doLT2),
-                data = dat_doLT2)
-performance::check_singularity(mod_doLT2)
-
-summary(mod_doLT2)$r.squared; summary(mod_doLT2)$adj.r.squared
-summary(mod_doLT2)
-```
-
-
-
-
-
-
-
-
-
-# Dredging  
-
-
-
-## Dredging  
-
-** everything below has eval: FALSE for the chunk** 
-
-How many models will this be? How long does it take MuMIn to come up with the list, using multiple cores?  
-
-16 predictors: 15 + r.e. of reserve.  
-
-
-```{r}
-#| eval: FALSE
-#| 
-# can subset for testing the dredging stuff below
-dat_test <- dat_chl
-formula <- paste0("chla_trend ~ ", paste(names(dat_test[3:ncol(dat_test)]), collapse = " + "), " + (1|reserve)")
-mod_test <- glmmTMB(as.formula(formula),
-                    data = dat_test)
-r.squaredGLMM(mod_test)
-```
-
- 
 
 ```{r}
 #| eval: FALSE
@@ -843,6 +653,8 @@ mods_best <- filter(mod_subsets,
 top.mods <- get.models(mod_subsets, subset = delta<2)
 avgd <- model.avg(top.mods)
 avgd$coefficients
+# full = zero method
+# subset = natural average method
 
 summary(avgd) # gives standard errors etc.
 # Grueber et al. say it's best to report unconditional SE "as it incorporates model selection uncertainty, as opposed to standard SE which only considers sampling variance" 
