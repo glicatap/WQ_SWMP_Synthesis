@@ -1,0 +1,297 @@
+---
+title: "Predictive Modeling - DO mg/L trends"
+format: 
+  html:
+    toc: true
+    code-fold: true
+warning: false
+message: false
+error: true
+embed-resources: true
+
+---
+
+# Setup  
+
+```{r}
+library(tidyverse)
+library(MuMIn)
+library(doParallel)
+library(glmmTMB)
+library(tictoc)
+library(vegan)
+library(ggfortify)
+```
+
+```{r}
+source(here::here("R", "Analyses_for_paper",
+                  "050_setup.R"))
+```
+
+
+Natural-log transforming nutrient medians and turbidity, to ensure linearity of effects and stabilize variance.  
+
+Centering and standardizing (1SD) predictors to make sure model converges and aid in relative interpretation (comparing effect sizes among variables on very different scales); once we have a top model set/averaged model, we can back-transform and interpret slopes in their raw units.  
+
+
+```{r}
+# pick the specific predictors we've agreed on
+# center and scale all but response
+
+dat_domgl <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # lat/temp/par PCA
+         tpl_PC1,
+         # wq medians
+         spcond_median, turb_median.log, domgl_median,
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(tpl_PC1:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+```
+
+```{r}
+# remove do median from model to see if it helps with the VIFs
+dat_domgl2 <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # lat/temp/par PCA
+         tpl_PC1,
+         # wq medians
+         spcond_median, turb_median.log, 
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(tpl_PC1:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "), " + (1|reserve)")
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "))
+
+```
+
+
+
+# Models     
+
+## Create and evaluate global models    
+
+### DO mgl
+
+```{r}
+mod_domgl <- glmmTMB(as.formula(formula_domgl),
+                    data = dat_domgl)
+performance::check_singularity(mod_domgl)
+summary(mod_domgl)$varcor
+
+# drop random factor due to singular fit and extremely low variance in random effect
+mod_domgl <- lm(as.formula(formula_fixed_domgl),
+                data = dat_domgl)
+performance::check_singularity(mod_domgl)
+
+summary(mod_domgl)$r.squared; summary(mod_domgl)$adj.r.squared
+summary(mod_domgl)
+```
+
+
+```{r}
+# the version without median do as a predictor
+mod_domgl2 <- glmmTMB(as.formula(formula_domgl2),
+                    data = dat_domgl2)
+performance::check_singularity(mod_domgl2)
+summary(mod_domgl2)$varcor
+
+# drop random factor due to singular fit
+mod_domgl2 <- lm(as.formula(formula_fixed_domgl2),
+                data = dat_domgl2)
+performance::check_singularity(mod_domgl2)
+
+summary(mod_domgl2)$r.squared; summary(mod_domgl2)$adj.r.squared
+summary(mod_domgl2)
+
+# for the evaluation chunk below
+# it does generally look a lot better when we don't include it
+# only moderate vif is no23 median, at 5.28
+# temp and DO are really interacting
+```
+
+
+#### Evaluate diagnostics - original model  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_domgl
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# what are those VIFs
+sort(car::vif(mod), decreasing = TRUE)
+# temp, do, no23 medians.
+
+
+# we'll look at other plots ourselves
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
+#### Evaluate diagnostics - model without DO median
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_domgl2
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# what are those VIFs
+sort(car::vif(mod), decreasing = TRUE)
+# temp, do, no23 medians.
+
+
+# we'll look at other plots ourselves
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
+
+```{r}
+#| eval: FALSE
+#| 
+# establish cluster
+cl <- makeCluster(10)  
+registerDoParallel(cl)
+```
+
+
+
+```{r}
+#| eval: FALSE
+#| 
+# run models  
+options(na.action = "na.fail")
+
+tic("run models")
+mod_subsets <- MuMIn::dredge(mod_domgl2, eval = TRUE,
+                             cluster = cl)
+toc()
+beepr::beep(8)
+
+```
+
+
+```{r}
+#| eval: FALSE
+#| 
+top.mods <- get.models(mod_subsets, subset = delta<2)
+avgd <- model.avg(top.mods)
+avgd$coefficients
+# full = zero method
+# subset = natural average method
+
+summary(avgd) # gives standard errors etc.
+# Grueber et al. say it's best to report unconditional SE "as it incorporates model selection uncertainty, as opposed to standard SE which only considers sampling variance" 
+
+# importances
+sw(avgd)
+```
+
+"Full" coefficient is the 'zero method' in Grueber et al (coefficient shrinkage); 'subset' is 'natural average' method (does not create shrinkage).  
+
+
+```{r}
+#| eval: FALSE
+#| 
+# turn off cluster
+stopCluster(cl)
+```
+
