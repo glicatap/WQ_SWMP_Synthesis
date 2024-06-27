@@ -1,6 +1,6 @@
 ---
 title: "Visualization of WQ/NUT medians, trends, and the uncertainty in each"
-output-file: "Viz_mediansAndTrends_simplified.html"
+output-file: "2024-06-27_Viz_mediansAndTrends_simplified.html"
 date: today
 format: 
     html:
@@ -834,6 +834,137 @@ for(i in seq_along(nut_parms)){
 
 ```
 
+
+
+# Ordered by cluster; colored by cluster  
+
+```{r}
+all <- all |> 
+  arrange(cluster, station) |> 
+  mutate(stn_factor = fct_inorder(station))
+```
+
+
+### WQ  
+
+```{r}
+wq_parms <- c("do_mgl", "do_pct", "sal", "spcond", "temp", "turb")
+
+for(i in seq_along(wq_parms)){
+  parm = wq_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = cluster,
+                       shape = cluster)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = cluster,
+                        shape = cluster)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend,
+                        xmin = ciLow_trend,
+                        xmax = ciHigh_trend)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (measurement units/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          legend.title.position = 'top',
+          legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.9))) &
+    guides(col = guide_legend(byrow = TRUE,
+                              ncol = 3))
+  
+  
+  print(p_out)
+}
+
+```
+
+### NUT  
+
+```{r}
+nut_parms <- c("chla", "nh4f", "no23f", "po4f")
+
+for(i in seq_along(nut_parms)){
+  parm = nut_parms[i]
+  sub_dat <- filter(all, param == parm)
+  
+  
+  p_meds <- ggplot(sub_dat,
+                   aes(col = cluster,
+                       shape = cluster)) +
+    geom_vline(xintercept = median(sub_dat$p_50, na.rm = TRUE),
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = p_50,
+                        xmin = p_25,
+                        xmax = p_75)) +
+    scale_x_log10() +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "monthly median")
+  
+  p_trnds <- ggplot(sub_dat,
+                    aes(col = cluster,
+                        shape = cluster)) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    geom_pointrange(aes(y = stn_factor,
+                        x = trend_pctPerYear,
+                        xmin = ciLow_pctPerYear,
+                        xmax = ciHigh_pctPerYear)) +
+    scale_color_manual(values = pal) +
+    scale_shape_manual(values = shps) +
+    labs(y = NULL,
+         x = "trend (% change/yr)")
+  
+  
+  p_out <- p_meds + p_trnds +
+    plot_annotation(title = parm,
+                    caption = "bars around monthly median represent the 25th-75th percentiles of monthly \nmedians at that station; bars for trend are 95% confidence interval.\nvertical lines represent overall median across all stations (left); zero trend (right)") +
+    plot_layout(guides = 'collect',
+                axes = 'collect') &
+    theme_bw() &
+    theme(legend.position = 'bottom',
+          legend.title.position = 'top',
+          legend.margin = margin(0, 0, 0, 0),
+          legend.text = element_text(size = rel(0.7)),
+          legend.key.spacing.y = unit(0.2, "pt"),
+          axis.text.y = element_text(size = rel(0.9))) &
+    guides(col = guide_legend(byrow = TRUE,
+                              ncol = 3))
+  
+  
+  print(p_out)
+}
+
+```
 
 
 
