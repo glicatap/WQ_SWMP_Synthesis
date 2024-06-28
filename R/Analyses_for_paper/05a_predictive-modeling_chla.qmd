@@ -109,7 +109,7 @@ plot(resids ~ fitted.values(mod),
      xlab = "fitted",
      ylab = "residual")
 abline(h = 0, col = "red3")
-plot(hist(resids, breaks = 20))
+hist(resids, breaks = 20)
 qqnorm(resids)
 qqline(resids, col = "gray60", lty = 2)
 boxplot(resids ~ preds_df$reserve)
@@ -130,6 +130,10 @@ par(op)
 
 ```
 
+```{r}
+# cleanup a bit
+rm(dat_all, mod, op, pca_tpl2, preds_df, preds_doLT2)
+```
 
 
 
@@ -158,6 +162,113 @@ beepr::beep(8)
 
 ```
 
+```
+run models: 24736.95 sec elapsed
+> beepr::beep(8)
+> 24736/60
+[1] 412.2667
+> 412/60
+[1] 6.866667
+```
+
+## Investigate candidate models  
+
+about 7 hours to run chl. 65,536 models.
+
+How many with delta < 2 or 6?  
+
+```{r}
+sum(mod_subsets$delta<2)
+sum(mod_subsets$delta<6)
+```
+
+Only 30 under 2! Not bad! 2,026 under 6.  
+
+How many models in the 95% confidence set?
+
+```{r}
+mod_subsets$cumuwt <- cumsum(mod_subsets$weight)
+
+as.data.frame(mod_subsets) |> 
+  mutate(rownumber = 1:nrow(mod_subsets)) |> 
+  select(rownumber, delta, weight, cumuwt) |> 
+  filter(cumuwt >= 0.95) |> 
+  head()
+```
+
+Over 31,000 models in the 95% confidence set - that's almost half of the candidate models.
+
+## Get and investigate top models  
+
+```{r}
+top_mods <- get.models(mod_subsets, subset = delta<2)
+
+sw(top_mods)
+```
+
+## average for final model  
+
+```{r}
+avgd_mod <- model.avg(top_mods)
+summary(avgd_mod)
+```
+
+## Coefficients from averaged model  
+
+From 'full averaging' method  
+
+Also using 'adjusted SE' - look into this  
+
+```{r}
+sumwts <- data.frame(sum_wt = sw(top_mods)) |> 
+  rownames_to_column("term")
+
+
+coeffs <- data.frame(summary(avgd_mod)$coefmat.full) |> 
+  rownames_to_column("term") |> 
+  left_join(sumwts) |> 
+  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
+         ci_high = Estimate + 1.96*Adjusted.SE,
+         term = str_remove(term, "cond\\("),
+         term = str_remove(term, "\\)")) |> 
+  filter(term != "(Int)") |> 
+  arrange(Estimate) |> 
+  mutate(term = fct_inorder(term))
+
+ggplot(coeffs) +
+  geom_pointrange(aes(y = term,
+                      x = Estimate,
+                      xmin = ci_low,
+                      xmax = ci_high,
+                      col = sum_wt)) +
+  khroma::scale_color_batlow(reverse = TRUE) +
+  geom_vline(xintercept = 0,
+             col = "gray40") +
+  labs(title = "Standardized slopes in averaged model for chl a trend",
+       x = "Slope",
+       y = "Term",
+       col = "variable importance")
+```
+
+
+## save things for later  
+
+Need to save the original data frame, full model, model subsets, and other interesting things I've generated. Model subsets are the most important but in order to regenerate things, also need the original data frame and full model.  
+
+```{r}
+save(dat_chl, mod_chl, mod_subsets, top_mods, avgd_mod, coeffs,
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "chla_out.RData"))
+```
+
+
+
+
+
+
+## other  
 
 ```{r}
 #| eval: FALSE
