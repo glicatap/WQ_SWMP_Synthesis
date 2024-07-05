@@ -34,6 +34,22 @@ pca_tpl <- prcomp(tpl, scale. = TRUE)
 #          loadings.label = TRUE)
 
 
+# adding domgl_median to the pca:
+tpld <- dat_all |> 
+  select(temp_median,
+         dailyPAR_median,
+         latitude,
+         domgl_median)
+
+pca_tpld <- prcomp(tpld, scale. = TRUE)
+# biplot(pca_tpld)
+# pca_tpld
+# summary(pca_tpld)
+# autoplot(pca_tpld,
+#          loadings = TRUE,
+#          loadings.label = TRUE)
+
+
 # for DO<2, we have fewer stations - do we want to use the same
 # PCA score, or generate a new one for only these stations?
 # I'm assuming the latter and doing that here
@@ -59,7 +75,7 @@ dat_all <- dat_all |>
          po4_median.log = po4f_median)
 # add PC1 score to dat_all
 dat_all$tpl_PC1 <- scores(pca_tpl)[,1]
-
+dat_all$tpld_PC1 <- scores(pca_tpld)[,1]
 
 preds_doLT2 <- preds_doLT2 |> 
   mutate(across(c(chla_median,

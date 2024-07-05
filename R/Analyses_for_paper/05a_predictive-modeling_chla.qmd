@@ -251,22 +251,87 @@ ggplot(coeffs) +
 ```
 
 
+
+
+
+Not really sure 2 is the best cutoff - plotting delta AICc, the shoulder doesn't happen until ~4-5. Maybe we should include all models with delta < 5. That would be 865 models.  
+
+```{r}
+subs2 <- data.frame(mod_subsets)
+plot(subs2$delta[1:5000],
+     main = "Delta AICc curve",
+     xlab = "model number",
+     ylab = "Delta")
+abline(h = 2, col = "red3")
+abline(h = 4, col = "orange")
+abline(h = 6, col = "orange")
+abline(h = 5, col = "orange")
+
+sum(subs2$delta <=4)
+sum(subs2$delta <=5)
+
+```
+
+
+Maybe we should do that and see how different it is from using a delta of 2. That tells us something about uncertainty.  
+
+```{r}
+top_mods2 <- get.models(mod_subsets, subset = delta<5)
+sw(top_mods2)
+
+avgd_mod2 <- model.avg(top_mods2)
+summary(avgd_mod2)
+
+sumwts <- data.frame(sum_wt = sw(avgd_mod2)) |> 
+  rownames_to_column("term")
+
+
+coeffs2 <- data.frame(summary(avgd_mod2)$coefmat.full) |> 
+  rownames_to_column("term") |> 
+  left_join(sumwts) |> 
+  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
+         ci_high = Estimate + 1.96*Adjusted.SE,
+         term = str_remove(term, "cond\\("),
+         term = str_remove(term, "\\)")) |> 
+  filter(term != "(Int)") |> 
+  arrange(Estimate) |> 
+  mutate(term = fct_inorder(term))
+
+ggplot(coeffs2) +
+  geom_pointrange(aes(y = term,
+                      x = Estimate,
+                      xmin = ci_low,
+                      xmax = ci_high,
+                      col = sum_wt)) +
+  khroma::scale_color_batlow(reverse = TRUE) +
+  geom_vline(xintercept = 0,
+             col = "gray40") +
+  labs(title = "Standardized slopes in averaged model for chl a trend",
+       x = "Slope",
+       y = "Term",
+       col = "variable importance")
+```
+
 ## save things for later  
 
 Need to save the original data frame, full model, model subsets, and other interesting things I've generated. Model subsets are the most important but in order to regenerate things, also need the original data frame and full model.  
 
 ```{r}
-save(dat_chl, mod_chl, mod_subsets, top_mods, avgd_mod, coeffs,
+save(dat_chl, mod_chl, mod_subsets, 
+     top_mods, avgd_mod, coeffs,  # delta < 2
      file = here::here("Outputs",
                        "06_model_selection",
                        "R_objects",
-                       "chla_out.RData"))
+                       "chla_out_Delta2.RData"))
+
+save(dat_chl, mod_chl, mod_subsets, 
+     top_mods, avgd_mod, coeffs,  # delta < 2
+     top_mods2, avgd_mod2, coeffs2, # delta < 5
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "chla_out_plusDelta5.RData"))
 ```
-
-
-
-
-
 
 ## other  
 
