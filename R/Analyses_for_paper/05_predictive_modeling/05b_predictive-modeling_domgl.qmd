@@ -122,6 +122,33 @@ formula_fixed_domgl3 <- paste0("domgl_trend ~ ", paste(names(dat_domgl3[3:ncol(d
 
 ```
 
+```{r}
+# version keeping domgl and removing PCA
+dat_domgl4 <- dat_all |> 
+  select(reserve,
+         domgl_trend,
+         # lat/temp/par PCA
+         # tpld_PC1,
+         # wq medians
+         domgl_median, spcond_median, turb_median.log, 
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend, dailyPAR_trend) |> 
+  mutate(across(domgl_median:last_col(),
+                function(x) as.vector(scale(x))))
+
+formula_domgl4 <- paste0("domgl_trend ~ ", paste(names(dat_domgl4[3:ncol(dat_domgl4)]), collapse = " + "), " + (1|reserve)")
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl4 <- paste0("domgl_trend ~ ", paste(names(dat_domgl4[3:ncol(dat_domgl4)]), collapse = " + "))
+
+```
 
 # Models     
 
@@ -168,6 +195,28 @@ summary(mod_domgl2)
 # temp and DO are really interacting
 ```
 
+
+```{r}
+# a version where we drop the PCA and keep domgl_median
+mod_domgl4 <- glmmTMB(as.formula(formula_domgl4),
+                    data = dat_domgl4)
+performance::check_singularity(mod_domgl4)
+summary(mod_domgl4)$varcor
+
+# drop random factor due to singular fit
+mod_domgl4 <- lm(as.formula(formula_fixed_domgl4),
+                data = dat_domgl4)
+performance::check_singularity(mod_domgl4)
+
+r2(mod_domgl4)
+check_collinearity(mod_domgl4)
+summary(mod_domgl4)
+
+# for the evaluation chunk below
+# it does generally look a lot better when we don't include it
+# only moderate vif is no23 median, at 5.28
+# temp and DO are really interacting
+```
 
 ```{r}
 # a version where DOmgl has been added to the PCA
