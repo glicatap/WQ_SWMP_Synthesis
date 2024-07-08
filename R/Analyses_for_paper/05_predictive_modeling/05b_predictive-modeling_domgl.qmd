@@ -26,6 +26,7 @@ library(performance)
 
 ```{r}
 source(here::here("R", "Analyses_for_paper",
+                  "05_predictive_modeling",
                   "050_setup.R"))
 ```
 
@@ -349,55 +350,38 @@ par(op)
 
 ```
 
+# Dredge  
+
+Make sure mod_domgl is the appropriate model!  
 
 ```{r}
-#| eval: FALSE
-#| 
 # establish cluster
 cl <- makeCluster(10)  
 registerDoParallel(cl)
-```
 
 
-
-```{r}
-#| eval: FALSE
-#| 
 # run models  
 options(na.action = "na.fail")
 
 tic("run models")
-mod_subsets <- MuMIn::dredge(mod_domgl2, eval = TRUE,
+domgl_subsets <- MuMIn::dredge(mod_domgl, eval = TRUE,
                              cluster = cl)
 toc()
 beepr::beep(8)
 
-```
 
-
-```{r}
-#| eval: FALSE
-#| 
-top.mods <- get.models(mod_subsets, subset = delta<2)
-avgd <- model.avg(top.mods)
-avgd$coefficients
-# full = zero method
-# subset = natural average method
-
-summary(avgd) # gives standard errors etc.
-# Grueber et al. say it's best to report unconditional SE "as it incorporates model selection uncertainty, as opposed to standard SE which only considers sampling variance" 
-
-# importances
-sw(avgd)
-```
-
-"Full" coefficient is the 'zero method' in Grueber et al (coefficient shrinkage); 'subset' is 'natural average' method (does not create shrinkage).  
-
-
-```{r}
-#| eval: FALSE
-#| 
 # turn off cluster
 stopCluster(cl)
+```
+
+# Save dredged object  
+
+```{r}
+save(dat_domgl, mod_domgl, domgl_subsets,
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "domgl_out.RData"),
+     compress = 'xz')
 ```
 
