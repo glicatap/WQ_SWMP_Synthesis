@@ -9,6 +9,8 @@ date: "`r Sys.Date()`"
 
 re-run 5/29/24 after using natural-log transformation on nutrients for trends (rather than log10)  
 
+re-run again 7/8/24, to insert 0s for DO<2 trend at stations where that trend did not calculate due to all values being 0  
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
@@ -31,7 +33,7 @@ params_nut <- c("chla_n", "chla_n_cens",
 params_met <- c("totprcp_total",
                 "dailyPAR_median")
 params_trends <- c("temp_median", "spcond_median", "turb_median",
-                   "do_mgl_median", "do_pct_median",
+                   "do_mgl_median", "do_pct_median", "do_proportion_below2",
                    "chla_n", "po4f", "nh4f", "no23f",
                    "dailyPAR_median",
                    "sqrt_precp_total")
@@ -134,7 +136,7 @@ trnds <- trends_wqnutmet |>
 # pivot wider, to one row per station
 trnds_water <- trnds |> 
   filter(parameter %in% c("temp_trend", "spcond_trend", "turb_trend",
-                          "do_mgl_trend", "do_pct_trend",
+                          "do_mgl_trend", "do_pct_trend", "do_proportion_below2_trend",
                           "chla_trend", "po4f_trend", "nh4f_trend",
                           "no23f_trend")) |> 
   pivot_wider(id_cols = c(reserve, station),
@@ -199,6 +201,13 @@ all_predictors <- left_join(water_all, met_all,
 # weed out the problem stations - too deep, or missing trend(s)  
 all_predictors <- all_predictors |> 
   filter(!(station %in% remove_stns))
+
+
+# in the stations that are left, any missing do below 2 trends
+# are because the time series was all 0s - insert 0 for trend in these
+all_predictors <- all_predictors |> 
+  mutate(do_proportion_below2_trend = case_when(is.na(do_proportion_below2_trend) ~ 0,
+                                                .default = do_proportion_below2_trend))
 ```
 
 # Writing out  
