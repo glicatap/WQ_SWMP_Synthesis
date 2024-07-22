@@ -1,18 +1,23 @@
 library(tidyverse)
+library(lme4)
 library(glmmTMB)
 library(MuMIn)
 
 load(here::here("Outputs",
                 "06_model_selection",
                 "R_objects",
-                "chla_out_plusDelta5.compressed.RData"))
+                "chla_out_lme4.RData"))
 dat_all <- read.csv(here::here("Outputs",
                                "04_compiled_predictors",
                                "compiled_predictors.csv"))
+mod_subsets <- chla_subsets
+
+min_aic <- chla_subsets$AICc[1]
+chla_subsets$delta <- chla_subsets$AICc - min_aic
 
 
 # where is the null model ----
-dredge_results <- mod_subsets
+dredge_results <- chla_subsets
 null_model_index <- which(rowSums(is.na(dredge_results[, 2:ncol(dredge_results)])) == max(rowSums(is.na(dredge_results[, 2:ncol(dredge_results)]))))
 dredge_results[null_model_index, ]
 
@@ -35,8 +40,10 @@ dat_sds <- dat_all |>
 # get top models ----
 
 # include all, and do the nested models thing
+# NOTE the se generated below is 'adjusted se' from output -
+# verify what this means
 
-test <- mod_subsets[which(mod_subsets$delta < 5),]
+test <- mod_subsets[which(mod_subsets$delta < 4),]
 test2 <- subset(test, !nested(.))
 sw(test)
 sw(test2)
@@ -71,7 +78,8 @@ ggplot(swdf, aes(x = predictor)) +
                                     hjust = 1,
                                     vjust = 1),
         legend.position = "bottom") +
-  labs(title = "Relative variable importance in models with delta < 5",
+  labs(title = "Relative variable importance, chla",
+       subtitle = "models with delta < 4",
        x = "Predictor",
        y = "Sum of Akaike weights")
 
@@ -85,7 +93,7 @@ coeffs2 <- data.frame(summary(modavg_all)$coefmat.full) |>
          term = str_remove(term, "cond\\("),
          term = str_remove(term, "\\)")) |> 
   left_join(swdf, by = c("term" = "predictor")) |> 
-  filter(term != "(Int)") |> 
+  filter(!str_starts(term, "\\(Int")) |> 
   arrange(Estimate) |> 
   mutate(term = fct_inorder(term))
 
@@ -102,6 +110,33 @@ ggplot(coeffs2) +
        x = "Slope",
        y = "Term",
        col = "variable importance")
+
+# put in order by variable importance rather than coefficient
+coeffs3 <- data.frame(summary(modavg_all)$coefmat.full) |> 
+  rownames_to_column("term") |> 
+  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
+         ci_high = Estimate + 1.96*Adjusted.SE,
+         term = str_remove(term, "cond\\("),
+         term = str_remove(term, "\\)")) |> 
+  left_join(swdf, by = c("term" = "predictor")) |> 
+  filter(!str_starts(term, "\\(Int")) |> 
+  arrange(sw_all) |> 
+  mutate(term = fct_inorder(term))
+
+ggplot(coeffs3) +
+  geom_pointrange(aes(y = term,
+                      x = Estimate,
+                      xmin = ci_low,
+                      xmax = ci_high,
+                      col = sw_all)) +
+  khroma::scale_color_batlow(reverse = TRUE) +
+  geom_vline(xintercept = 0,
+             col = "gray40") +
+  labs(title = "Standardized coefficients in averaged model for chl a trend",
+       x = "Coefficient",
+       y = "Term",
+       col = "variable importance")
+
 
 
 # make predictions ----
@@ -121,7 +156,7 @@ names(newdata) <- newdata.names
 
 # have to fit the models inside model.avg in order to predict
 modavg_all <- model.avg(test, fit = TRUE)
-
+# note for delta < 5, 865 models, this takes ~10-12 minutes
 
 
 # po4 trend ----
@@ -129,6 +164,9 @@ modavg_all <- model.avg(test, fit = TRUE)
 predict_po4trend <- newdata |> 
   mutate(po4f_trend = newdata.sds)
 
+# non-working predictions section ----
+# lme4 improves speed of model dredging, but the 'se.fit' argument
+# for predict.averaging no longer works
 predictions_po4f <- predict(modavg_all,
                             newdata = predict_po4trend,
                             se.fit = TRUE,
@@ -179,6 +217,58 @@ ggplot(predictions_po4f_df) +
   labs(title = "Partial effect of PO4 trend on chl trend",
        x = "PO4 trend (%/yr)",
        y = "Expected Chl a trend (%/year)")
+
+
+# working but without SEs predictions section ----
+# lme4 improves speed of model dredging, but the 'se.fit' argument
+# for predict.averaging no longer works
+predictions_po4f <- predict(modavg_all,
+                            newdata = predict_po4trend,
+                            re.form = NA)
+
+predictions_po4f_df <- data.frame(predictor.sd = predict_po4trend$po4f_trend,
+                                  predictor.natural = (predict_po4trend$po4f_trend * dat_sds$po4f_trend) + dat_means$po4f_trend,
+                                  predicted = predictions_po4f) |> 
+  mutate(pct_per_year = exp(predicted) * 100 - 100,
+         predictor.pct_per_year = exp(predictor.natural) * 100 - 100)
+
+
+
+ggplot(predictions_po4f_df) +
+  # geom_ribbon(aes(x = predictor.sd,
+  #                 ymin = ci_low,
+  #                 ymax = ci_high),
+  #             fill = "gray",
+  #             alpha = 0.6) +
+  geom_line(aes(x = predictor.sd,
+                y = pct_per_year),
+            col = "blue") +
+  theme_bw() +
+  labs(title = "Partial effect of PO4 trend on chl trend",
+       x = "Standardized PO4 trend (standard deviations different from mean)",
+       y = "Change in chl a (%/year)")
+
+
+ggplot(predictions_po4f_df) +
+  # geom_ribbon(aes(x = predictor.pct_per_year,
+  #                 ymin = ci_low,
+  #                 ymax = ci_high),
+  #             fill = "gray",
+  #             alpha = 0.6) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             col = "gray20") +
+  geom_line(aes(x = predictor.pct_per_year,
+                y = pct_per_year),
+            linewidth = 1,
+            col = "blue") +
+  theme_bw() +
+  labs(title = "Partial effect of PO4 trend on chl trend",
+       x = "PO4 trend (%/yr)",
+       y = "Expected Chl a trend (%/year)")
+
+
+
 
 # spcond trend ----
 

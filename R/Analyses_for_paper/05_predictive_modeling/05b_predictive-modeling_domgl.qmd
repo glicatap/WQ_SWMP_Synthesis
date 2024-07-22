@@ -44,63 +44,6 @@ dat_domgl <- dat_all |>
   select(reserve,
          domgl_trend,
          # lat/temp/par PCA
-         tpl_PC1,
-         # wq medians
-         spcond_median, turb_median.log, domgl_median,
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpl_PC1:last_col(),
-                function(x) as.vector(scale(x))))
-
-formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
-
-# generate formula without random effect
-# due to singular fit when including random effect
-formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
-```
-
-```{r}
-# remove do median from model to see if it helps with the VIFs
-dat_domgl2 <- dat_all |> 
-  select(reserve,
-         domgl_trend,
-         # lat/temp/par PCA
-         tpl_PC1,
-         # wq medians
-         spcond_median, turb_median.log, 
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpl_PC1:last_col(),
-                function(x) as.vector(scale(x))))
-
-formula_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "), " + (1|reserve)")
-
-# generate formula without random effect
-# due to singular fit when including random effect
-formula_fixed_domgl2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl2[3:ncol(dat_domgl2)]), collapse = " + "))
-
-```
-
-
-
-```{r}
-# create a version where domgl has been added to the PCA
-dat_domgl3 <- dat_all |> 
-  select(reserve,
-         domgl_trend,
-         # lat/temp/par PCA
          tpld_PC1,
          # wq medians
          spcond_median, turb_median.log, 
@@ -115,40 +58,11 @@ dat_domgl3 <- dat_all |>
   mutate(across(tpld_PC1:last_col(),
                 function(x) as.vector(scale(x))))
 
-formula_domgl3 <- paste0("domgl_trend ~ ", paste(names(dat_domgl3[3:ncol(dat_domgl3)]), collapse = " + "), " + (1|reserve)")
+formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
 
 # generate formula without random effect
 # due to singular fit when including random effect
-formula_fixed_domgl3 <- paste0("domgl_trend ~ ", paste(names(dat_domgl3[3:ncol(dat_domgl3)]), collapse = " + "))
-
-```
-
-```{r}
-# version keeping domgl and removing PCA
-dat_domgl4 <- dat_all |> 
-  select(reserve,
-         domgl_trend,
-         # lat/temp/par PCA
-         # tpld_PC1,
-         # wq medians
-         domgl_median, spcond_median, turb_median.log, 
-         # wq trends
-         temp_trend, spcond_trend, turb_trend,
-         # nut medians
-         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
-         # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
-         # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(domgl_median:last_col(),
-                function(x) as.vector(scale(x))))
-
-formula_domgl4 <- paste0("domgl_trend ~ ", paste(names(dat_domgl4[3:ncol(dat_domgl4)]), collapse = " + "), " + (1|reserve)")
-
-# generate formula without random effect
-# due to singular fit when including random effect
-formula_fixed_domgl4 <- paste0("domgl_trend ~ ", paste(names(dat_domgl4[3:ncol(dat_domgl4)]), collapse = " + "))
-
+formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
 ```
 
 # Models     
@@ -172,75 +86,6 @@ r2(mod_domgl)
 check_collinearity(mod_domgl)
 summary(mod_domgl)
 ```
-
-
-```{r}
-# the version without median do as a predictor
-mod_domgl2 <- glmmTMB(as.formula(formula_domgl2),
-                    data = dat_domgl2)
-performance::check_singularity(mod_domgl2)
-summary(mod_domgl2)$varcor
-
-# drop random factor due to singular fit
-mod_domgl2 <- lm(as.formula(formula_fixed_domgl2),
-                data = dat_domgl2)
-performance::check_singularity(mod_domgl2)
-
-r2(mod_domgl2)
-check_collinearity(mod_domgl2)
-summary(mod_domgl2)
-
-# for the evaluation chunk below
-# it does generally look a lot better when we don't include it
-# only moderate vif is no23 median, at 5.28
-# temp and DO are really interacting
-```
-
-
-```{r}
-# a version where we drop the PCA and keep domgl_median
-mod_domgl4 <- glmmTMB(as.formula(formula_domgl4),
-                    data = dat_domgl4)
-performance::check_singularity(mod_domgl4)
-summary(mod_domgl4)$varcor
-
-# drop random factor due to singular fit
-mod_domgl4 <- lm(as.formula(formula_fixed_domgl4),
-                data = dat_domgl4)
-performance::check_singularity(mod_domgl4)
-
-r2(mod_domgl4)
-check_collinearity(mod_domgl4)
-summary(mod_domgl4)
-
-# for the evaluation chunk below
-# it does generally look a lot better when we don't include it
-# only moderate vif is no23 median, at 5.28
-# temp and DO are really interacting
-```
-
-```{r}
-# a version where DOmgl has been added to the PCA
-mod_domgl3 <- glmmTMB(as.formula(formula_domgl3),
-                    data = dat_domgl3)
-performance::check_singularity(mod_domgl3)
-summary(mod_domgl3)$varcor
-
-# drop random factor due to singular fit
-mod_domgl3 <- lm(as.formula(formula_fixed_domgl3),
-                data = dat_domgl3)
-performance::check_singularity(mod_domgl3)
-
-r2(mod_domgl3)
-check_collinearity(mod_domgl3)
-summary(mod_domgl3)
-
-# for the evaluation chunk below
-# it does generally look a lot better when we don't include it
-# only moderate vif is no23 median, at 5.28
-# temp and DO are really interacting
-```
-
 
 
 
@@ -295,93 +140,5 @@ for(i in 1:ncol(preds_df)){
 # go back to normal plot layout
 par(op)
 
-```
-
-#### Evaluate diagnostics - model without DO median
-
-```{r}
-# assign model at top so this code chunk can be reused
-mod = mod_domgl2
-
-
-# this code shows a variety of plots, which is nice
-performance::check_model(mod)
-
-# what are those VIFs
-sort(car::vif(mod), decreasing = TRUE)
-# temp, do, no23 medians.
-
-
-# we'll look at other plots ourselves
-
-# pull out pearson residuals
-resids <- resid(mod, type = "pearson")
-
-op <- par()
-
-# pull out predictor data frame
-preds_df <- mod$model[2:ncol(mod$model)]
-
-# set up a 4-plot layout
-par(mfrow = c(2, 2))
-
-# plot the main diagnostic graphs
-plot(resids ~ fitted.values(mod),
-     xlab = "fitted",
-     ylab = "residual")
-abline(h = 0, col = "red3")
-hist(resids, breaks = 20)
-qqnorm(resids)
-qqline(resids, col = "gray60", lty = 2)
-
-# set up a bigger plot layout
-par(mfrow = c(4, 5))
-
-# plot residuals against every predictor
-for(i in 1:ncol(preds_df)){
-  plot(resids ~ preds_df[[i]],
-       xlab = names(preds_df)[i],
-       ylab = "pearson residuals")
-  abline(h = 0, col = "red3")
-}
-
-# go back to normal plot layout
-par(op)
-
-```
-
-# Dredge  
-
-Make sure mod_domgl is the appropriate model!  
-
-```{r}
-# establish cluster
-cl <- makeCluster(10)  
-registerDoParallel(cl)
-
-
-# run models  
-options(na.action = "na.fail")
-
-tic("run models")
-domgl_subsets <- MuMIn::dredge(mod_domgl, eval = TRUE,
-                             cluster = cl)
-toc()
-beepr::beep(8)
-
-
-# turn off cluster
-stopCluster(cl)
-```
-
-# Save dredged object  
-
-```{r}
-save(dat_domgl, mod_domgl, domgl_subsets,
-     file = here::here("Outputs",
-                       "06_model_selection",
-                       "R_objects",
-                       "domgl_out.RData"),
-     compress = 'xz')
 ```
 

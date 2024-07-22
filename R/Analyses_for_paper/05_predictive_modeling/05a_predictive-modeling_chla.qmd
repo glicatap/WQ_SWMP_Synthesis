@@ -42,8 +42,8 @@ Centering and standardizing (1SD) predictors to make sure model converges and ai
 dat_chl <- dat_all |> 
   select(reserve,
          chla_trend,
-         # lat/temp/par PCA
-         tpl_PC1,
+         # lat/temp/par/domgl PCA
+         tpld_PC1,
          # wq medians
          spcond_median, turb_median.log,
          # wq trends
@@ -54,7 +54,7 @@ dat_chl <- dat_all |>
          nh4f_trend, no23f_trend, po4f_trend,
          # met
          precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpl_PC1:last_col(),
+  mutate(across(tpld_PC1:last_col(),
                 function(x) as.vector(scale(x))))
 
 formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
@@ -75,8 +75,8 @@ r.squaredGLMM(mod_chl)
 summary(mod_chl)
 ```
 
-Marginal r2 = 0.268  
-Cond'l r2 = 0.690  
+Marginal r2 = 0.286  
+Cond'l r2 = 0.686  
 
 
 #### Evaluate diagnostics  
@@ -96,8 +96,6 @@ performance::check_model(mod)
 
 # pull out pearson residuals
 resids <- resid(mod, type = "pearson")
-
-op <- par()
 
 # pull out predictor data frame
 preds_df <- mod$frame[2:ncol(mod$frame)]
@@ -127,7 +125,7 @@ for(i in 1:ncol(preds_df)){
 }
 
 # go back to normal plot layout
-par(op)
+par(mfrow = c(1, 1))
 
 ```
 
@@ -135,198 +133,4 @@ par(op)
 # cleanup a bit
 rm(dat_all, mod, op, pca_tpl2, preds_df, preds_doLT2)
 ```
-
-# Dredge model subsets  
-
-```{r}
-# establish cluster
-cl <- makeCluster(10)  
-registerDoParallel(cl)
- 
-# run models
-options(na.action = "na.fail")
-
-tic("run models")
-chla_subsets <- MuMIn::dredge(mod_chl, eval = TRUE,
-                             cluster = cl)
-toc()
-beepr::beep(8)
-
-
-# turn off clusters
-stopCluster(cl)
-```
-
-```
-run models: 24736.95 sec elapsed
-> beepr::beep(8)
-> 24736/60
-[1] 412.2667
-> 412/60
-[1] 6.866667
-```
-
-# Save dredged object  
-
-Need to save the original data frame, full model, model subsets, and other interesting things I've generated. Model subsets are the most important but in order to regenerate things, also need the original data frame and full model.  
-
-```{r}
-save(dat_chl, mod_chl, chla_subsets, 
-     file = here::here("Outputs",
-                       "06_model_selection",
-                       "R_objects",
-                       "chla_out.RData"),
-     compress = "xz")
-```
-
-
-# Other  
-
-## Investigate candidate models  
-
-Most of what's below should really go in one of the '06' scripts.  
-
-about 7 hours to run chl. 65,536 models.
-
-How many with delta < 2 or 6?  
-
-```{r}
-sum(mod_subsets$delta<2)
-sum(mod_subsets$delta<6)
-```
-
-Only 30 under 2! Not bad! 2,026 under 6.  
-
-How many models in the 95% confidence set?
-
-```{r}
-mod_subsets$cumuwt <- cumsum(mod_subsets$weight)
-
-as.data.frame(mod_subsets) |> 
-  mutate(rownumber = 1:nrow(mod_subsets)) |> 
-  select(rownumber, delta, weight, cumuwt) |> 
-  filter(cumuwt >= 0.95) |> 
-  head()
-```
-
-Over 31,000 models in the 95% confidence set - that's almost half of the candidate models.
-
-## Get and investigate top models  
-
-```{r}
-top_mods <- get.models(mod_subsets, subset = delta<2)
-
-sw(top_mods)
-```
-
-## average for final model  
-
-```{r}
-avgd_mod <- model.avg(top_mods)
-summary(avgd_mod)
-```
-
-## Coefficients from averaged model  
-
-From 'full averaging' method  
-
-Also using 'adjusted SE' - look into this  
-
-```{r}
-sumwts <- data.frame(sum_wt = sw(top_mods)) |> 
-  rownames_to_column("term")
-
-
-coeffs <- data.frame(summary(avgd_mod)$coefmat.full) |> 
-  rownames_to_column("term") |> 
-  left_join(sumwts) |> 
-  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
-         ci_high = Estimate + 1.96*Adjusted.SE,
-         term = str_remove(term, "cond\\("),
-         term = str_remove(term, "\\)")) |> 
-  filter(term != "(Int)") |> 
-  arrange(Estimate) |> 
-  mutate(term = fct_inorder(term))
-
-ggplot(coeffs) +
-  geom_pointrange(aes(y = term,
-                      x = Estimate,
-                      xmin = ci_low,
-                      xmax = ci_high,
-                      col = sum_wt)) +
-  khroma::scale_color_batlow(reverse = TRUE) +
-  geom_vline(xintercept = 0,
-             col = "gray40") +
-  labs(title = "Standardized slopes in averaged model for chl a trend",
-       x = "Slope",
-       y = "Term",
-       col = "variable importance")
-```
-
-
-
-
-
-Not really sure 2 is the best cutoff - plotting delta AICc, the shoulder doesn't happen until ~4-5. Maybe we should include all models with delta < 5. That would be 865 models.  
-
-```{r}
-subs2 <- data.frame(mod_subsets)
-plot(subs2$delta[1:5000],
-     main = "Delta AICc curve",
-     xlab = "model number",
-     ylab = "Delta")
-abline(h = 2, col = "red3")
-abline(h = 4, col = "orange")
-abline(h = 6, col = "orange")
-abline(h = 5, col = "orange")
-
-sum(subs2$delta <=4)
-sum(subs2$delta <=5)
-
-```
-
-
-Maybe we should do that and see how different it is from using a delta of 2. That tells us something about uncertainty.  
-
-```{r}
-top_mods2 <- get.models(mod_subsets, subset = delta<5)
-sw(top_mods2)
-
-avgd_mod2 <- model.avg(top_mods2)
-summary(avgd_mod2)
-
-sumwts <- data.frame(sum_wt = sw(avgd_mod2)) |> 
-  rownames_to_column("term")
-
-
-coeffs2 <- data.frame(summary(avgd_mod2)$coefmat.full) |> 
-  rownames_to_column("term") |> 
-  left_join(sumwts) |> 
-  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
-         ci_high = Estimate + 1.96*Adjusted.SE,
-         term = str_remove(term, "cond\\("),
-         term = str_remove(term, "\\)")) |> 
-  filter(term != "(Int)") |> 
-  arrange(Estimate) |> 
-  mutate(term = fct_inorder(term))
-
-ggplot(coeffs2) +
-  geom_pointrange(aes(y = term,
-                      x = Estimate,
-                      xmin = ci_low,
-                      xmax = ci_high,
-                      col = sum_wt)) +
-  khroma::scale_color_batlow(reverse = TRUE) +
-  geom_vline(xintercept = 0,
-             col = "gray40") +
-  labs(title = "Standardized slopes in averaged model for chl a trend",
-       x = "Slope",
-       y = "Term",
-       col = "variable importance")
-```
-
-
-
-
-
 
