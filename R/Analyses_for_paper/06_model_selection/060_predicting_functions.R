@@ -115,7 +115,7 @@ graph_predictions <- function(predictions,
     theme_bw() 
   
   # return the plot
-  print(p)
+  p
 }
 
 
