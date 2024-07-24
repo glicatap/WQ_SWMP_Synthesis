@@ -1,8 +1,10 @@
 # have to fit the models inside model.avg in order to predict
-modavg_all <- model.avg(test, fit = TRUE)
+# modavg_all <- model.avg(test, fit = TRUE)
 
 make_predictions <- function(data, predictor, avgd_mod,
-                             means, sds){
+                             means, sds,
+                             response.is.log.trend = FALSE,
+                             predictor.is.log.trend = FALSE){
   # data is unquoted data frame of data that went into the model
   # predictor is quoted column name for what you want predictions of
   # avgd_mod is unquoted model.average object that has fitted models in it
@@ -47,28 +49,73 @@ make_predictions <- function(data, predictor, avgd_mod,
     mutate(ci_low = predicted - 1.96*se,
            ci_high = predicted + 1.96*se)
   
+  if(response.is.log.trend == TRUE){
+    predictions_df <- predictions_df |> 
+      mutate(pct_per_year = exp(predicted) * 100 - 100,
+             ci_low = exp(ci_low) * 100 - 100,
+             ci_high = exp(ci_high) * 100 - 100)
+  }
+  
+  if(predictor.is.log.trend == TRUE){
+    predictions_df <- predictions_df |> 
+      mutate(predictor.pct_per_year = exp(predictor.natural) * 100 - 100)
+  }
+  
   return(predictions_df)
 }
 
 # this doesn't take care of logarithmic or other transformations - may need to do that in another step
 
-graph_predictions <- function(predictions){
+graph_predictions <- function(predictions,
+                              response.is.log.trend = FALSE,
+                              predictor.is.log.trend = FALSE){
   # predictions is a data frame with predictions and ses
   # must have columns: predictor.natural, ci_low, ci_high, and predicted
-  ggplot(predictions) +
-    geom_ribbon(aes(x = predictor.natural,
+  
+  # set up aesthetics based on inputs
+  if(predictor.is.log.trend == TRUE & response.is.log.trend == FALSE){
+    p <- ggplot(predictions,
+                aes(x = predictor.pct_per_year,
+                    y = predicted,
                     ymin = ci_low,
-                    ymax = ci_high),
-                fill = "gray",
-                alpha = 0.6) +
+                    ymax = ci_high))
+  } else if(predictor.is.log.trend == TRUE & response.is.log.trend == TRUE){
+    p <- ggplot(predictions,
+                aes(x = predictor.pct_per_year,
+                    y = pct_per_year,
+                    ymin = ci_low,
+                    ymax = ci_high))
+  } else if(predictor.is.log.trend == FALSE & response.is.log.trend == TRUE){
+    p <- ggplot(predictions,
+                aes(x = predictor.natural,
+                    y = pct_per_year,
+                    ymin = ci_low,
+                    ymax = ci_high))
+  } else {
+    p <- ggplot(predictions,
+                aes(x = predictor.natural,
+                    y = predicted,
+                    ymin = ci_low,
+                    ymax = ci_high))
+  }
+  
+  # add layers to the plot
+  p <- p +
     geom_hline(yintercept = 0,
                linetype = "dashed",
-               col = "gray20") +
-    geom_line(aes(x = predictor.natural,
-                  y = predicted),
-              linewidth = 1,
-              col = "blue") +
+               col = "gray20",
+               linewidth = 0.3) +
+    geom_vline(xintercept = 0,
+               linetype = "dashed",
+               col = "gray20",
+               linewidth = 0.3) +
+    geom_ribbon(fill = "gray",
+                alpha = 0.6) +
+    geom_line(col = "blue") +
     theme_bw() 
+  
+  # return the plot
+  print(p)
 }
 
 
