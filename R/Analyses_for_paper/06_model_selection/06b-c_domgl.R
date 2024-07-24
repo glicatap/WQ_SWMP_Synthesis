@@ -1,5 +1,6 @@
 library(tidyverse)
 library(MuMIn)
+library(vegan)
 
 load(here::here("Outputs",
                 "06_model_selection",
@@ -9,9 +10,21 @@ dat_all <- read.csv(here::here("Outputs",
                                "04_compiled_predictors",
                                "compiled_predictors.csv"))
 
+# get dat_all set up properly, with PCA and log transformations etc.
+source(here::here("R", "Analyses_for_paper",
+                  "05_predictive_modeling",
+                  "050_setup.R"))
+
 mod_subsets <-  domgl_subsets
 
-
+dat_means <- dat_all |> 
+  select(any_of(names(dat_domgl)),
+         -reserve) |> 
+  summarize(across(everything(), mean))
+dat_sds <- dat_all |> 
+  select(any_of(names(dat_domgl)),
+         -reserve) |> 
+  summarize(across(everything(), sd))
 
 # reusable code
 sum(mod_subsets$delta<2)
@@ -97,31 +110,6 @@ ggplot(swdf, aes(x = predictor)) +
 
 # plot standardized coefficients ----
 
-coeffs2 <- data.frame(summary(modavg_all)$coefmat.full) |> 
-    rownames_to_column("term") |> 
-    mutate(ci_low = Estimate - 1.96*Adjusted.SE,
-           ci_high = Estimate + 1.96*Adjusted.SE,
-           term = str_remove(term, "cond\\("),
-           term = str_remove(term, "\\)")) |> 
-    left_join(swdf, by = c("term" = "predictor")) |> 
-    filter(term != "(Int)") |> 
-    arrange(Estimate) |> 
-    mutate(term = fct_inorder(term))
-
-ggplot(coeffs2) +
-    geom_pointrange(aes(y = term,
-                        x = Estimate,
-                        xmin = ci_low,
-                        xmax = ci_high,
-                        col = sw_all)) +
-    khroma::scale_color_batlow(reverse = TRUE) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    labs(title = "Standardized slopes in averaged model for DO mgl trend",
-         x = "Slope",
-         y = "Term",
-         col = "variable importance")
-
 # put in order by variable importance rather than coefficient
 coeffs3 <- data.frame(summary(modavg_all)$coefmat.full) |> 
     rownames_to_column("term") |> 
@@ -148,3 +136,58 @@ ggplot(coeffs3) +
          y = "Term",
          col = "variable importance")
 
+
+# make predictions ----
+
+newdata.names <- names(dat_doLT2)[3:ncol(dat_doLT2)] 
+# make a sequence for the predictor
+newdata.sds <- seq(-3, 3, by = 0.1)
+# make a data frame - start as a matrix with 0s
+# a column for every variable; we'll replace what we want as a predictor
+# with newdata.sds later
+newdata.matrix <- matrix(data = 0,
+                         nrow = length(newdata.sds),
+                         ncol = length(newdata.names))
+newdata <- data.frame(newdata.matrix)
+names(newdata) <- newdata.names
+
+
+# have to fit the models inside model.avg in order to predict
+modavg_all <- model.avg(test, fit = TRUE)
+
+
+# po4 trend ----
+
+predict_partrend <- newdata |> 
+  mutate(dailyPAR_trend = newdata.sds)
+
+predictions_par <- predict(modavg_all,
+                           newdata = predict_partrend,
+                           se.fit = TRUE,
+                           re.form = NA)
+
+predictions_par_df <- data.frame(predictor.sd = predict_partrend$dailyPAR_trend,
+                                 predictor.natural = (predict_partrend$dailyPAR_trend * dat_sds$dailyPAR_trend) + dat_means$dailyPAR_trend,
+                                 predicted = predictions_par$fit,
+                                 se = predictions_par$se) |> 
+  mutate(ci_low = predicted - 1.96*se,
+         ci_high = predicted + 1.96*se
+  )
+
+ggplot(predictions_par_df) +
+  geom_ribbon(aes(x = predictor.natural,
+                  ymin = ci_low,
+                  ymax = ci_high),
+              fill = "gray",
+              alpha = 0.6) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             col = "gray20") +
+  geom_line(aes(x = predictor.natural,
+                y = predicted),
+            linewidth = 1,
+            col = "blue") +
+  theme_bw() +
+  labs(title = "Partial effect of PAR trend on DO<2 trend",
+       x = "PAR trend (change per year)",
+       y = "Expected change in DO<2")
