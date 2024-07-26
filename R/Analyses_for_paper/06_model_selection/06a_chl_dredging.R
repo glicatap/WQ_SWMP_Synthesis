@@ -2,7 +2,9 @@ library(tidyverse)
 library(doParallel)
 library(tictoc)
 library(vegan)
-library(lme4)   # switched to this from glmmTMB due to timing
+# library(lme4)   # switched to this from glmmTMB due to timing
+library(glmmTMB)  # back to this because it allows SEs for predictions and WLS
+library(nlme)
 library(MuMIn)
 
 
@@ -37,13 +39,17 @@ dat_chl <- dat_all |>
 
 # generate formula
 formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
+formula_nlme <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "))
 
 # generate model
-mod_chl <- lmer(as.formula(formula_chl),
+mod_chl <- glmmTMB(as.formula(formula_chl),
                 data = dat_chl, 
                 REML = FALSE)
 
-
+mod_nlme <- lme(as.formula(formula_nlme),
+                data = dat_chl,
+                random = ~ 1|reserve,
+                method = "ML")
 # run models ----
 # establish cluster
 cl <- makeCluster(10)  
@@ -67,5 +73,32 @@ save(dat_chl, mod_chl, chla_subsets,
      file = here::here("Outputs",
                        "06_model_selection",
                        "R_objects",
-                       "chla_out.RData"),
+                       "chla_out_glmmTMB.RData"),
+     compress = "xz")
+
+
+# run models nlme ----
+# establish cluster
+cl <- makeCluster(10)  
+registerDoParallel(cl)
+
+options(na.action = "na.fail")
+
+tic("run models")
+chla_subsets <- MuMIn::dredge(mod_nlme, eval = TRUE,
+                              cluster = cl)
+toc()
+beepr::beep(8)
+
+
+# turn off cluster
+stopCluster(cl)
+
+
+# save subsets ----
+save(dat_chl, mod_chl, chla_subsets, 
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "chla_out_nlme.RData"),
      compress = "xz")
