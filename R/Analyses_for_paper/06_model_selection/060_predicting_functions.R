@@ -3,6 +3,7 @@
 
 make_predictions <- function(data, predictor, avgd_mod,
                              means, sds,
+                             sd.range = c(-3, 3),
                              response.is.log.trend = FALSE,
                              predictor.is.log.trend = FALSE){
   # data is unquoted data frame of data that went into the model
@@ -12,7 +13,7 @@ make_predictions <- function(data, predictor, avgd_mod,
   
   # means is a data frame of means for each predictor, for back-calculating
   # sds is a data frame of standard deviations for each predictor, for back-calculating
-
+  # sd.range is a numeric vector of the range of standard deviations in the predictor for which Y should be predicted
   
   # pull out mean and sd
   predictor_mean <- means[[predictor]]
@@ -21,7 +22,7 @@ make_predictions <- function(data, predictor, avgd_mod,
   # set up data frames
   dat <- data
   newdata.names <- names(dat)[3:ncol(dat)]
-  newdata.sds <- seq(-3, 3, by = 0.1)
+  newdata.sds <- seq(min(sd.range), max(sd.range), by = 0.1)
   # start newdata as a matrix with 0s
   # a column for every variable; we'll replace what we want as a predictor
   # with newdata.sds later
@@ -40,7 +41,8 @@ make_predictions <- function(data, predictor, avgd_mod,
   predictions <- predict(avgd_mod,
                          newdata = newdata,
                          se.fit = TRUE,
-                         re.form = NA)
+                         re.form = NA,
+                         level = 0)
   
   predictions_df <- data.frame(predictor.sd = newdata[[predictor]],
                                predictor.natural = (newdata[[predictor]] * predictor_sd) + predictor_mean,
@@ -102,16 +104,17 @@ graph_predictions <- function(predictions,
   # add layers to the plot
   p <- p +
     geom_hline(yintercept = 0,
-               linetype = "dashed",
-               col = "gray20",
+               linetype = "solid",
+               col = "gray10",
                linewidth = 0.3) +
     geom_vline(xintercept = 0,
-               linetype = "dashed",
-               col = "gray20",
+               linetype = "solid",
+               col = "gray10",
                linewidth = 0.3) +
-    geom_ribbon(fill = "gray",
+    geom_ribbon(fill = "gray80",
                 alpha = 0.6) +
-    geom_line(col = "blue") +
+    geom_line(col = "blue",
+              linewidth = 0.7) +
     theme_bw() 
   
   # return the plot

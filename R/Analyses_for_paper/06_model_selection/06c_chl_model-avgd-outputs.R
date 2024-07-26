@@ -2,12 +2,13 @@ library(tidyverse)
 library(vegan)
 library(lme4)
 library(glmmTMB)
+library(nlme)
 library(MuMIn)
 
 load(here::here("Outputs",
                 "06_model_selection",
                 "R_objects",
-                "chla_out_lme4.RData"))
+                "chla_out_nlme.RData"))
 # set up data frames
 dat_all <- read.csv(here::here("Outputs",
                                "04_compiled_predictors",
@@ -37,19 +38,33 @@ dat_sds <- dat_all |>
 # NOTE the se generated below is 'adjusted se' from output -
 # verify what this means
 
-top_mods <- mod_subsets[which(mod_subsets$delta < 4),]
-top_mods_unnested <- subset(top_mods, !nested(.))
-sw(top_mods)
+# delta < 4
+top_modsd4 <- mod_subsets[which(mod_subsets$delta < 4),]
+top_modsd4_unnested <- subset(top_modsd4, !nested(.))
+sw(top_modsd4)
 sw(top_mods_unnested)
-model.avg(top_mods)$coefficients
+model.avg(top_modsd4)$coefficients
 model.avg(top_mods_unnested)$coefficients
 
-# average models ----
-modavg_all <- model.avg(top_mods)
+# deltas < 2 and 6, for supplementary info
+top_modsd2 <- mod_subsets[which(mod_subsets$delta < 2),]
+top_modsd2_unnested <- subset(top_modsd2, !nested(.))
 
-swdf <- data.frame(sw_all = sw(top_mods)) |> 
+top_modsd6 <- mod_subsets[which(mod_subsets$delta < 6),]
+top_modsd6_unnested <- subset(top_modsd6, !nested(.))
+
+
+# average models ----
+# for supplementary, get coeffs etc. for deltas 2 and 6
+mod_avgd2 <- model.avg(top_modsd2)
+mod_avgd6 <- model.avg(top_modsd6)
+
+# for main, use delta < 4
+mod_avgd4 <- model.avg(top_modsd4, fit = TRUE)
+
+swdf <- data.frame(sw_all = sw(top_modsd4)) |> 
   rownames_to_column("predictor")
-swdf2 <- data.frame(sw_nonnested = sw(top_mods_unnested)) |> 
+swdf2 <- data.frame(sw_nonnested = sw(top_modsd4_unnested)) |> 
   rownames_to_column("predictor")
 
 swdf <- full_join(swdf, swdf2, by = "predictor") |> 
@@ -82,7 +97,7 @@ ggplot(swdf, aes(x = predictor)) +
 
 
 # put in order by variable importance rather than coefficient
-coeffs3 <- data.frame(summary(modavg_all)$coefmat.full) |> 
+coeffs_stnd <- data.frame(summary(mod_avgd4)$coefmat.full) |> 
   rownames_to_column("term") |> 
   mutate(ci_low = Estimate - 1.96*Adjusted.SE,
          ci_high = Estimate + 1.96*Adjusted.SE,
@@ -93,7 +108,7 @@ coeffs3 <- data.frame(summary(modavg_all)$coefmat.full) |>
   arrange(sw_all) |> 
   mutate(term = fct_inorder(term))
 
-ggplot(coeffs3) +
+ggplot(coeffs_stnd) +
   geom_pointrange(aes(y = term,
                       x = Estimate,
                       xmin = ci_low,
@@ -103,26 +118,23 @@ ggplot(coeffs3) +
   geom_vline(xintercept = 0,
              col = "gray40") +
   labs(title = "Standardized coefficients in averaged model for chl a trend",
+       subtitle = "models with delta < 4",
        x = "Coefficient",
        y = "Term",
        col = "variable importance")
 
 
-
-# make predictions ----
-
-# lme4 doesn't let us use se for predictions, so back to glmmTMB output
-# (glmmTMB wasn't generating deltas or weights)
-
-# how many do we need to subset from glmmTMB for delta < 4?
-n_d2 <- sum(chla_subsets$delta < 2)
-n_d4 <- sum(chla_subsets$delta < 4)
-n_d6 <- sum(chla_subsets$delta < 6)
-
-load(here::here("Outputs",
-                "06_model_selection",
-                "R_objects",
-                "chla_out_glmmTMB.RData"))
-
-top_mods_glmmTMB <- chla_subsets[1:n_d4, ]
-modavg_all <- model.avg(top_mods_glmmTMB, fit = TRUE)
+# save important outputs for predictor workup
+save(dat_chl,                              # data frame used for model
+     mod_chl,                              # global model
+     dat_means, dat_sds,                   # means and sds of predictors on original scales
+     coeffs_stnd,                          # standardized coeffs for delta < 4; includes importance vals
+     mod_avgd2, mod_avgd4, mod_avgd6,      # model avgd objects; avgd4 has full fits
+     top_modsd2, top_modsd2_unnested,        # nested and non-nested model sets for different deltas
+     top_modsd4, top_modsd4_unnested,
+     top_modsd6, top_modsd6_unnested,
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "chla_post-averaging.RData"),
+     compress = "xz")
