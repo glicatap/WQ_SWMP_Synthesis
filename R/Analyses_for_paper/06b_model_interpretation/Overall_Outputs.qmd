@@ -35,22 +35,21 @@ chl_in <- load(here::here("Outputs",
 chl_list <- mget(chl_in)
 rm(list = chl_in)
 
-# uncomment when averaging has been performed on DO models
 
-# domgl_in <- load(here::here("Outputs",
-#                 "06_model_selection",
-#                 "R_objects",
-#                 "domgl_post-averaging.RData"))
-# domgl_list <- mget(domgl_in)
-# rm(list = domgl_in)
-# 
-# 
-# doLT2_in <- load(here::here("Outputs",
-#                 "06_model_selection",
-#                 "R_objects",
-#                 "doLT2_post-averaging.RData"))
-# doLT2_list <- mget(doLT2_in)
-# rm(list = doLT2_in)
+domgl_in <- load(here::here("Outputs",
+                "06_model_selection",
+                "R_objects",
+                "domgl_post-averaging.RData"))
+domgl_list <- mget(domgl_in)
+rm(list = domgl_in)
+
+
+doLT2_in <- load(here::here("Outputs",
+                "06_model_selection",
+                "R_objects",
+                "doLT2_post-averaging.RData"))
+doLT2_list <- mget(doLT2_in)
+rm(list = doLT2_in)
 
 
 source(here::here("R",

@@ -27,119 +27,109 @@ dat_sds <- dat_all |>
          -reserve) |> 
   summarize(across(everything(), sd))
 
-# how many models based on various deltas ----
-sum(mod_subsets$delta<2)
-sum(mod_subsets$delta<4)
-sum(mod_subsets$delta<6)
+# get top models ----
 
-# find out how big the 95% confidence set is ----
-mod_subsets$cumuwt <- cumsum(mod_subsets$weight)
-as.data.frame(mod_subsets) |> 
-    mutate(rownumber = 1:nrow(mod_subsets)) |> 
-    select(rownumber, delta, weight, cumuwt) |> 
-    filter(cumuwt >= 0.95) |> 
-    head()
+# include all, and do the nested models thing
+# NOTE the se generated below is 'adjusted se' from output -
+# verify what this means
 
-# 95% confidence set has 21,256 models
-# delta of 13.35
+# delta < 4
+top_modsd4 <- mod_subsets[which(mod_subsets$delta < 4),]
+top_modsd4_unnested <- subset(top_modsd4, !nested(.))
+sw(top_modsd4)
+sw(top_modsd4_unnested)
+model.avg(top_modsd4)$coefficients
+model.avg(top_modsd4_unnested)$coefficients
 
-# plots of deltas
-# commented out since no longer needed
-# subs2 <- data.frame(mod_subsets)
-# plot(subs2$delta[1:21000],
-#      main = "Delta AICc curve, domgl",
-#      xlab = "model number",
-#      ylab = "Delta")
-# abline(h = 2, col = "red3", lty = 2)
-# abline(h = 4, col = "blue", lty = 2)
-# abline(h = 6, col = "orange", lty = 2)
-# 
-# 
-# plot(subs2$delta,
-#      main = "Delta AICc curve",
-#      xlab = "model number",
-#      ylab = "Delta")
-# abline(h = 2, col = "red3")
-# abline(h = 4, col = "orange")
-# abline(h = 6, col = "orange")
-# abline(h = 5, col = "orange")
-# 
-# sum(subs2$delta <=4)
-# sum(subs2$delta <=5)
+# deltas < 2 and 6, for supplementary info
+top_modsd2 <- mod_subsets[which(mod_subsets$delta < 2),]
+top_modsd2_unnested <- subset(top_modsd2, !nested(.))
 
+top_modsd6 <- mod_subsets[which(mod_subsets$delta < 6),]
+top_modsd6_unnested <- subset(top_modsd6, !nested(.))
 
-
-top_mods <- mod_subsets[which(mod_subsets$delta < 4),]
-top_mods_unnested <- subset(top_mods, !nested(.))
-sw(top_mods)
-sw(top_mods_unnested)
-model.avg(top_mods)$coefficients
-model.avg(top_mods_unnested)$coefficients
 
 # average models ----
-# "swdf" name is for "sum of weights data frame"
+# for supplementary, get coeffs etc. for deltas 2 and 6
+mod_avgd2 <- model.avg(top_modsd2)
+mod_avgd6 <- model.avg(top_modsd6)
 
-swdf <- data.frame(sw_all = sw(top_mods)) |> 
-    rownames_to_column("predictor")
-swdf2 <- data.frame(sw_nonnested = sw(top_mods_unnested)) |> 
-    rownames_to_column("predictor")
+# for main, use delta < 4 and fit them
+mod_avgd4 <- model.avg(top_modsd4, fit = TRUE)
+
+swdf <- data.frame(sw_all = sw(top_modsd4)) |> 
+  rownames_to_column("predictor")
+swdf2 <- data.frame(sw_nonnested = sw(top_modsd4_unnested)) |> 
+  rownames_to_column("predictor")
 
 swdf <- full_join(swdf, swdf2, by = "predictor") |> 
-    arrange(desc(sw_all)) |> 
-    mutate(predictor = str_remove(predictor, "cond\\("),
-           predictor = str_remove(predictor, "\\)"),
-           predictor = fct_inorder(predictor))
+  arrange(desc(sw_all)) |> 
+  mutate(predictor = str_remove(predictor, "cond\\("),
+         predictor = str_remove(predictor, "\\)"),
+         predictor = fct_inorder(predictor))
 
 # plot variable importances  ----
 ggplot(swdf, aes(x = predictor)) +
-    geom_point(aes(y = sw_all,
-                   col = "all top models"),
-               size = 3) +
-    geom_point(aes(y = sw_nonnested,
-                   col = "nesting removed"),
-               size = 3) +
-    scale_color_brewer(palette = "Set1") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 40,
-                                     hjust = 1,
-                                     vjust = 1),
-          legend.position = "bottom") +
-    labs(title = "Relative variable importance, DO mg/L",
-         subtitle = "models with delta < 4",
-         x = "Predictor",
-         y = "Sum of Akaike weights")
+  geom_point(aes(y = sw_all,
+                 col = "all top models"),
+             size = 3) +
+  geom_point(aes(y = sw_nonnested,
+                 col = "nesting removed"),
+             size = 3) +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 40,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.position = "bottom") +
+  labs(title = "Relative variable importance, domgl",
+       subtitle = "models with delta < 4",
+       x = "Predictor",
+       y = "Sum of Akaike weights")
 
-# model averaging ----
-# have to fit the models inside model.avg in order to predict
-modavg_all <- model.avg(top_mods, fit = TRUE)
 
 # plot standardized coefficients ----
 
+
 # put in order by variable importance rather than coefficient
-coeffs3 <- data.frame(summary(modavg_all)$coefmat.full) |> 
-    rownames_to_column("term") |> 
-    mutate(ci_low = Estimate - 1.96*Adjusted.SE,
-           ci_high = Estimate + 1.96*Adjusted.SE,
-           term = str_remove(term, "cond\\("),
-           term = str_remove(term, "\\)")) |> 
-    left_join(swdf, by = c("term" = "predictor")) |> 
-    filter(!str_starts(term, "\\(Int")) |> 
-    arrange(sw_all) |> 
-    mutate(term = fct_inorder(term))
+coeffs_stnd <- data.frame(summary(mod_avgd4)$coefmat.full) |> 
+  rownames_to_column("term") |> 
+  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
+         ci_high = Estimate + 1.96*Adjusted.SE,
+         term = str_remove(term, "cond\\("),
+         term = str_remove(term, "\\)")) |> 
+  left_join(swdf, by = c("term" = "predictor")) |> 
+  filter(!str_starts(term, "\\(Int")) |> 
+  arrange(sw_all) |> 
+  mutate(term = fct_inorder(term))
 
-ggplot(coeffs3) +
-    geom_pointrange(aes(y = term,
-                        x = Estimate,
-                        xmin = ci_low,
-                        xmax = ci_high,
-                        col = sw_all)) +
-    khroma::scale_color_batlow(reverse = TRUE) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    labs(title = "Standardized coefficients in averaged model for DO mgl trend",
-         x = "Coefficient",
-         y = "Term",
-         col = "variable importance")
+ggplot(coeffs_stnd) +
+  geom_pointrange(aes(y = term,
+                      x = Estimate,
+                      xmin = ci_low,
+                      xmax = ci_high,
+                      col = sw_all)) +
+  khroma::scale_color_batlow(reverse = TRUE) +
+  geom_vline(xintercept = 0,
+             col = "gray40") +
+  labs(title = "Standardized coefficients in averaged model for domgl trend",
+       subtitle = "models with delta < 4",
+       x = "Coefficient",
+       y = "Term",
+       col = "variable importance")
 
 
-
+# save important outputs for predictor workup
+save(dat_domgl,                              # data frame used for model
+     mod_domgl,                              # global model
+     dat_means, dat_sds,                   # means and sds of predictors on original scales
+     coeffs_stnd,                          # standardized coeffs for delta < 4; includes importance vals
+     mod_avgd2, mod_avgd4, mod_avgd6,      # model avgd objects; avgd4 has full fits
+     top_modsd2, top_modsd2_unnested,        # nested and non-nested model sets for different deltas
+     top_modsd4, top_modsd4_unnested,
+     top_modsd6, top_modsd6_unnested,
+     file = here::here("Outputs",
+                       "06_model_selection",
+                       "R_objects",
+                       "domgl_post-averaging.RData"),
+     compress = "xz")
