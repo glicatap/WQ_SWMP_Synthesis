@@ -1,0 +1,315 @@
+---
+title: "Graphs and Tables of averaged model outputs (delta < 4)"
+output-file: "2024-08-01 Model Outputs main"
+date: today
+format: 
+  pdf:
+    toc: true
+  html:
+      toc: true
+      toc-location: left
+      embed-resources: true
+fig-width: 6
+fig-height: 4
+echo: false
+warning: false
+message: false
+error: true
+---
+
+This file contains information on model outputs for our three key responses, using model-averaging (full model method) on models with delta AICc < 4 from the top model.  
+```{r}
+library(dplyr)
+library(ggplot2)
+library(nlme)
+library(MuMIn)
+library(gt)
+```
+
+```{r}
+# get needed data frames and source functions
+chl_in <- load(here::here("Outputs",
+                "06_model_selection",
+                "R_objects",
+                "chla_post-averaging.RData"))
+chl_list <- mget(chl_in)
+rm(list = chl_in)
+
+# uncomment when averaging has been performed on DO models
+
+# domgl_in <- load(here::here("Outputs",
+#                 "06_model_selection",
+#                 "R_objects",
+#                 "domgl_post-averaging.RData"))
+# domgl_list <- mget(domgl_in)
+# rm(list = domgl_in)
+# 
+# 
+# doLT2_in <- load(here::here("Outputs",
+#                 "06_model_selection",
+#                 "R_objects",
+#                 "doLT2_post-averaging.RData"))
+# doLT2_list <- mget(doLT2_in)
+# rm(list = doLT2_in)
+
+
+source(here::here("R",
+                  "Analyses_for_paper",
+                  "06_model_selection",
+                  "060_predicting_functions.R"))
+```
+
+
+
+# Tabular summary of predictors  
+
+```{r}
+# use gt or kableExtra
+# one row for each predictor
+# three big sections, one for each response
+# each response should have # candidate models
+# each response section should get the following columns:
+# Estimate, SE, SW, # models
+```
+
+```{r}
+coeffs_chl <- chl_list$coeffs_stnd
+# coeffs_domgl <- domgl_list$coeffs_stnd
+# coeffs_doLT2 <- doLT2_list$coeffs_stnd
+```
+
+
+# Coefficient summary graphics  
+
+## Chl a  
+
+
+**Global model:**  
+
+```{r}
+graph_coeffs(coeffs_chl, title_param = "Chl a trend")
+```
+
+
+
+## DO mg/L  
+
+**Global model:** 
+
+```{r}
+graph_coeffs(coeffs_domgl, title_param = "DO mg/L trend")
+```
+
+
+## Proportion of time DO < 2 mg/L  
+
+**Global model:** 
+
+```{r}
+graph_coeffs(coeffs_doLT2, title_param = "\ntrend in proportion of DO readings < 2 mg/L")
+```
+
+
+# Individual Predictor partial effect plots  
+
+These graphs have generally been created below for the top 5-6 predictors for each key response. The function defaults to predicting the response for a range of -3 to +3 standard deviations for the predictor's values. In some cases, when the range of predictor values was outside of that, the range has been specified as a function argument, to capture our expectations for the response, when all other predictors are held at their average value, over the range of predictor values in our dataset.  
+
+When possible, predictors and responses were back-transformed to their original scales. When trends of log-parameters were used, these were calculated to percent change per year (e.g. a linear trend in log-chl of 0.05 becomes a multiplicative trend for chl, exp(0.05) = approximately 1.05, or a 5% increase per year over year).  
+
+## Chl a  
+
+```{r}
+#| include: false
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(chl_list, envir = .GlobalEnv)
+```
+
+### PO4 trend  
+
+```{r}
+po4trend_on_chl <- make_predictions(data = dat_chl,
+                                    predictor = "po4f_trend",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-3.7, 3.4),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = TRUE)
+
+graph_predictions(po4trend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of PO4 trend on Chl a trend",
+       x = "PO4 trend (% per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### Turbidity trend  
+
+```{r}
+turbtrend_on_chl <- make_predictions(data = dat_chl,
+                                    predictor = "turb_trend",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-5, 2),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = FALSE)
+
+graph_predictions(turbtrend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Turbidity trend on Chl a trend",
+       x = "Turbidity trend (NTU per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### NH4 trend  
+
+```{r}
+nh4trend_on_chl <- make_predictions(data = dat_chl,
+                                   predictor = "nh4f_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = TRUE,
+                                   predictor.is.log.trend = TRUE)
+
+graph_predictions(nh4trend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of NH4 trend on Chl a trend",
+       x = "NH4 trend (% per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### SpCond trend  
+
+```{r}
+spctrend_on_chl <- make_predictions(data = dat_chl,
+                                   predictor = "spcond_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = TRUE,
+                                   predictor.is.log.trend = FALSE)
+
+graph_predictions(spctrend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond trend on Chl a trend",
+       x = "Specific Conductance trend (mS/cm per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### Chl a median  
+
+```{r}
+chlmedian_on_chl <- make_predictions(data = dat_chl,
+                                    predictor = "chla_median.log",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-3.2, 2),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = FALSE) 
+
+graph_predictions(chlmedian_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of log(chla median) on Chl a trend",
+       x = "log(Chl a long-term median (ug/L))",
+       y = "Expected Chl a trend (% per year)")
+
+# back-calculated to actual median
+# shape is a little weird because median chl was log-transformed prior to modeling
+chlmedian_on_chl <- chlmedian_on_chl |> 
+  mutate(predictor.natural = exp(predictor.natural))
+
+graph_predictions(chlmedian_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Chl a median on Chl a trend",
+       x = "Chl a long-term median (ug/L)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### Latitude / Temp / PAR / DO medians  
+
+This will take more work to pull out and has not been done yet.  
+
+```{r}
+# latitudinal PCA ----
+# this one is going to take some extra work to pull out temp, DO, latitude
+```
+
+### Precipitation trend  
+
+For trend calculation, precipitation was square-root transformed. This met regression assumpetions better than a log-transformation, but is not able to be calculated to something intuitive like % change per year.  
+
+```{r}
+precp_on_chl <- make_predictions(data = dat_chl,
+                                 predictor = "precp_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-3.4, 2.5),
+                                 response.is.log.trend = TRUE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(precp_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Precipitation trend on Chl a trend",
+       x = "Trend in square-root of precipitation (per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+
+```{r}
+# clean up the global environment again
+rm(list = chl_in)
+```
+
+
+## DO mg/L  
+
+```{r}
+# don't forget to add 'include: false' as a chunk comment when this is ready
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(domgl_list, envir = .GlobalEnv)
+```
+
+
+**all the stuff**
+
+
+```{r}
+# clean up the global environment again
+rm(list = domgl_in)
+```
+
+
+
+## DO < 2  
+
+
+
+```{r}
+# don't forget to add 'include: false' as a chunk comment when this is ready
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(doLT2_list, envir = .GlobalEnv)
+```
+
+
+**all the stuff**
+
+
+```{r}
+# clean up the global environment again
+rm(list = doLT2_in)
+```
+

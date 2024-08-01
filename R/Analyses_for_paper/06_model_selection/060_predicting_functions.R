@@ -122,3 +122,27 @@ graph_predictions <- function(predictions,
 }
 
 
+# graph standardized coefficients ----
+graph_coeffs <- function(data, title_param = NULL){
+  coeffs_stnd <- data
+  
+  p <- ggplot(coeffs_stnd) +
+    geom_pointrange(aes(y = term,
+                        x = Estimate,
+                        xmin = ci_low,
+                        xmax = ci_high,
+                        col = sw_all)) +
+    khroma::scale_color_batlow(reverse = TRUE) +
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    labs(x = "Coefficient",
+         y = "Term",
+         col = "variable importance")
+  
+  if(!is.null(title_param)){
+    p <- p +
+      ggtitle(paste("Standardized coefficients in averaged model for", title_param))
+  }
+  
+  print(p)
+}

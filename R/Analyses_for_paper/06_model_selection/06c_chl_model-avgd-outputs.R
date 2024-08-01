@@ -42,9 +42,9 @@ dat_sds <- dat_all |>
 top_modsd4 <- mod_subsets[which(mod_subsets$delta < 4),]
 top_modsd4_unnested <- subset(top_modsd4, !nested(.))
 sw(top_modsd4)
-sw(top_mods_unnested)
+sw(top_modsd4_unnested)
 model.avg(top_modsd4)$coefficients
-model.avg(top_mods_unnested)$coefficients
+model.avg(top_modsd4_unnested)$coefficients
 
 # deltas < 2 and 6, for supplementary info
 top_modsd2 <- mod_subsets[which(mod_subsets$delta < 2),]
