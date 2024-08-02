@@ -1,16 +1,18 @@
 ---
 title: "Graphs and Tables of averaged model outputs (delta < 4)"
-output-file: "2024-08-01 Model Outputs main"
+output-file: "2024-08-02 Model Outputs main"
 date: today
 format: 
   pdf:
     toc: true
+    fig-width: 6
+    fig-height: 4
   html:
-      toc: true
-      toc-location: left
-      embed-resources: true
-fig-width: 6
-fig-height: 4
+    toc: true
+    toc-location: left
+    embed-resources: true
+    fig-width: 7
+    fig-height: 5
 echo: false
 warning: false
 message: false
@@ -58,22 +60,12 @@ source(here::here("R",
 ```
 
 
-
-# Tabular summary of predictors  
-
 ```{r}
-# use gt or kableExtra
-# one row for each predictor
-# three big sections, one for each response
-# each response should have # candidate models
-# each response section should get the following columns:
-# Estimate, SE, SW, # models
-```
-
-
-
-```{r}
-# make a big table of coefficients
+# compile coefficients
+# while we're in this step,
+# back-transform coefficients to original units:
+# both the coefficient and standard error can be
+# back-transformed by multiplying by (st.dev(Y)/ st.dev(X))
 
 
 # chl, and extract information on importance
@@ -85,6 +77,24 @@ nmods_chl <- data.frame("n.models" = attributes(chl_list$coeffs_stnd$sw_all)$n.m
   tibble::rownames_to_column("term")
 coeffs_chl <- full_join(coeffs_chl, nmods_chl, by = "term")
 
+# back-transform
+sd_y <- chl_list$dat_sds$chla_trend
+transform_mults <- chl_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_chl = left_join(coeffs_chl, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
+
+# coeffs_chl |> 
+#     arrange(desc(sw)) |> 
+#     select(term, Estimate, Estimate.natural) |> 
+#     mutate(across(c(Estimate, Estimate.natural),
+#                   \(x) round(x, 4))) |> 
+#     gt::gt()
+
 
 # domgl
 coeffs_domgl <- domgl_list$coeffs_stnd |> 
@@ -94,6 +104,17 @@ coeffs_domgl <- domgl_list$coeffs_stnd |>
 nmods_domgl <- data.frame("n.models" = attributes(domgl_list$coeffs_stnd$sw_all)$n.models) |> 
   tibble::rownames_to_column("term")
 coeffs_domgl <- full_join(coeffs_domgl, nmods_domgl, by = "term")
+
+# back-transform
+sd_y <- domgl_list$dat_sds$domgl_trend
+transform_mults <- domgl_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_domgl = left_join(coeffs_domgl, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
 
 
 
@@ -106,72 +127,80 @@ nmods_doLT2 <- data.frame("n.models" = attributes(doLT2_list$coeffs_stnd$sw_all)
   tibble::rownames_to_column("term")
 coeffs_doLT2 <- full_join(coeffs_doLT2, nmods_doLT2, by = "term")
 
-
-# join
-coeffs_all <- bind_rows(coeffs_chl, coeffs_domgl, coeffs_doLT2)
-
-# cleanup
-rm(nmods_chl,
-   nmods_domgl,
-   nmods_doLT2,
-   coeffs_chl, coeffs_domgl, coeffs_doLT2)
-```
-
-```{r}
-# clean up coeffs data frame and make a nice table
-coeffs_totbl <- coeffs_all |> 
-  select(model, term, Estimate, Adjusted.SE, sw, n.models) |> 
-  mutate(Estimate = round(Estimate, 4),
-         Adjusted.SE = round(Adjusted.SE, 4),
-         sw = round(sw, 2)) |> 
-  rename(SE = Adjusted.SE,
-         Predictor = term) |> 
-  pivot_wider(names_from = model,
-              values_from = c(Estimate, SE, sw, n.models),
-              names_glue = "{model}_{.value}",
-              names_vary = "slowest") |> 
-  arrange(desc(`Chl a trend_sw`))
-
-gt(coeffs_totbl) |> 
-  tab_spanner_delim(delim = "_") |> 
-  tab_header(title = "Standardized coefficients and importance",
-             subtitle = "Model averaging with delta AICc < 4") |> 
-  tab_style(style = cell_borders(sides = "right",
-                                 color = "gray80",
-                                 weight = px(3)),
-            locations = cells_body(columns = c(1, 5, 9, 13))) |> 
-  opt_row_striping()
+# back-transform
+sd_y <- doLT2_list$dat_sds$doLT2_trend
+transform_mults <- doLT2_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_doLT2 = left_join(coeffs_doLT2, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
+rm(nmods_chl, nmods_domgl, nmods_doLT2,
+   sd_y, transform_mults)
 ```
 
 
-# Coefficient summary graphics  
+
+# Coefficient summaries  
 
 ## Chl a  
 
 
 **Global model:**  
 
+**# Candidate models:**  
+
+**# models in top set (delta < 4):**  
+
+to be filled in  
+
 ```{r}
 graph_coeffs(chl_list$coeffs_stnd, title_param = "Chl a trend")
 ```
 
+```{r}
+table_coeffs(coeffs_chl, response = "Chl a trend", delta = 4)
+```
 
 
 ## DO mg/L  
 
-**Global model:** 
+**Global model:**  
+
+**# Candidate models:**  
+
+**# models in top set (delta < 4):**  
+
+to be filled in  
 
 ```{r}
 graph_coeffs(domgl_list$coeffs_stnd, title_param = "DO mg/L trend")
 ```
 
+```{r}
+table_coeffs(coeffs_domgl, response = "DO mg/L trend", delta = 4)
+```
+
+
 
 ## Proportion of time DO < 2 mg/L  
 
-**Global model:** 
+**Global model:**  
+
+**# Candidate models:**  
+
+**# models in top set (delta < 4):**  
+
+to be filled in  
 
 ```{r}
 graph_coeffs(doLT2_list$coeffs_stnd, title_param = "\ntrend in proportion of DO readings < 2 mg/L")
+```
+
+```{r}
+table_coeffs(coeffs_doLT2, response = "DO < 2 trend", delta = 4)
 ```
 
 

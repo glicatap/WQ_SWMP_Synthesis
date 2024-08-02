@@ -146,3 +146,40 @@ graph_coeffs <- function(data, title_param = NULL){
   
   print(p)
 }
+
+
+# table of averaged model coefficients ----
+table_coeffs <- function(data, response, delta = 4){
+    # data should be a coefficient data frame with the appropriate columns
+    # response should be a character string to use for titles etc.
+    coeffs_totbl <- data |> 
+        dplyr::select(Predictor = term, 
+                      Estimate, SE = Adjusted.SE,
+                      Estimate. = Estimate.natural, SE. = Adjusted.SE.natural,
+                      sw, nmodels = n.models) |> 
+        dplyr::mutate(across(c(Estimate:SE.),
+                             \(x) round(x, 4)),
+                      sw = round(sw, 2)) |> 
+        dplyr::arrange(desc(sw)) 
+    
+    gt::gt(coeffs_totbl) |> 
+        tab_spanner(columns = c(2, 3), label = "Standardized") |> 
+        tab_spanner(columns = c(4, 5), label = "Predictor Units") |> 
+        tab_spanner(columns = c(6, 7), label = "Importance") |> 
+        tab_header(title = paste("Coefficients for", response, "model"),
+                   subtitle = paste("Model averaging with delta AICc <", delta)) |> 
+        tab_style(style = cell_borders(sides = "right",
+                                       color = "gray80",
+                                       weight = px(3)),
+                  locations = cells_body(columns = c(1, 3, 5, 7))) |> 
+        cols_label(starts_with("Estimate") ~ "Estimate",
+                   starts_with("SE") ~ "SE",
+                   sw ~ "Sum of Weights",
+                   nmodels ~ "# models") |> 
+        opt_row_striping() |> 
+        cols_width(Predictor ~ pct(20),
+                   starts_with("Est") ~ pct(10),
+                   starts_with("SE") ~ pct(10),
+                   everything() ~ pct(10))
+    
+}
