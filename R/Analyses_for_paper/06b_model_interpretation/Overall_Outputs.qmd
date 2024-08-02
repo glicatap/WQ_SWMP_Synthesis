@@ -19,7 +19,22 @@ message: false
 error: true
 ---
 
+# Overview  
+
+
 This file contains information on model outputs for our three key responses, using model-averaging (full model method) on models with delta AICc < 4 from the top model.  
+
+
+## Some notes on coefficients and graphics  
+
+Standardized coefficients, as in the coefficient plots and the left columns of the coefficient tables, are interpreted on a scale of standard deviations: one standard deviation in [predictor] is expected to be associated with a [coefficient]-unit change in [response].  
+
+In the tables, coefficients have also been back-transformed to the units of the predictors. We must keep in mind that the predictor units are generally not on the scales of variable measurements (nutrient and turbidity trends are "trend in the log-transformed [variable]", and nutrient and turbidity medians have also been log-transformed. precipitation trend is "trend in square-root of precipitation"). 
+
+In the partial effect plots, transformations to more intuitive associations have been made graphically. This was not done for the tables because such transformations are generally not linear, but rather multiplicative.    
+
+
+
 ```{r}
 library(tidyverse)
 library(nlme)
@@ -151,29 +166,25 @@ rm(nmods_chl, nmods_domgl, nmods_doLT2,
 **Global model:**  
 
 ```{r}
-cat("normal chunk \n\n")
-mod_chl$modelInfo$allForm$formula
+formula(chl_list$mod_chl)
 ```
 
-```{r}
-#| results: asis
+That formula doesn't show it, but `Reserve` was included as a random effect.  
 
-cat("results asis \n\n")
-mod_chl$modelInfo$allForm$formula
-```
+**# Candidate models:**  `r format(2^(length(fixef(chl_list$mod_chl)) - 1), big.mark = ",", scientific = FALSE)`
 
-**# Candidate models:**  
+**# models in top set (delta < 4):**  `r nrow(chl_list$top_modsd4)`
 
-**# models in top set (delta < 4):**  
-
-to be filled in  
 
 ```{r}
 graph_coeffs(chl_list$coeffs_stnd, title_param = "Chl a trend")
 ```
 
+What we see from the graph above and the table below is that we've got 3 really key predictors for chl trend: phosphate trend (positive association), turbidity trend (positive association), and ammonia trend (negative association). Spcond trend (positive), long-term median chlorophyll (positive), the latitudinal gradient (negative: so association b/t chl trend and latitude itself is negative; and b/t chl and median DO mgL & daily PAR are positive), and precipitation trend (positive) are of moderate importance.  
+
+
 ```{r}
-table_coeffs(coeffs_chl, response = "Chl a trend", delta = 4)
+table_coeffs(coeffs_chl, title_param = "Chl a trend", delta = 4)
 ```
 
 
@@ -181,18 +192,24 @@ table_coeffs(coeffs_chl, response = "Chl a trend", delta = 4)
 
 **Global model:**  
 
-**# Candidate models:**  
+```{r}
+formula(domgl_list$mod_domgl)
+```
 
-**# models in top set (delta < 4):**  
 
-to be filled in  
+**# Candidate models:**  `r format(2^(length(coef(domgl_list$mod_domgl)) - 1), big.mark = ",", scientific = FALSE)`
+
+**# models in top set (delta < 4):**  `r nrow(domgl_list$top_modsd4)`
 
 ```{r}
 graph_coeffs(domgl_list$coeffs_stnd, title_param = "DO mg/L trend")
 ```
 
+From the graph above and the table below we see 5 important predictors for DO mg/L trend: trend in daily PAR (positive association), temperature trend (negative association),  chl a trend (negative association), SpCond median (positive), and SpCond trend (negative). Chl a median (positive association) is of moderate importance. 
+
+
 ```{r}
-table_coeffs(coeffs_domgl, response = "DO mg/L trend", delta = 4)
+table_coeffs(coeffs_domgl, title_param = "DO mg/L trend", delta = 4)
 ```
 
 
@@ -201,18 +218,25 @@ table_coeffs(coeffs_domgl, response = "DO mg/L trend", delta = 4)
 
 **Global model:**  
 
-**# Candidate models:**  
+```{r}
+formula(doLT2_list$mod_doLT2)
+```
 
-**# models in top set (delta < 4):**  
 
-to be filled in  
+**# Candidate models:**  `r format(2^(length(coef(doLT2_list$mod_doLT2)) - 1), big.mark = ",", scientific = FALSE)`
+
+**# models in top set (delta < 4):**  `r nrow(doLT2_list$top_modsd4)`
 
 ```{r}
 graph_coeffs(doLT2_list$coeffs_stnd, title_param = "\ntrend in proportion of DO readings < 2 mg/L")
 ```
 
+
+The graph above and the table below indicate 3 major predictors for DO < 2 trend / hypoxia trend, all negatively associated with trend in hypoxia: median precipitation, NO23 trend, and daily PAR trend. SpCond trend (positive) and SpCond median (negative) are of moderate importance. Chl a trend (positive) has some indication of being important but is not as strong as the other predictors.  
+
+
 ```{r}
-table_coeffs(coeffs_doLT2, response = "DO < 2 trend", delta = 4)
+table_coeffs(coeffs_doLT2, title_param = "DO < 2 trend", delta = 4)
 ```
 
 

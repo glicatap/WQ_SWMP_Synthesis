@@ -149,9 +149,9 @@ graph_coeffs <- function(data, title_param = NULL){
 
 
 # table of averaged model coefficients ----
-table_coeffs <- function(data, response, delta = 4){
+table_coeffs <- function(data, title_param, delta = 4){
     # data should be a coefficient data frame with the appropriate columns
-    # response should be a character string to use for titles etc.
+    # title_param should be a character string to use for titles etc.
     coeffs_totbl <- data |> 
         dplyr::select(Predictor = term, 
                       Estimate, SE = Adjusted.SE,
@@ -166,7 +166,7 @@ table_coeffs <- function(data, response, delta = 4){
         tab_spanner(columns = c(2, 3), label = "Standardized") |> 
         tab_spanner(columns = c(4, 5), label = "Predictor Units") |> 
         tab_spanner(columns = c(6, 7), label = "Importance") |> 
-        tab_header(title = paste("Coefficients for", response, "model"),
+        tab_header(title = paste("Coefficients for", title_param, "model"),
                    subtitle = paste("Model averaging with delta AICc <", delta)) |> 
         tab_style(style = cell_borders(sides = "right",
                                        color = "gray80",
