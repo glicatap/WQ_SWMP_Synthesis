@@ -150,6 +150,18 @@ rm(nmods_chl, nmods_domgl, nmods_doLT2,
 
 **Global model:**  
 
+```{r}
+cat("normal chunk \n\n")
+mod_chl$modelInfo$allForm$formula
+```
+
+```{r}
+#| results: asis
+
+cat("results asis \n\n")
+mod_chl$modelInfo$allForm$formula
+```
+
 **# Candidate models:**  
 
 **# models in top set (delta < 4):**  

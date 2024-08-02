@@ -94,6 +94,7 @@ beepr::beep(8)
 # turn off cluster
 stopCluster(cl)
 
+mod_chl = mod_nlme
 
 # save subsets ----
 save(dat_chl, mod_chl, chla_subsets, 
