@@ -2,7 +2,6 @@ library(tidyverse)
 library(doParallel)
 library(tictoc)
 library(vegan)
-library(glmmTMB)
 library(MuMIn)
 
 

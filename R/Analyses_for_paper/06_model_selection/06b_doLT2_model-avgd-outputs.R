@@ -8,7 +8,13 @@ load(here::here("Outputs",
                 "doLT2_out.RData"))
 dat_all <- read.csv(here::here("Outputs",
                                "04_compiled_predictors",
-                               "compiled_predictors.csv")) |> 
+                               "compiled_predictors.csv"))
+
+source(here::here("R", "Analyses_for_paper",
+                  "05_predictive_modeling",
+                  "050_setup.R"))
+
+dat_all <- dat_all |>
     rename(doLT2_trend = do_proportion_below2_trend)
 
 mod_subsets <-  doLT2_subsets
