@@ -1,7 +1,8 @@
 # have to fit the models inside model.avg in order to predict
 # modavg_all <- model.avg(test, fit = TRUE)
 
-make_predictions <- function(data, predictor, avgd_mod,
+make_predictions <- function(data, response, predictor, 
+                             avgd_mod,
                              means, sds,
                              sd.range = c(-3, 3),
                              response.is.log.trend = FALSE,
@@ -18,6 +19,9 @@ make_predictions <- function(data, predictor, avgd_mod,
   # pull out mean and sd
   predictor_mean <- means[[predictor]]
   predictor_sd <- sds[[predictor]]
+  
+  response_mean <- means[[response]]
+  response_sd <- sds[[response]]
     
   # set up data frames
   dat <- data
@@ -46,8 +50,8 @@ make_predictions <- function(data, predictor, avgd_mod,
   
   predictions_df <- data.frame(predictor.sd = newdata[[predictor]],
                                predictor.natural = (newdata[[predictor]] * predictor_sd) + predictor_mean,
-                               predicted = predictions$fit,
-                               se = predictions$se) |> 
+                               predicted = (predictions$fit * response_sd) + response_mean,
+                               se = predictions$se * response_sd) |> 
     mutate(ci_low = predicted - 1.96*se,
            ci_high = predicted + 1.96*se)
   
