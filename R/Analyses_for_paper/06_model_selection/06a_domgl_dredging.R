@@ -31,8 +31,8 @@ dat_domgl <- dat_all |>
          # nut trends
          chla_trend, nh4f_trend, no23f_trend, po4f_trend,
          # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpld_PC1:last_col(),
+         precp_median, precp_trend) |> 
+  mutate(across(!reserve,
                 function(x) as.vector(scale(x))))
 
 formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))

@@ -31,8 +31,8 @@ dat_doLT2 <- dat_all |>
          # nut trends
          chla_trend, nh4f_trend, no23f_trend, po4f_trend,
          # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpld_PC1:last_col(),
+         precp_median, precp_trend) |> 
+  mutate(across(!reserve,
                 function(x) as.vector(scale(x))))
 
 formula_fixed_doLT2 <- paste0("doLT2_trend ~ ", paste(names(dat_doLT2[3:ncol(dat_doLT2)]), collapse = " + "))
