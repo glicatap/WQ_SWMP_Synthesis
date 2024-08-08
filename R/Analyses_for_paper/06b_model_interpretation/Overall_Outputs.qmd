@@ -1,6 +1,6 @@
 ---
 title: "Graphs and Tables of averaged model outputs (delta < 4)"
-output-file: "2024-08-06 Model Outputs main"
+output-file: "2024-08-07 Model Outputs main"
 date: today
 format: 
   pdf:
@@ -77,6 +77,7 @@ source(here::here("R",
 
 ```{r}
 # compile coefficients
+
 # while we're in this step,
 # back-transform coefficients to original units:
 # both the coefficient and standard error can be
@@ -103,11 +104,11 @@ coeffs_chl = left_join(coeffs_chl, transform_mults) |>
     mutate(Estimate.natural = Estimate * trans_mult,
            Adjusted.SE.natural = Adjusted.SE * trans_mult)
 
-# coeffs_chl |> 
-#     arrange(desc(sw)) |> 
-#     select(term, Estimate, Estimate.natural) |> 
+# coeffs_chl |>
+#     arrange(desc(sw)) |>
+#     select(term, Estimate, Estimate.natural) |>
 #     mutate(across(c(Estimate, Estimate.natural),
-#                   \(x) round(x, 4))) |> 
+#                   \(x) round(x, 4))) |>
 #     gt::gt()
 
 
