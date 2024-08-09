@@ -17,10 +17,13 @@ embed-resources: true
 library(tidyverse)
 library(MuMIn)
 library(doParallel)
-library(glmmTMB)
+# library(glmmTMB)
+library(lme4)
+library(nlme)
 library(tictoc)
 library(vegan)
 library(ggfortify)
+library(car)
 ```
 
 ```{r}
@@ -53,11 +56,13 @@ dat_chl <- dat_all |>
          # nut trends
          nh4f_trend, no23f_trend, po4f_trend,
          # met
-         precp_median, precp_trend, dailyPAR_trend) |> 
-  mutate(across(tpld_PC1:last_col(),
+         precp_median, precp_trend) |> 
+  mutate(across(!reserve,
                 function(x) as.vector(scale(x))))
 
 formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
+formula_nlme <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "))
+
 ```
 
 
@@ -68,15 +73,21 @@ formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), co
 ### Chl  
 
 ```{r}
-mod_chl <- glmmTMB(as.formula(formula_chl),
-                    data = dat_chl)
+mod_chl <- lme(as.formula(formula_nlme),
+                data = dat_chl,
+                random = ~ 1|reserve,
+                method = "REML")
 performance::check_singularity(mod_chl)
 r.squaredGLMM(mod_chl)
 summary(mod_chl)
+
+# for leverage plots
+mod_chl_lmer <- lmer(as.formula(formula_chl),
+                data = dat_chl)
 ```
 
-Marginal r2 = 0.286  
-Cond'l r2 = 0.686  
+Marginal r2 = 0.228  
+Cond'l r2 = 0.722  
 
 
 #### Evaluate diagnostics  
@@ -98,7 +109,7 @@ performance::check_model(mod)
 resids <- resid(mod, type = "pearson")
 
 # pull out predictor data frame
-preds_df <- mod$frame[2:ncol(mod$frame)]
+preds_df <- mod$data
 
 # set up a 4-plot layout
 par(mfrow = c(2, 2))
@@ -126,8 +137,89 @@ for(i in 1:ncol(preds_df)){
 
 # go back to normal plot layout
 par(mfrow = c(1, 1))
-
 ```
+
+#### Evaluate possibly influential observations  
+
+```{r}
+
+# look at some plots of leverage and influence
+plot(hatvalues(mod_chl_lmer), resids)
+influencePlot(mod_chl_lmer)
+cooks <- cooks.distance(mod_chl_lmer)
+
+
+# look at some potential problem predictors - we just don't want to see big values at the edges
+plot(hatvalues(mod_chl_lmer) ~ preds_df$spcond_trend)
+plot(cooks ~ preds_df$spcond_trend)
+plot(hatvalues(mod_chl_lmer) ~ preds_df$temp_trend)
+plot(cooks ~ preds_df$temp_trend)
+```
+
+```{r}
+preds_df$possibly_influential <- FALSE
+preds_df$possibly_influential[c(45, 81, 90, 94)] <- TRUE
+
+preds_df$hats <- hatvalues(mod_chl_lmer)
+preds_df$cooks <- cooks.distance(mod_chl_lmer)
+preds_df$resids <- resid(mod_chl_lmer, type = "pearson")
+preds_df$fitted <- fitted(mod_chl_lmer)
+
+preds_df_long <- preds_df |> 
+    pivot_longer(chla_trend:precp_trend,
+                 names_to = "predictor",
+                 values_to = "value")
+
+cbind("station" = dat_all$station[c(45, 81, 90, 94)], dat_chl[c(45, 81, 90, 94), c("spcond_trend", "precp_median", "temp_trend")], "Pearson residual" = preds_df$resids[c(45, 81, 90, 94)])
+
+ggplot(preds_df_long,
+       aes(x = value,
+           y = cooks,
+           col = possibly_influential)) +
+    geom_point(size = 3, 
+               alpha = 0.6) +
+    facet_wrap(~predictor) +
+    labs(title = "Cook's distances by predictor",
+         x = "standardized predictor value",
+         y = "Cook's D")
+
+ggplot(preds_df_long,
+       aes(x = value,
+           y = resids,
+           col = possibly_influential)) +
+    geom_point(size = 3, 
+               alpha = 0.6) +
+    facet_wrap(~predictor) +
+    geom_hline(yintercept = 0, col = "gray40") +
+    labs(title = "Residuals by predictor",
+         x = "standardized predictor value",
+         y = "Pearson residual")
+
+ggplot(preds_df,
+       aes(x = fitted,
+           y = chla_trend,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    geom_abline(slope = 1, intercept = 0,
+                linetype = "dashed") +
+    labs(title = "Observed vs. fitted, Chl a",
+         x = "Fitted chla trend (standardized)",
+         y = "Observed chla trend (standardized)")
+
+ggplot(preds_df,
+       aes(x = fitted,
+           y = resids,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    geom_hline(yintercept = 0, col = "gray40") +
+    labs(title = "Residuals vs. fitted, Chl a",
+         x = "Fitted chla trend (standardized)",
+         y = "Pearson residual")
+```
+
+
 
 ```{r}
 # cleanup a bit
