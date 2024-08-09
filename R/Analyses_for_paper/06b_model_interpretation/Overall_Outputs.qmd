@@ -1,6 +1,6 @@
 ---
 title: "Graphs and Tables of averaged model outputs (delta < 4)"
-output-file: "2024-08-07 Model Outputs main"
+output-file: "2024-08-09 Model Outputs main"
 date: today
 format: 
   pdf:
@@ -178,7 +178,8 @@ That formula doesn't show it, but `Reserve` was included as a random effect.
 
 
 ```{r}
-graph_coeffs(chl_list$coeffs_stnd, title_param = "Chl a trend")
+graph_coeffs(chl_list$coeffs_stnd, title_param = "Chl a trend",
+             subtitle = "delta < 4")
 ```
 
 What we see from the graph above and the table below is that we've got 3 really key predictors for chl trend: phosphate trend (positive association), turbidity trend (positive association), and ammonia trend (negative association). Spcond trend (positive), long-term median chlorophyll (positive), the latitudinal gradient (negative: so association b/t chl trend and latitude itself is negative; and b/t chl and median DO mgL & daily PAR are positive), and precipitation trend (positive) are of moderate importance.  
@@ -203,7 +204,8 @@ formula(domgl_list$mod_domgl)
 **# models in top set (delta < 4):**  `r nrow(domgl_list$top_modsd4)`
 
 ```{r}
-graph_coeffs(domgl_list$coeffs_stnd, title_param = "DO mg/L trend")
+graph_coeffs(domgl_list$coeffs_stnd, title_param = "DO mg/L trend",
+             subtitle = "delta < 4")
 ```
 
 From the graph above and the table below we see 4 important predictors for DO mg/L trend: median SpCond (positive association), Chl a trend (negative), temperature trend (negative),  and median Chl a (positive). Moderate predictors are ammonia trend (negative), SpCond trend (negative), and the latitudinal gradient (negative: so association b/t DO mg/L trend and latitude itself is negative; and b/t DO mg/L trend and median DO mgL & daily PAR are positive). 
@@ -229,7 +231,9 @@ formula(doLT2_list$mod_doLT2)
 **# models in top set (delta < 4):**  `r nrow(doLT2_list$top_modsd4)`
 
 ```{r}
-graph_coeffs(doLT2_list$coeffs_stnd, title_param = "\ntrend in proportion of DO readings < 2 mg/L")
+graph_coeffs(doLT2_list$coeffs_stnd, 
+             title_param = "\ntrend in proportion of DO readings < 2 mg/L",
+             subtitle = "delta < 4")
 ```
 
 

@@ -127,7 +127,7 @@ graph_predictions <- function(predictions,
 
 
 # graph standardized coefficients ----
-graph_coeffs <- function(data, title_param = NULL){
+graph_coeffs <- function(data, title_param = NULL, subtitle = NULL){
   coeffs_stnd <- data
   
   p <- ggplot(coeffs_stnd) +
@@ -145,10 +145,15 @@ graph_coeffs <- function(data, title_param = NULL){
   
   if(!is.null(title_param)){
     p <- p +
-      ggtitle(paste("Standardized coefficients in averaged model for", title_param))
+      labs(title = paste("Standardized coefficients in averaged model for", title_param))
   }
   
-  print(p)
+  if(!is.null(subtitle)){
+      p <- p +
+          labs(subtitle = subtitle)
+  }
+  
+  p
 }
 
 
@@ -162,7 +167,7 @@ table_coeffs <- function(data, title_param, delta = 4){
                       Estimate. = Estimate.natural, SE. = Adjusted.SE.natural,
                       sw, nmodels = n.models) |> 
         dplyr::mutate(across(c(Estimate:SE.),
-                             \(x) round(x, 4)),
+                             \(x) round(x, 3)),
                       sw = round(sw, 2)) |> 
         dplyr::arrange(desc(sw)) 
     

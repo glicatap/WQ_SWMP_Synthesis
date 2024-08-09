@@ -22,7 +22,7 @@ error: true
 # Overview  
 
 
-This file contains information on model outputs for our three key responses, using model-averaging (full model method) on models with delta AICc < 2 and < 6 from the top model. delta < 4 will be discussed in the main paper, and this file is for supplementary information. delta < 4 models may be included here for comparison.  
+This file contains information on model outputs for our three key responses, using model-averaging (full model method) on models with delta AICc < 2 and < 6 from the top model. delta < 4 will be discussed in the main paper, and this file provides information for supplementary materials.    
 
 
 ## Some notes on coefficients and graphics  
@@ -37,7 +37,6 @@ library(tidyverse)
 library(nlme)
 library(MuMIn)
 library(gt)
-library(patchwork)
 ```
 
 ```{r}
@@ -309,16 +308,11 @@ That formula doesn't show it, but `Reserve` was included as a random effect.
 
 
 ```{r}
-#| fig-width: 7
-#| fig-height: 4
+graph_coeffs(chl_list$coeffs_stnd_d2, title_param = "Chl a trend",
+             subtitle = "delta < 2")
 
-p2 <- graph_coeffs(chl_list$coeffs_stnd_d2, title_param = "Chl a trend") +
-    labs(subtitle = "delta < 2")
-
-p6 <- graph_coeffs(chl_list$coeffs_stnd_d6, title_param = "Chl a trend") +
-    labs(subtitle = "delta < 6")
-
-p2 + p6
+graph_coeffs(chl_list$coeffs_stnd_d6, title_param = "Chl a trend",
+             subtitle = "delta < 6")
 ```
 
 We have the same major 3 predictors for chl trend as we did with delta < 4: phosphate trend (positive association), turbidity trend (positive association), and ammonia trend (negative association). Spcond trend, median chl a, and precip trend are of higher importance with the delta < 2 model. Using delta < 6 seems to shrink coefficients, sometimes fairly substantially.  
@@ -349,16 +343,12 @@ formula(domgl_list$mod_domgl)
 
 
 ```{r}
-#| fig-width: 7
-#| fig-height: 4
+graph_coeffs(domgl_list$coeffs_stnd_d2, title_param = "DO mg/L trend",
+             subtitle = "delta < 2") 
 
-p2 <- graph_coeffs(domgl_list$coeffs_stnd_d2, title_param = "DO mg/L trend") +
-    labs(subtitle = "delta < 2")
+graph_coeffs(domgl_list$coeffs_stnd_d6, title_param = "DO mg/L trend",
+             subtitle = "delta < 6")
 
-p6 <- graph_coeffs(domgl_list$coeffs_stnd_d6, title_param = "DO mg/L trend") +
-    labs(subtitle = "delta < 6")
-
-p2 + p6
 ```
 
 The top 4 predictors stay the same, with similar coefficients, but importance changes slightly. Outputs are more similar for DO mg/L delta 2 vs. 6 than they were for the chl model using different deltas.  
@@ -393,16 +383,14 @@ formula(doLT2_list$mod_doLT2)
 
 
 ```{r}
-#| fig-width: 7
-#| fig-height: 4
+graph_coeffs(doLT2_list$coeffs_stnd_d2, 
+             title_param = "\ntrend in proportion of DO readings < 2 mg/L",
+             subtitle = "delta < 2")
 
-p2 <- graph_coeffs(doLT2_list$coeffs_stnd_d2, title_param = "\ntrend in proportion of DO readings < 2 mg/L") +
-    labs(subtitle = "delta < 2")
+graph_coeffs(doLT2_list$coeffs_stnd_d6, 
+                   title_param = "\ntrend in proportion of DO readings < 2 mg/L",
+                   subtitle = "delta < 6")
 
-p6 <- graph_coeffs(doLT2_list$coeffs_stnd_d6, title_param = "\ntrend in proportion of DO readings < 2 mg/L") +
-    labs(subtitle = "delta < 6")
-
-p2 + p6
 ```
 
 
