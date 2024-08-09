@@ -4,9 +4,6 @@ dat_all <- read.csv(here::here("Outputs",
                                "04_compiled_predictors", 
                                "compiled_predictors.csv"))
 
-preds_doLT2 <- read.csv(here::here("Outputs", 
-                                   "04_compiled_predictors",
-                                   "doLT2_compiled_predictors.csv"))
 
 
 # PCA on temp/par/latitude ----
@@ -24,17 +21,8 @@ pca_tpl <- prcomp(tpl, scale. = TRUE)
 #          loadings = TRUE,
 #          loadings.label = TRUE)
 
-# commented out; will delete when final pca decision is made
-# pca_tp <- prcomp(tpl[, 1:2], scale. = TRUE)
-# biplot(pca_tp)
-# pca_tp
-# summary(pca_tp)
-# autoplot(pca_tp,
-#          loadings = TRUE,
-#          loadings.label = TRUE)
 
-
-# adding domgl_median to the pca:
+# adding domgl_median to the pca ----
 tpld <- dat_all |> 
   select(temp_median,
          dailyPAR_median,
@@ -46,19 +34,32 @@ pca_tpld <- prcomp(tpld, scale. = TRUE)
 # pca_tpld
 # summary(pca_tpld)
 # autoplot(pca_tpld,
+#          shape = FALSE,
+#          label = TRUE,
 #          loadings = TRUE,
 #          loadings.label = TRUE)
 
 
-# for DO<2, we have fewer stations - do we want to use the same
-# PCA score, or generate a new one for only these stations?
-# I'm assuming the latter and doing that here
-tpl2 <- preds_doLT2 |> 
-  select(temp_median,
-         dailyPAR_median,
-         latitude)
+# removing PAR median from PCA
+# because PAR trends were removed from model 8/6/24
+# and we think medians are fine to leave in
+# but want to demonstrate 
+tld <- dat_all |> 
+    select(temp_median,
+           latitude,
+           domgl_median)
 
-pca_tpl2 <- prcomp(tpl2, scale. = TRUE)
+pca_tld <- prcomp(tld, scale. = TRUE)
+# biplot(pca_tld)
+# pca_tld
+# summary(pca_tld)
+# autoplot(pca_tld,
+#          shape = FALSE,
+#          label = TRUE,
+#          loadings = TRUE,
+#          loadings.label = TRUE)
+
+
 
 # subset dfs, add PC score ----
 dat_all <- dat_all |> 
@@ -76,18 +77,14 @@ dat_all <- dat_all |>
 # add PC1 score to dat_all
 dat_all$tpl_PC1 <- scores(pca_tpl)[,1]
 dat_all$tpld_PC1 <- scores(pca_tpld)[,1]
+dat_all$tld_PC1 <- scores(pca_tld)[,1]
 
-preds_doLT2 <- preds_doLT2 |> 
-  mutate(across(c(chla_median,
-                  nh4f_median,
-                  no23f_median,
-                  po4f_median,
-                  turb_median),
-                function(x) log(x))) |> 
-  rename(turb_median.log = turb_median,
-         chla_median.log = chla_median,
-         nh4_median.log = nh4f_median,
-         no23_median.log = no23f_median,
-         po4_median.log = po4f_median)
-# add PC1 score to preds_doLT2
-preds_doLT2$tpl_PC1 <- scores(pca_tpl2)[,1]
+# PC1 from versions with/without PAR are ideally 1:1
+# let's check
+# ggplot(dat_all,
+#        aes(x = tpld_PC1,
+#            y = tld_PC1)) +
+#     geom_text(aes(label = station)) +
+#     geom_abline(slope = 1, intercept = 0,
+#                 linetype = "dashed")
+# cor(dat_all$tpld_PC1, dat_all$tld_PC1, method = "spearman")
