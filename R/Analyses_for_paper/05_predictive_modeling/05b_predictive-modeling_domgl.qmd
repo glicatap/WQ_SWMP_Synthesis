@@ -163,24 +163,35 @@ par(op)
 
 ```
 
-#### Evaluate possibly influential observations  
+# Evaluate possibly influential observations  
 
 ```{r}
 
-# look at some plots of leverage and influence
-plot(hatvalues(mod_domgl), resids)
-influencePlot(mod_domgl)
-cooks <- cooks.distance(mod_domgl)
-
-
-# look at some potential problem predictors - we just don't want to see big values at the edges
-plot(hatvalues(mod_domgl) ~ preds_df$spcond_trend)
-plot(cooks ~ preds_df$spcond_trend)
-plot(hatvalues(mod_domgl) ~ preds_df$temp_trend)
-plot(cooks ~ preds_df$temp_trend)
+# # look at some plots of leverage and influence
+# plot(hatvalues(mod_domgl), resids)
+# influencePlot(mod_domgl)
+# cooks <- cooks.distance(mod_domgl)
+# 
+# 
+# # look at some potential problem predictors - we just don't want to see big values at the edges
+# plot(hatvalues(mod_domgl) ~ preds_df$spcond_trend)
+# plot(cooks ~ preds_df$spcond_trend)
+# plot(hatvalues(mod_domgl) ~ preds_df$temp_trend)
+# plot(cooks ~ preds_df$temp_trend)
 ```
 
+
+The plot below graphs residual on the y-axis, hat-value (leverage) on the x-axis, and Cook's distance as size. Possibly influential data points are identified by row number. Note, we want to look at Pearson residuals for mixed models, and this shows studentized residuals - so my own plots will be a little different than this output. But it does identify the potentially problematic points, which I'll identify in a data frame (using the row numbers) and plot in a few various ways.  
+
+
 ```{r}
+influencePlot(mod_domgl)
+```
+
+Only two points with high Cok's D relative to the rest, and neither has much leverage. They are the ones with the biggest residuals. What are the 4 points that the code above highlighted for us?  
+
+```{r}
+
 infls <- c(9, 13, 45, 67)
 
 preds_df$possibly_influential <- FALSE
@@ -197,7 +208,11 @@ preds_df_long <- preds_df |>
                  values_to = "value")
 
 cbind("station" = dat_all$station[infls], dat_domgl[infls, c("no23_median.log", "turb_trend", "precp_trend", "tpld_PC1")], "Pearson residual" = preds_df$resids[infls])
+```
 
+cbmmc and owcdr  
+
+```{r}
 ggplot(preds_df_long,
        aes(x = value,
            y = cooks,
@@ -271,5 +286,4 @@ ggplot(preds_df,
          x = "Fitted domgl trend (standardized)",
          y = "Cook's D")
 ```
-
 

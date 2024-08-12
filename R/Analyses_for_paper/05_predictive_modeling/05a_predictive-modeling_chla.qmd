@@ -139,22 +139,24 @@ for(i in 1:ncol(preds_df)){
 par(mfrow = c(1, 1))
 ```
 
-#### Evaluate possibly influential observations  
+# Evaluate possibly influential observations  
 
 ```{r}
-
-# look at some plots of leverage and influence
-plot(hatvalues(mod_chl_lmer), resids)
-influencePlot(mod_chl_lmer)
-cooks <- cooks.distance(mod_chl_lmer)
-
-
-# look at some potential problem predictors - we just don't want to see big values at the edges
-plot(hatvalues(mod_chl_lmer) ~ preds_df$spcond_trend)
-plot(cooks ~ preds_df$spcond_trend)
-plot(hatvalues(mod_chl_lmer) ~ preds_df$temp_trend)
-plot(cooks ~ preds_df$temp_trend)
+# 
+# # look at some plots of leverage and influence
+# plot(hatvalues(mod_chl_lmer), resids)
+# cooks <- cooks.distance(mod_chl_lmer)
+# 
+# 
+# # look at some potential problem predictors - we just don't want to see big values at the edges
+# plot(hatvalues(mod_chl_lmer) ~ preds_df$spcond_trend)
+# plot(cooks ~ preds_df$spcond_trend)
+# plot(hatvalues(mod_chl_lmer) ~ preds_df$temp_trend)
+# plot(cooks ~ preds_df$temp_trend)
 ```
+
+
+The plot below graphs residual on the y-axis, hat-value (leverage) on the x-axis, and Cook's distance as size. Possibly influential data points are identified by row number. Note, we want to look at Pearson residuals for mixed models, and this shows studentized residuals - so my own plots will be a little different than this output. But it does identify the potentially problematic points, which I'll identify in a data frame (using the row numbers) and plot in a few various ways.  
 
 ```{r}
 preds_df$possibly_influential <- FALSE
@@ -169,54 +171,71 @@ preds_df_long <- preds_df |>
     pivot_longer(chla_trend:precp_trend,
                  names_to = "predictor",
                  values_to = "value")
+```
 
-cbind("station" = dat_all$station[c(45, 81, 90, 94)], dat_chl[c(45, 81, 90, 94), c("spcond_trend", "precp_median", "temp_trend")], "Pearson residual" = preds_df$resids[c(45, 81, 90, 94)])
 
+```{r}
+influencePlot(mod_chl_lmer)
+```
+
+We have one point with a LOT of leverage, and 3 that have fairly high Cook's distances compared to other points.  First though, what are all of these points, and how do they relate to the individual predictors?  
+
+```{r}
+cbind("station" = dat_all$station[c(45, 81, 90, 94)], dat_chl[c(45, 81, 90, 94), c("spcond_trend", "precp_median", "precp_trend", "temp_trend")], "Pearson residual" = preds_df$resids[c(45, 81, 90, 94)])
+```
+
+The 4 possibly influential points are in blue in the following graphs. We get concerned if they have high leverage (are far away from the mean in the predictor space) and are influential as calculated by Cook's D, which also incorporates the size of the y value (chl trend) for the point.    
+
+```{r}
 ggplot(preds_df_long,
        aes(x = value,
            y = cooks,
            col = possibly_influential)) +
-    geom_point(size = 3, 
+    geom_point(size = 2, 
                alpha = 0.6) +
     facet_wrap(~predictor) +
     labs(title = "Cook's distances by predictor",
          x = "standardized predictor value",
-         y = "Cook's D")
+         y = "Cook's D") +
+    theme(legend.position = "bottom")
 
 ggplot(preds_df_long,
        aes(x = value,
            y = resids,
            col = possibly_influential)) +
-    geom_point(size = 3, 
+    geom_point(size = 2, 
                alpha = 0.6) +
     facet_wrap(~predictor) +
     geom_hline(yintercept = 0, col = "gray40") +
     labs(title = "Residuals by predictor",
          x = "standardized predictor value",
-         y = "Pearson residual")
+         y = "Pearson residual") +
+    theme(legend.position = "bottom")
 
 ggplot(preds_df,
        aes(x = fitted,
            y = chla_trend,
            col = possibly_influential)) +
-    geom_point(size = 3,
+    geom_point(size = 2,
                alpha = 0.6) +
     geom_abline(slope = 1, intercept = 0,
                 linetype = "dashed") +
     labs(title = "Observed vs. fitted, Chl a",
          x = "Fitted chla trend (standardized)",
-         y = "Observed chla trend (standardized)")
+         y = "Observed chla trend (standardized)") +
+    theme(legend.position = "bottom")
 
 ggplot(preds_df,
        aes(x = fitted,
            y = resids,
            col = possibly_influential)) +
-    geom_point(size = 3,
+    geom_point(size = 2,
                alpha = 0.6) +
     geom_hline(yintercept = 0, col = "gray40") +
     labs(title = "Residuals vs. fitted, Chl a",
          x = "Fitted chla trend (standardized)",
-         y = "Pearson residual")
+         y = "Pearson residual") +
+    theme(legend.position = "bottom")
 ```
 
 
