@@ -104,30 +104,42 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 ## Predictive Modeling, Model Selection, Model Averaging
 
--   Construction and checking of big predictive models
+### Constructing and evaluating global models
 
-    -   Selected predictors (incl. Par trend exclusion)
+-   Selected predictors (incl. Par trend exclusion)
 
-    -   Collinearity
+-   Collinearity
 
-    -   Latitudinal PCA
+-   Latitudinal PCA
 
-    -   Influential observations
+-   Influential observations
 
-    -   REML for checking random effects, then ML for model selection (Zuur et al. 2009, section 5.7)
+-   REML for checking random effects, then ML for model selection (Zuur et al. 2009, section 5.7)
 
-    -   Goodness of fit
+-   Goodness of fit
 
 -   Centering and scaling variables (including response, to get standardized coefficients), to streamline model convergence and help in model selection
 
--   Model selection and averaging
+### Model selection and averaging
 
-    -   MuMIn::dredge; justify all-subsets selection
+-   All-subsets selection was performed on the global models, using `MuMIn::dredge()`. This practice is frequently looked down on (Burnham and Anderson 2002, Grueber et al. 2011); however, we were careful to include only potentially important predictors in our model, and they could legitimately be influencing the responses through any combination of their subsets. 
 
-    -   Top model set, AICc thresholds, etc.
+-   Top model set, AICc thresholds, etc. 
+    
+    -   different recommendations for AIC: Burnham and Anderson 2002 are often cited for using delta < 2, though they back away from this in later papers. Richards 2008 recommended 6 as the value required to be 95% sure the model with the lowest Expected Kullback-Leibler Distance is in the top model set. Bolker 2009 recommended 10 for ecological studies. Grueber et al. 2011 recommend considering the number of models in each group, because "too many" are likely to include spurious predictors (but guidance for what is "too many" is lacking). Burnham and Anderson 2002 also describe a 95% confidence set, which is supported by Symonds and Moussalli 2011. 
+    
+    -   for our models, we chose delta < 4 as the threshold to focus on in the paper. We focused on the chla models when making this decision, but numbers for the DO models looked similar. The 95% confidence set contained almost half the candidate models, which was a very high number. Even delta < 6 contained a high number of models (~2000). Delta < 2 contained only 30 models. However, when plotting delta values in order, there was really no demarcation between delta of 2 and delta just higher than 2 - there was no reason to think this was a point of differentation where information drops off. Delta around 4 resulted in a more reasonable number of models in the top set and was near an "elbow" in the deltas plot, so we decided on it. We also conducted analyses using deltas of 2 and 6, and present these in supplementary information.  
+    
+    -   AICc used (e.g. Burnham and Anderson 2004) (not 'regular' AIC) - it involves a correction for small sample size and approximates AIC when sample size is large enough, so there is no downside.     
+    
+    -   AIC and mixed models: Grueber et al. 2011 mention in their Table 2 that AICc can be problematic when random effects are present. Zuur et al. 2009 recommend, when performing model selection on mixed models, fitting and evaluating the global model with REML, and determining the best random effects structure using likelihood ratio tests or AIC/BIC on models fitted via REML. REML must be used when comparing models with the same fixed effects but nested random effects. Degrees of freedom are calculated differently between REML and ML, and AIC cannot be compared between the two methods (Zuur et al. 2009). Then, to find the optimal fixed effect structure, use ML estimation to compare models with nested fixed effects but the same random effects.  
+    
+    -   In our global model fitting and evaluation, we did use REML when fitting the model (using `nlme::lme()`) and determining whether a random effect for Reserve was needed. When it was (chla models), the global model was then re-fit with `REML = FALSE`, so the ML fit could be used in all-subsets selection and AIC could be compared between the different subsets. When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()`.  
+    
+    -   Zuur et al. 2009 also say the final 'best' model should be re-fit and presented using REML. However, they were talking about a single best model; when I performed model averaging on models re-fit with REML, it changed the model weights an unacceptable amount (any models below the top 2 had essentially 0 weight and were not included in the averaging). So for our model averaging, I used the models as fitted with ML.  
+    
+-   **Variable Importance**: `sw`, the sum of Akaike weights for models in which a predictor appears, generated from the `MuMIn::sw()` function, can be interpreted as the probability that the predictor is in the “best” model (Grueber et al. 2011, Symonds and Moussalli 2011). The function also shows how many models from the top set a predictor appeared in. Predictors that are in a lot of models and/or the most highly weighted models will have higher weights than those in few and/or low-weighted models.  
 
-    -   importance/sum of weights/n models
+-   **Nesting** vs. not (Richards 2008; referenced in Grueber et al. 2011 and Harrison et al. 2018) - Richards (2008) suggested that to avoid the problem of selecting overly complex models, models should be removed from the selected set if a simpler nested version of the model has also been selected and has a lower AIC. Clear guidance for this is lacking. We generated values and plots of importance values for all top models vs. with more complex models removed, but because differences in AIC were so small across the top model set, were uncomfortable completely discarding more complex models that might have nearly identical AICc values. Additionally, Lukacs et al. 2009 suggest that full-model averaging "can help to reduce the problems caused by the model selection bias towards over-complex (and indeed under-complex) models". *We can present the non-nested model importance values and/or graphs in supplementary information* but otherwise did not pursue this issue.  
 
-    -   Nesting vs. not
-
-    -   Full-model averaging
+-   **Full-model averaging** - also known as the "zero method" (Grueber et al. 2011), this method treats each predictor as if it has a coefficient in all averaged models. If a predictor does not appear in a model, the value incorporated into the averaging for that predictor is 0 and thus is a method of shrinkage. This method is recommended when using all-subsets selection, when there is large uncertainty as to the "best" model, and "when the aim of the study is to determine which factors have the strongest effect on the response variable" (quote from Grueber et al. 2011, who cite Nakagawa & Freckleton 2010). This contrasts with the *subset method*, which only averages coefficients of the predictor for the models in which that predictor appears. Grueber et al. 2011 and Symonds and Moussalli 2011 are great citations for these decisions.    
