@@ -70,44 +70,12 @@ This folder contains `.RData` objects for each response with output from model d
 -  `top_modsd2_unnested` / `d4` / `d6` - model selection table for the subset of models with delta < 2 (or 4, or 6), but with models removed if they were only a more complex version of a model with lower AICc.  
 
 
- 
-
 ## 07_visualizations  
 
 This folder contains outputs from scripts in `R/Analyses_for_paper/07_visualizations`. At this point the files are exploring medians and long-term trends, but I expect this will be added to.  
   
 
-# Explanation of trend calculations  
+# Statistical Methods  
 
-## Station selection  
+Explanations of station inclusion, data point inclusion, and trend calculation methods have been moved to the [`R/Analyses_for_paper` README](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods). Details on predictive modeling, model selection, and model averaging procedures are also in that README.    
 
-Only SWMP stations that started collecting data before 2013, and that were active as of the end of 2022, are represented here. Only stations that exist for BOTH WQ and NUT data types are represented. Water quality stations that were abnormally deep (long-term median depth > 6m) were removed.  
-
-### Data point inclusion  
-
-See the data processing README files for explanations on data point inclusion/exclusion. Generally, data points flagged as either suspect or rejected were excluded from these analyses.  
-
-### Monthly aggregation  
-
-Again, see the data processing README files. Additionally, see the `Outputs/02_calculated_long-term-trends/data_dictionary_trend_parameters.csv` file for parameters analyzed and transformations made. For WQ and MET, we are generally working with monthly median values. For NUTs, we are working with averaged replicates for each month.
-
-### Trend calculation  
-
-We have generally used GAMs (generalized additive models) to calculate trends. A seasonal term is included, with 12 knots if possible and the number of months represented in the data frame otherwise (e.g. stations where sondes are removed part of the year due to ice). Autocorrelation of residuals is automatically checked for and if present, the model is re-run to account for the autocorrelation. The reported trend in the outputs is the LINEAR trend through time (per year) of the parameter. To account for censoring, autocorrelation, and seasonality, we used `mgcv::bam`.    
-
-For NUT parameters: values were log transformed [as of 5/29/2024, this is natural-log; replacing log10, as natural-log yields more interpretable coefficinets; see Gelman et al. 2021], and marked as censored (e.g. below the minimum detection limit, or MDL) or uncensored. This created a response matrix that was used in `mgcv::bam` with `family = cnorm()` to account for censoring.  
-
-For WQ monthly medians, we also used `mgcv::bam` for consistency in outputs. There is no censoring in these parameters, so we used `family = gaussian()`.  
-
-For WQ proportion of DO below 2 and 5: These calculations were made before monthly aggregation - each valid 15-minute data point was marked TRUE/FALSE for below 2 and 5, respectively (in separate columns). During monthly aggregation, the total TRUE for each month was divided by the total number of valid DO points for the month, leading to a proportion per month. Trends were again calculated in `mgcv::bam()` with a seasonal term and an autocorrelation term if necessary. Because this response is a proportion, we used `family = betar()`. The `eps` option, which adjusts exact 0s and 1s, was set to 1/10th of the minimum number of readings per month (1/27900). 
-
-For MET parameters, we again used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Monthly precipitation was square-root transformed before analysis (this produced the best residual diagnostics on 5 stations explored).  
-
-
-### Seasonal trends  
-
-This part is simpler and rougher: we have not accounted for autocorrelation or any "wiggliness" in the data. We simply split data into four seasons: Winter (Jan, Feb, Mar); Spring (Apr, May, Jun); Summer (Jul, Aug, Sep); Fall (Oct, Nov, Dec) and calculated a linear trend. For WQ medians, we used the simple `lm()` function. Nutrients still used `mgcv::bam()` to account for censoring (`family = cnorm()`), and DO proportions also used `mgcv::bam()` with `family = betar()`.  
-
-### Additional  
-
-p-values have NOT been adjusted from any of these analyses, so be wary about declaring any individual trend significant based on its reported p-value. Be especially wary about seasonal p-values, as autocorrelation is not accounted for.  
