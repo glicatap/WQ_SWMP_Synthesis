@@ -36,19 +36,18 @@ Outputs were written to the `Outputs/04_compiled_predictors` folder.
 
 This folder contains one `.qmd` file for each response variable. In these files, the global model for each response (using predictors agreed upon by the data analysis team) is generated and evaluated by checking fit, residuals, and influential points. For details on the process, see the Modeling README. **LINK**
 
-`050_setup.R` is a helper file that reads in the data and compiled predictors, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median PAR, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. **If I do this, that file also constructs the data frames for each predictor model used in folders `05` and `06`.**
+`050_setup.R` is a helper file that reads in the data and compiled predictors from earlier steps, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median PAR, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. 
 
-Outputs from the `.qmd` files were written by default to the folder containing the script; these have been copied to the `Outputs/05_predictive_modeling` folder.
 
 ## 06_model_selection
 
-For details on model selection process decisions, see the Modeling README. **LINK**
+For details on model selection process decisions, see the detailed **Statistical Methods** section below.  
 
 Files in this folder implement all-subsets selection from the global models evaluated in folder `05_predictive_modeling`, and then implement model averaging for top-model sets. Each response variable gets its own scripts, of which there are two: `06a` for dredging (using `MuMIn::dredge()`), and `06b` for model averaging. The scripts have an abbreviation for the response variable in the names - e.g. the chlorophyll a trend model has all-subsets selection performed in `06a_chl_dredging.R`, then model averaging in `06b_chl_model-avgd_outputs.R`. DO mg/L trend is represented by 'domgl', and proportion of time DO \< 2 mg/L trend is represented by 'doLT2' (LT = "less than").
 
 `060_predicting_functions.R` contains functions to generate the same tables and graphs for different sets of models and parameters. It is used more in folder `06b_model_interpretation` than in this folder, but was created here before splitting the scripts further.
 
-Outputs were written to the `Outputs/06_model_selection` folder, in the subfolder `R_objects`. These objects have not been pushed to github due to size, but are available on Box. **LINK**
+Outputs were written to the `Outputs/06_model_selection` folder, in the subfolder `R_objects`. These objects are available in both the github repository and on Box. See the [06_model_selection section](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#06_model_selection) of the `Outputs` readme for details on data frames contained within each .RData object.  
 
 ## 06b_model_interpretation
 
@@ -107,19 +106,9 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 ### Constructing and evaluating global models
 
--   Selected predictors (incl. Par trend exclusion)
+All variables were centered and scaled to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model selection and averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
 
--   Collinearity
-
--   Latitudinal PCA
-
--   Influential observations
-
--   REML for checking random effects, then ML for model selection (Zuur et al. 2009, section 5.7)
-
--   Goodness of fit
-
--   Centering and scaling variables (including response, to get standardized coefficients), to streamline model convergence and help in model selection
+Global models were constructed with the predictors and a random effect for Reserve and fit using the `lme()` function of the R `nlme` package (v. 3.1.160; Pinherio et al. 2022) using Restricted Maximum Likelihood (REML). To determine whether the random effect was necessary, a simple linear model without the random effect was constructed via `nlme::gls()`, also using REML, to enable comparison via AIC (Zuur et al. 2009, section 5.7). When the random effect was required (chla models), the global model was then re-fit with Maximum Likelihood (ML) for subsequent model selection; when random effects are present but fixed effects vary, REML does not generate comparable AIC values (Zuur et al. 2009). When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()` (R Core Team 2022).
 
 ### Model selection and averaging
 
@@ -159,9 +148,13 @@ Burnham, K. P., & Anderson, D. R. (2004). Multimodel Inference: Understanding AI
 
 Burnham, K. P., Anderson, D. R., & Huyvaert, K. P. (2011). AIC model selection and multimodel inference in behavioral ecology: Some background, observations, and comparisons. *Behavioral Ecology and Sociobiology*, *65*(1), 23–35. <https://doi.org/10.1007/s00265-010-1029-6>
 
+Cloern, J. E., & Jassby, A. D. (2008). Complex seasonal patterns of primary producers at the land–sea interface. Ecology Letters, 11(12), 1294–1303. https://doi.org/10.1111/j.1461-0248.2008.01244.x
+
 Grueber, C. E., Nakagawa, S., Laws, R. J., & Jamieson, I. G. (2011). Multimodel inference in ecology and evolution: Challenges and solutions. *Journal of Evolutionary Biology*, *24*(4), 699–711. <https://doi.org/10.1111/j.1420-9101.2010.02210.x>
 
 Harrison, X. A., Donaldson, L., Correa-Cano, M. E., Evans, J., Fisher, D. N., Goodwin, C. E. D., Robinson, B. S., Hodgson, D. J., & Inger, R. (2018). A brief introduction to mixed effects modelling and multi-model inference in ecology. *PeerJ*, *6*, e4794. <https://doi.org/10.7717/peerj.4794>
+
+Helsel, D. R. (2011). Statistics for censored environmental data using Minitab and R (Second edition). Wiley.
 
 Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed-effects models. *Methods in Ecology and Evolution*, *4*(2), 133–142. <https://doi.org/10.1111/j.2041-210x.2012.00261.x>
 

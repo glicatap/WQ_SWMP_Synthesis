@@ -40,8 +40,14 @@ Individual station/parameter outputs from running the GAMs were saved as individ
 
 ## 04_compiled_predictors  
 
+This folder contains two csv files to potentially use in predictive modeling. The main file is `compiled_predictors.csv`; it contains one row per station, and one column for each parameter's median and trend at that station, as well as latitude. When DO<2 trend could not be calculated for 5 stations, the datasets were inspected, and DO<2 was always 0. As such, 0 was inserted for doLT2_trend for these stations.  
+
+`compiled_predictors_withExternalInfo.csv` is the same file, but with many parameters from SWMP CLUE ([overview](https://www.nerra.org/swmp-clue/); [parameters](https://docs.google.com/spreadsheets/d/1yfg62Fpfs8jZ2UnuCv2VA7wSfaAxVj0o/edit?gid=198754012#gid=198754012)) added as columns.  
+
 
 ## 05_predictive_modeling  
+
+This folder does not contain outputs because predictive modeling and evaluation was performed interactively. It remains here for consistency with `R/Analyses_for_paper`.  
 
 
 ## 06_model_selection  
@@ -74,8 +80,4 @@ This folder contains `.RData` objects for each response with output from model d
 
 This folder contains outputs from scripts in `R/Analyses_for_paper/07_visualizations`. At this point the files are exploring medians and long-term trends, but I expect this will be added to.  
   
-
-# Statistical Methods  
-
-Explanations of station inclusion, data point inclusion, and trend calculation methods have been moved to the [`R/Analyses_for_paper` README](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods). Details on predictive modeling, model selection, and model averaging procedures are also in that README.    
 
