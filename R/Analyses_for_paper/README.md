@@ -60,7 +60,8 @@ This folder contains two `.qmd` files and their output: `Overall_Outputs.qmd` an
 
 Outputs of the `.qmd` files are by default saved in the R directory where the file is. The latest versions have been copied to the `Outputs/06_model_selection` folder.
 
-# Statistical Methods
+
+# Statistical Methods - Detailed  
 
 ## Station selection
 
@@ -146,6 +147,8 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 # References
 
+Bartoń K (2023). _MuMIn: Multi-Model Inference_. R package version 1.47.5, <https://CRAN.R-project.org/package=MuMIn>.
+
 Bolker, B. M., Brooks, M. E., Clark, C. J., Geange, S. W., Poulsen, J. R., Stevens, M. H. H., & White, J.-S. S. (2009). Generalized linear mixed models: A practical guide for ecology and evolution. *Trends in Ecology & Evolution*, *24*(3), Article 3. <https://doi.org/10.1016/j.tree.2008.10.008>
 
 Burnham, K. P., & Anderson, D. R. (Eds.). (2002). *Model Selection and Multimodel Inference*. Springer New York. <https://doi.org/10.1007/b97636>
@@ -160,8 +163,16 @@ Harrison, X. A., Donaldson, L., Correa-Cano, M. E., Evans, J., Fisher, D. N., Go
 
 Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed-effects models. *Methods in Ecology and Evolution*, *4*(2), 133–142. <https://doi.org/10.1111/j.2041-210x.2012.00261.x>
 
+Pinheiro J, Bates D, R Core Team (2022). _nlme: Linear and Nonlinear Mixed Effects Models_. R package version 3.1-160, <https://CRAN.R-project.org/package=nlme>.
+
+R Core Team (2022). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
 Richards, S. A. (2008). Dealing with overdispersed count data in applied ecology. *Journal of Applied Ecology*, *45*(1), 218–227. <https://doi.org/10.1111/j.1365-2664.2007.01377.x>
 
 Symonds, M. R. E., & Moussalli, A. (2011). A brief guide to model selection, multimodel inference and model averaging in behavioural ecology using Akaike’s information criterion. *Behavioral Ecology and Sociobiology*, *65*(1), 13–21. <https://doi.org/10.1007/s00265-010-1037-6>
+
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_, *4*(43), 1686. doi:10.21105/joss.01686 <https://doi.org/10.21105/joss.01686>.
+
+Wood, S.N. (2017). Generalized Additive Models: An Introduction with R (2nd edition). Chapman and Hall/CRC. <doi:10.1201/9781315370279>
 
 Zuur, A. F., Ieno, E. N., Walker, N. J., Saveliev, A. A., & Smith, G. M. (2009). *Mixed effects models and extensions in ecology with R*. Springer.
