@@ -42,13 +42,26 @@ While working on code, I have generally tried to keep detailed READMEs in the fo
 -   Seasonality:  [Median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/03_calculated_seasonality/seasonal_amplitude_medians.csv); [Trends in median amplitudes](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/03_calculated_seasonality/seasonal_amplitude_trends.csv)  
 -   [Compiled predictors](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/blob/main/Outputs/04_compiled_predictors/compiled_predictors.csv) csv - includes long-term trend outputs from above, as well as medians. When other predictor values are obtained, they will be added.  
 
+# General Methods Summary  
+
+
+If I were writing this up for a manuscript, this would be my starting point. For a much more detailed write-up of the stats, see the [**Statistical Methods - Detailed**](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods---detailed) portion of the `R/Analyses_for_paper` readme. For more detail on Data Processing, see the [**Data Processing**](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Data_processing#readme) readme.      
+
+**Data Processing**  
+
+General data processing was performed using the `SWMPr` package (v. 2.5.0, Beck 2016) and `tidyverse` meta-package for R (Wickham et al. 2019).
+
+Data files from all Reserves and stations, with a date range of 2002-2022, were downloaded from the NERRS Centralized Data Management Office's Advanced Query System, Zip Download option, on 8/29/2023. Only SWMP stations that started collecting data before 2013, were active as of the end of 2022, and collected both water quality (WQ) and nutrient (NUT) data types were included in analyses. Water quality stations that were abnormally deep (long-term median depth > 6m: pdbgd, kachd, and kacsd) were removed after trend calculation. Generally, data points flagged as either suspect or rejected were excluded from these analyses. For nutrients, only grab samples were included. Typically each NUT station has two replicate grab samples per month, though some stations collect more.  
+
+**QA/QC acceptance etc.** - talk about the criteria  
+Data points that did not meet QA/QC criteria were removed from data files before calculating monthly aggregated statistics. 
+
+**Aggregation to monthly values**  
+Monthly aggregated values (median, quartiles, sd, IQR) were calculated for WQ or meteorological (MET) data only if a month had at least one week's worth of valid values. For typical 15-minute data, the cutoff was 672 points. To calculate monthly values for NUT data, valid monthly replicates were averaged. A column indicating censored data points was present; if at least one valid replicate was identified as censored, the average value was also identified as censored. Monthly medians for each parameter from this aggregation process were used in trend calculations and further modeling.   
+
+
 
 # Statistical Methods Summary  
-
-If I were writing this up for a manuscript, this would be my starting point. For a much more detailed write-up, see the [**Statistical Methods - Detailed**](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods---detailed) portion of the `R/Analyses_for_paper` readme.      
-
-
-General data formatting was performed and graphics were made using the `tidyverse` meta-package for R (Wickham et al. 2019).
 
 **Long-term trend calculations**  
 
@@ -62,3 +75,9 @@ To assess how well environmental conditions and changes in environmental conditi
 Global models were constructed with the predictors and a random effect for Reserve and fit using the `lme()` function of the R `nlme` package (v. 3.1.160; Pinherio et al. 2022) using Restricted Maximum Likelihood (REML). To determine whether the random effect was necessary, a simple linear model without the random effect was constructed via `nlme::gls()`, also using REML, to enable comparison via AIC (Zuur et al. 2009, section 5.7). When the random effect was required (chla models), the global model was then re-fit with Maximum Likelihood (ML) for subsequent model selection; when random effects are present but fixed effects vary, REML does not generate comparable AIC values (Zuur et al. 2009). When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()` (R Core Team 2022).
 
 All model selection, averaging, and variable importance calculations were performed using the R `MuMIn` package (v. 1.47.5; Barton 2023). All-subsets selection was performed using the `dredge()` function. Due to varying recommendations on AIC thresholds for top model sets (e.g. Bolker et al. 2009, Burnham and Anderson 2002, Richards 2008) and based on the number of models that would be included using different thresholds (Grueber et al. 2011), we generated top model sets for each response based on delta AICc for thresholds of 2, 4, and 6. Results using delta < 4 are presented here; results for deltas 2 and 6 are provided in supplementary materials. Final standardized coefficients were generated by averaging the top model sets with `model.avg()`, using the full-model method, which is appropriate for comparing relative effect sizes when there is high model uncertainty (Symonds and Moussalli 2011). Variable importance was assessed partly by comparing standardized coefficients but also by using metrics calculated by the `sw()` function. The sum of Akaike weights of models in which a predictor appears can be interpreted as the probability that the predictor is in the “best” model (Grueber et al. 2011, Symonds and Moussalli 2011). The function also shows how many models from the top set a predictor appeared in. Predictors that are in many models and/or highly weighted models will have higher weights than those in few and/or low-weighted models.  
+
+Graphics were generated using the `ggplot2` package in R, part of the `tidyverse` meta-package (Wickham et al. 2019).  
+
+# References  
+
+Full citations referenced above can be found in the more detailed `R/Analyses_for_paper` readme's [References section](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#references).  

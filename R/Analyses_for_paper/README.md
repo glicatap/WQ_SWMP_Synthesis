@@ -149,6 +149,8 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 Bartoń K (2023). _MuMIn: Multi-Model Inference_. R package version 1.47.5, <https://CRAN.R-project.org/package=MuMIn>.
 
+Beck MW (2016). “SWMPr: An R Package for Retrieving, Organizing, and Analyzing Environmental Data for Estuaries.” _The R Journal_, *8*(1), 219-232. doi:10.32614/RJ-2016-015 <https://doi.org/10.32614/RJ-2016-015>.
+
 Bolker, B. M., Brooks, M. E., Clark, C. J., Geange, S. W., Poulsen, J. R., Stevens, M. H. H., & White, J.-S. S. (2009). Generalized linear mixed models: A practical guide for ecology and evolution. *Trends in Ecology & Evolution*, *24*(3), Article 3. <https://doi.org/10.1016/j.tree.2008.10.008>
 
 Burnham, K. P., & Anderson, D. R. (Eds.). (2002). *Model Selection and Multimodel Inference*. Springer New York. <https://doi.org/10.1007/b97636>
