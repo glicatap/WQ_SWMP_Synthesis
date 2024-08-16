@@ -45,7 +45,7 @@ While working on code, I have generally tried to keep detailed READMEs in the fo
 
 # Statistical Methods Summary  
 
-If I were writing this up for a manuscript, this would be my starting point. For a much more detailed write-up, see the [`Statistical Methods - Detailed`](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods-detailed) portion of the `R/Analyses_for_paper` readme.      
+If I were writing this up for a manuscript, this would be my starting point. For a much more detailed write-up, see the [**Statistical Methods - Detailed**](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods---detailed) portion of the `R/Analyses_for_paper` readme.      
 
 
 General data formatting was performed and graphics were made using the `tidyverse` meta-package for R (Wickham et al. 2019).
