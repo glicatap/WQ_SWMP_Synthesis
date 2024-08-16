@@ -57,6 +57,12 @@ This folder does not contain outputs because predictive modeling and evaluation 
 
 ## 06_model_selection  
 
+The most recent html files generated from model interpretation (`R/Analyses_for_paper/06b_model_interpretation`) are in this folder. Both files start with a date.  
+
+The file with `Model Outputs main` in the name contains outputs from model-averaging when delta AICc \< 4, as agreed by the work group. It starts with graphs and tables summarizing standardized coefficients from averaged models for each response. Then, the top several predictors for each response (and the response itself) are back-transformed to either original units or %/year change (when a log-transformation has happened), and graphs of the key predictors and their expected response values are provided. This is to help interpret the effect of each predictor, in more understandable units than standardized coefficients provide. There is some interpretation below many of these graphs and tables.  
+
+The file with `Model Outputs supplementary` in the name contains graphs and tables summarizing standardized coefficients using deltas of 2 and 6 as thresholds, for comparison to what will be reported in the main paper ("how does choice of delta AICc threshold affect the results?"). Individual predictor plots were not made in this file.
+
 ### R_objects folder  
 
 This folder contains `.RData` objects for each response with output from model dredging (`out` in the file name) and model averaging (`post-averaging` in the file name). I'm using `chl` in describing objects here, but for `domgl` and `doLT2` objects, replace `chl` with the appropriate response.   
