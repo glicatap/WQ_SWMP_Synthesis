@@ -59,6 +59,8 @@ Data points that did not meet QA/QC criteria were removed from data files before
 **Aggregation to monthly values**  
 Monthly aggregated values (median, quartiles, sd, IQR) were calculated for WQ or meteorological (MET) data only if a month had at least one week's worth of valid values. For typical 15-minute data, the cutoff was 672 points. To calculate monthly values for NUT data, valid monthly replicates were averaged. A column indicating censored data points was present; if at least one valid replicate was identified as censored, the average value was also identified as censored. Monthly medians for each parameter from this aggregation process were used in trend calculations and further modeling.   
 
+**Long-term medians** - something here about using ROS  
+
 
 
 # Statistical Methods Summary  
@@ -70,7 +72,11 @@ Long-term trends in the monthly median values of parameters were calculated as t
 
 **Assessing predictors of eutrophication trends**
 
-To assess how well environmental conditions and changes in environmental conditions explain or predict changes in our three key response variables, chlorophyll *a* and dissolved oxygen as DO mg/L and as proportion of time DO < 2 mg/L ('doLT2'), we used an information theoretic model selection framework (Burnham and Anderson 2002). We carefully chose predictors for each of the three responses; see **Table ??** for predictors used in each model. No interactions were included. All variables were centered and standardized to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
+To assess how well environmental conditions and changes in environmental conditions explain or predict changes in our three key response variables, chlorophyll *a* and dissolved oxygen as DO mg/L and as proportion of time DO < 2 mg/L ('doLT2'), we used an information theoretic model selection framework (Burnham and Anderson 2002). We carefully chose predictors for each of the three responses; see **Table ??** for predictors used in each model. No interactions were included. 
+
+**Something about the latitudinal PCA, because of collinearity**  
+
+All variables were centered and scaled to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model selection and averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
 
 Global models were constructed with the predictors and a random effect for Reserve and fit using the `lme()` function of the R `nlme` package (v. 3.1.160; Pinherio et al. 2022) using Restricted Maximum Likelihood (REML). To determine whether the random effect was necessary, a simple linear model without the random effect was constructed via `nlme::gls()`, also using REML, to enable comparison via AIC (Zuur et al. 2009, section 5.7). When the random effect was required (chla models), the global model was then re-fit with Maximum Likelihood (ML) for subsequent model selection; when random effects are present but fixed effects vary, REML does not generate comparable AIC values (Zuur et al. 2009). When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()` (R Core Team 2022).
 
