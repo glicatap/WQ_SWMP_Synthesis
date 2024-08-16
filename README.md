@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # SWMP Water Quality Synthesis
 
 ## About the project
@@ -72,7 +77,7 @@ We chose trends in chlorophyll a, dissolved oxygen (DO, mg/L), and proportion of
 
 Primary predictor variables we chose were: water temperature (temp), specific conductance (spcond), turbidity (turb), chlorophyll a (chla), dissolved ammonium (NH4), dissolved nitrate+nitrite (NO23), dissolved inorganic phosphorus (PO4), daily total photosynthetically active radiation (dailyPAR), and monthly total precipitation (precp). Organic forms of Nitrogen and Phosphorus are known to be important but are not measured as part of SWMP, so could not be included here. 
 
-Long-term medians and trends of all parameters were calculated, from monthly median values, for potential inclusion as predictors in models of eutrophication. Due to censoring of NUT parameters, as well as the presence of 0 to multiple detection limits based on the stations, robust Regression on Order Statistics (ROS) was used to estimate long-term medians (Helsel 2011). When studying PAR time series, differences when sensors were changed were apparent at several stations, leading us to exclude trend in PAR from predictors. We believe long-term median PAR is valid and retained it in the analysis.  
+Long-term medians and trends of all parameters were calculated, from monthly median values, for potential inclusion as predictors in models of eutrophication. Due to censoring of NUT parameters, as well as the presence of 0 to multiple detection limits based on the stations, we used the `cenros()` function from the `NADA` R package (v. 1.6.1.1; Lee 2020) to conduct robust Regression on Order Statistics (ROS) and thus estimate long-term medians (Helsel 2011). When studying PAR time series, differences when sensors were changed were apparent at several stations, leading us to exclude trend in PAR from predictors. We believe long-term median PAR is valid and retained it in the analysis.  
 
 Due to collinearity between median DO mg/L, median daily PAR, median water temperature, and latitude, these four variables were combined into a Principal Components Analysis, and a station's score on axis 1 was used as a predictor in modeling (named 'tpld_PC1').  
 

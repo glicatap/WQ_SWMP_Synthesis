@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # R/Analyses_for_paper Folder
 
 The structure of this folder mirrors that of the `Outputs` folder. Because this folder contains the code generating all calculations and analyses, further detail on statistical methods is below the explanation of this folder's contents.
@@ -154,7 +159,9 @@ Grueber, C. E., Nakagawa, S., Laws, R. J., & Jamieson, I. G. (2011). Multimodel 
 
 Harrison, X. A., Donaldson, L., Correa-Cano, M. E., Evans, J., Fisher, D. N., Goodwin, C. E. D., Robinson, B. S., Hodgson, D. J., & Inger, R. (2018). A brief introduction to mixed effects modelling and multi-model inference in ecology. *PeerJ*, *6*, e4794. <https://doi.org/10.7717/peerj.4794>
 
-Helsel, D. R. (2011). Statistics for censored environmental data using Minitab and R (Second edition). Wiley.
+Helsel, D. R. (2011). Statistics for censored environmental data using Minitab and R (Second edition). Wiley.  
+
+Lee L (2020). _NADA: Nondetects and Data Analysis for Environmental Data_. R package version 1.6-1.1, <https://CRAN.R-project.org/package=NADA>.
 
 Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed-effects models. *Methods in Ecology and Evolution*, *4*(2), 133–142. <https://doi.org/10.1111/j.2041-210x.2012.00261.x>
 

@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Outputs Folder  
 
 The structure of this folder mirrors that of `R/Analyses_for_paper`. Sub-folders exist for each of the different steps beyond the processed data.  
