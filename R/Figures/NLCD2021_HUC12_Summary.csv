@@ -1,0 +1,1156 @@
+gridcode,name,FREQUENCY,SUM_Shape_Area
+0,Cape Saint George Shoal-Gulf of Mexico,58,11328638.6
+0,Hyannis Harbor-Frontal Nantucket Sound,36,306246264.6
+0,Padilla Bay-Strait of Georgia,4,534335978.2
+0,Tijuana River-Frontal Pacific Ocean,5,65195103.61
+11,<Null>,5,3599.627495
+11,Apalachicola Bay,128,34392833.73
+11,Aransas Bay,1697,690728275.6
+11,Bayou Casotte-Pt Aux Chenes Bay,317,1636433.624
+11,Bayou Heron-Grand Bay Swamp,444,2267884.314
+11,Blackbird Creek-Frontal Delaware River,162,7964797.549
+11,Branch Brook-Merriland River,48,108930.5145
+11,Bush River,92,29652715.39
+11,Carter Creek-York River,143,1670583.362
+11,Chappel Creek,25,36512.59461
+11,Charles Branch-Western Branch Patuxent River,70,318010.5835
+11,Coos Bay,174,14474576.22
+11,Corpus Christi Bay,566,3418599.243
+11,Dawho River-North Edisto River,932,31645830.38
+11,Debidue Creek,362,1173464.758
+11,Doboy Sound-Frontal Atlantic Ocean,1438,46887046.63
+11,East River-Apalachicola River,322,8771459.738
+11,Elkhorn Slough,220,6847563.591
+11,Fallsburg Creek-Hudson River,74,309622.467
+11,Furnace Brook-Hudson River,116,50079613.76
+11,Great Bay,90,269704.2206
+11,Great Bay-Frontal Atlantic Ocean,769,2294325.027
+11,Henderson Creek-Barron River Frontal,1172,159819742.1
+11,Hope Creek-Edisto River,584,1154855.347
+11,Hyannis Harbor-Frontal Nantucket Sound,1034,678094542.1
+11,Joe Leary Slough-Frontal Padilla Bay,29,143542.5765
+11,Jones Creek-York River,119,964045.9808
+11,Lakes Kill-Saw Kill,53,496153.6469
+11,Lamprey River,144,425928.1586
+11,Lower Ashepoo River,933,69714742.9
+11,Lower Cooper River,775,54281652.1
+11,Lower Fish River,147,1648067.404
+11,Lower Mullica River,149,5947874.231
+11,Lower Saint Jones River,145,31246406.13
+11,Magnolia River,72,7838391.138
+11,Masonboro Inlet-Mason Inlet,499,15882251.17
+11,Mataponi Creek-Patuxent River,82,5177020.221
+11,Middle Mullica River,66,2609597.379
+11,Mill Creek-Hudson River,42,8126645.499
+11,Mill Creek-Pamunkey River,255,16282971.85
+11,Monie Bay,110,6348529.495
+11,Mudder Kill-Hudson River,102,45999419.86
+11,Nacote Creek,55,1057690.448
+11,Novato Creek-Frontal San Pablo Bay Estuaries,1460,541943270.2
+11,Old Woman Creek,48,281984.9167
+11,Outlet Waccamaw River-Atlantic Intracoastal Waterway,359,13308108.73
+11,Oyster River,48,556467.1738
+11,Padilla Bay-Strait of Georgia,172,1004946012
+11,Pellicer Creek,81,638881.9244
+11,Pellicer Creek-Big Mulberry Branch Frontal,468,17797785.48
+11,Pokegama River,31,100929.3777
+11,Poquoson River-Frontal Chesapeake Bay,270,128314217.2
+11,Pt Aux Chenes Bay-Mississippi Sound,30,241771301.5
+11,Richardson Bay-San Francisco Bay,37,21348304.23
+11,Rooker Bay,1263,29833761.35
+11,Saint Louis River,159,25202466.77
+11,San Antonio Bay-Espiritu Santo Bay,2468,439476969.1
+11,San Diego Bay,77,45101148.77
+11,San Pablo Bay,4,57912.94985
+11,Sarah Creek-York River,79,420791.4185
+11,Skimino Creek-York River,213,91736134.39
+11,South Edisto River-Atlantic Intracoastal Waterway,943,5356863.721
+11,Spirit Lake-Saint Louis River,50,146290.4503
+11,Squamscott River,41,26374705.29
+11,St. George Sound,75,1032968628
+11,Stevens Brook-Frontal Atlantic Ocean,196,2150789.653
+11,Stony Creek,32,88058.22144
+11,Store Creek,388,1393306.458
+11,Suisun Bay Estuaries,3306,46324153.35
+11,Swan Lake-Copano Bay,43,184166760.1
+11,Tijuana River-Frontal Pacific Ocean,46,322541.2766
+11,Tolomato River-Moses Creek Frontal,215,18837753.2
+11,Town of Southport-Cape Fear River,475,43821740.4
+11,Tuckerton Creek-Little Egg Harbor,442,127454285.4
+11,Upper East Passage,48,37297013.38
+11,Upper Saint Jones River,54,1514460.663
+11,Upper Tolomato River,469,10457049.46
+11,Upper West Passage,42,53342092.09
+11,Winchester Creek,99,20904024.7
+11,Winyah Bay,467,69265001.73
+21,<Null>,2,1230.921936
+21,Apalachicola Bay,837,2822371.078
+21,Aransas Bay,3470,10912609.73
+21,Bayou Casotte-Pt Aux Chenes Bay,1239,5455542.508
+21,Bayou Heron-Grand Bay Swamp,430,2141844.543
+21,Blackbird Creek-Frontal Delaware River,1324,4860716.968
+21,Branch Brook-Merriland River,1166,3618524.377
+21,Bush River,1637,7296434.61
+21,Carter Creek-York River,2044,13159845.37
+21,Chappel Creek,1023,2362815.335
+21,Charles Branch-Western Branch Patuxent River,3452,14822723.14
+21,Coos Bay,1710,6997366.314
+21,Corpus Christi Bay,732,1643997.849
+21,Dawho River-North Edisto River,579,2066050.909
+21,Debidue Creek,478,3212131.256
+21,Doboy Sound-Frontal Atlantic Ocean,767,5363686.066
+21,East River-Apalachicola River,1181,4600162.134
+21,Elkhorn Slough,4331,17638157.62
+21,Fallsburg Creek-Hudson River,1803,6029567.056
+21,Furnace Brook-Hudson River,2791,12392280.37
+21,Great Bay,1204,4449618.979
+21,Great Bay-Frontal Atlantic Ocean,479,1820370.108
+21,Henderson Creek-Barron River Frontal,1050,5635817.084
+21,Hope Creek-Edisto River,132,1325966.968
+21,Hyannis Harbor-Frontal Nantucket Sound,17183,56953167.21
+21,Joe Leary Slough-Frontal Padilla Bay,1273,3667920.009
+21,Jones Creek-York River,1119,5234448.395
+21,Lakes Kill-Saw Kill,1468,3740906.937
+21,Lamprey River,1123,3582951.581
+21,Lower Ashepoo River,169,1061256.006
+21,Lower Cooper River,3228,11885860.49
+21,Lower Fish River,3585,13102406.57
+21,Lower Mullica River,586,1983736.697
+21,Lower Saint Jones River,1329,6935926.382
+21,Magnolia River,2211,9033667.355
+21,Masonboro Inlet-Mason Inlet,4931,23496190.99
+21,Mataponi Creek-Patuxent River,1655,5888875.616
+21,Middle Mullica River,1720,6960716.125
+21,Mill Creek-Hudson River,833,1718396.013
+21,Mill Creek-Pamunkey River,875,4581473.511
+21,Monie Bay,389,1687377.914
+21,Mudder Kill-Hudson River,1442,3994028.957
+21,Nacote Creek,2322,7627393.213
+21,Novato Creek-Frontal San Pablo Bay Estuaries,1555,5154658.01
+21,Old Woman Creek,1094,2762423.767
+21,Outlet Waccamaw River-Atlantic Intracoastal Waterway,1318,11206716.72
+21,Oyster River,1602,7687863.638
+21,Padilla Bay-Strait of Georgia,48,57477.58098
+21,Pellicer Creek,391,941627.2797
+21,Pellicer Creek-Big Mulberry Branch Frontal,2824,11219268.99
+21,Pokegama River,438,1700650.841
+21,Poquoson River-Frontal Chesapeake Bay,3217,19747249.2
+21,Pt Aux Chenes Bay-Mississippi Sound,17,31921.875
+21,Richardson Bay-San Francisco Bay,197,282336.0947
+21,Rooker Bay,899,2228112.515
+21,Saint Louis River,2315,10659482.29
+21,San Antonio Bay-Espiritu Santo Bay,1690,5957636.05
+21,San Diego Bay,1378,6293506.799
+21,San Pablo Bay,8,6592.29126
+21,Sarah Creek-York River,1077,7936643.848
+21,Skimino Creek-York River,1345,6587741.547
+21,South Edisto River-Atlantic Intracoastal Waterway,297,1014891.394
+21,Spirit Lake-Saint Louis River,2352,7942557.225
+21,Squamscott River,1520,4639964.131
+21,St. George Sound,924,3045687.534
+21,Stevens Brook-Frontal Atlantic Ocean,3061,10869080.31
+21,Stony Creek,1137,1972396.376
+21,Store Creek,682,4547186.938
+21,Suisun Bay Estuaries,1434,5056546.541
+21,Swan Lake-Copano Bay,25,32733.98438
+21,Tijuana River-Frontal Pacific Ocean,939,2649802.705
+21,Tolomato River-Moses Creek Frontal,1612,6395650.159
+21,Town of Southport-Cape Fear River,881,3328861.377
+21,Tuckerton Creek-Little Egg Harbor,1221,5624431.76
+21,Upper East Passage,1053,4361159.097
+21,Upper Saint Jones River,2713,13340717.11
+21,Upper Tolomato River,3189,11347222.58
+21,Upper West Passage,368,1587306.322
+21,Winchester Creek,663,2707761.685
+21,Winyah Bay,753,6513071.374
+22,Apalachicola Bay,862,7087140.884
+22,Aransas Bay,4864,18457179.1
+22,Bayou Casotte-Pt Aux Chenes Bay,1171,7536630.35
+22,Bayou Heron-Grand Bay Swamp,223,471322.7051
+22,Blackbird Creek-Frontal Delaware River,931,1773460.19
+22,Branch Brook-Merriland River,1174,3106554.593
+22,Bush River,2022,7552679.068
+22,Cape Saint George Shoal-Gulf of Mexico,6,5400
+22,Carter Creek-York River,1784,5143053.351
+22,Chappel Creek,824,1457895.616
+22,Charles Branch-Western Branch Patuxent River,2802,12629338.66
+22,Coos Bay,1829,9085050.184
+22,Corpus Christi Bay,1497,2908750.836
+22,Dawho River-North Edisto River,407,635119.8486
+22,Debidue Creek,540,1903739.612
+22,Doboy Sound-Frontal Atlantic Ocean,633,1723394.971
+22,East River-Apalachicola River,1055,3011913.885
+22,Elkhorn Slough,3928,11842853.35
+22,Fallsburg Creek-Hudson River,2090,4546204.074
+22,Furnace Brook-Hudson River,3999,10358866.57
+22,Great Bay,1343,4768411.555
+22,Great Bay-Frontal Atlantic Ocean,593,2706841.022
+22,Henderson Creek-Barron River Frontal,1603,6899780.457
+22,Hope Creek-Edisto River,97,193716.8152
+22,Hyannis Harbor-Frontal Nantucket Sound,21632,113208171
+22,Joe Leary Slough-Frontal Padilla Bay,2105,7344168.115
+22,Jones Creek-York River,601,1037685.608
+22,Lakes Kill-Saw Kill,1480,3889513.065
+22,Lamprey River,957,2553286.816
+22,Lower Ashepoo River,187,322956.7932
+22,Lower Cooper River,3543,26284884.25
+22,Lower Fish River,2444,7774303.656
+22,Lower Mullica River,396,1030863.757
+22,Lower Saint Jones River,1604,6007017.81
+22,Magnolia River,1450,4491760.941
+22,Masonboro Inlet-Mason Inlet,4142,31668502.56
+22,Mataponi Creek-Patuxent River,670,1608608.606
+22,Middle Mullica River,1303,4607486.609
+22,Mill Creek-Hudson River,1055,2767403.128
+22,Mill Creek-Pamunkey River,625,1739908.411
+22,Monie Bay,256,437858.5968
+22,Mudder Kill-Hudson River,1386,4073617.351
+22,Nacote Creek,1913,6784127.353
+22,Novato Creek-Frontal San Pablo Bay Estuaries,3160,10300205.03
+22,Old Woman Creek,912,2019378.351
+22,Outlet Waccamaw River-Atlantic Intracoastal Waterway,1288,5420163.757
+22,Oyster River,1837,5406896.571
+22,Padilla Bay-Strait of Georgia,114,398594.8999
+22,Pellicer Creek,437,1729988.498
+22,Pellicer Creek-Big Mulberry Branch Frontal,3032,20495185.84
+22,Pokegama River,420,1195757.206
+22,Poquoson River-Frontal Chesapeake Bay,2940,13132366.01
+22,Pt Aux Chenes Bay-Mississippi Sound,17,5010904.715
+22,Richardson Bay-San Francisco Bay,274,414036.5699
+22,Rooker Bay,2220,8544232.672
+22,Saint Louis River,4025,14304972.92
+22,San Antonio Bay-Espiritu Santo Bay,1787,5389157.098
+22,San Diego Bay,3844,11734278.6
+22,San Pablo Bay,25,48451.24512
+22,Sarah Creek-York River,1203,3639131.021
+22,Skimino Creek-York River,609,1446651.92
+22,South Edisto River-Atlantic Intracoastal Waterway,354,2102262.122
+22,Spirit Lake-Saint Louis River,2555,7625382.056
+22,Squamscott River,1545,5409096.474
+22,St. George Sound,1388,5949407.401
+22,Stevens Brook-Frontal Atlantic Ocean,3670,10290925.04
+22,Stony Creek,1004,2408602.986
+22,Store Creek,474,643643.6462
+22,Suisun Bay Estuaries,2146,6100872.404
+22,Swan Lake-Copano Bay,61,80054.29687
+22,Tijuana River-Frontal Pacific Ocean,1733,4487847.411
+22,Tolomato River-Moses Creek Frontal,1748,14435300.67
+22,Town of Southport-Cape Fear River,861,3177123.239
+22,Tuckerton Creek-Little Egg Harbor,1304,6267184.497
+22,Upper East Passage,2099,5055760.423
+22,Upper Saint Jones River,3245,10576503.89
+22,Upper Tolomato River,3196,11541197.85
+22,Upper West Passage,626,2310969.795
+22,Winchester Creek,371,1780063.263
+22,Winyah Bay,734,2084481.464
+23,<Null>,1,615.72876
+23,Apalachicola Bay,906,3671161.688
+23,Aransas Bay,4061,17631691.95
+23,Bayou Casotte-Pt Aux Chenes Bay,1272,8315295.859
+23,Bayou Heron-Grand Bay Swamp,86,186445.8984
+23,Blackbird Creek-Frontal Delaware River,363,1177514.676
+23,Branch Brook-Merriland River,671,1707929.819
+23,Bush River,1391,5019889.966
+23,Cape Saint George Shoal-Gulf of Mexico,78,90715.12756
+23,Carter Creek-York River,806,3085780.106
+23,Chappel Creek,273,586981.398
+23,Charles Branch-Western Branch Patuxent River,1677,6999681.802
+23,Coos Bay,1406,8914405.287
+23,Corpus Christi Bay,1482,6278823.248
+23,Dawho River-North Edisto River,151,235394.989
+23,Debidue Creek,347,829031.1218
+23,Doboy Sound-Frontal Atlantic Ocean,220,467919.4977
+23,East River-Apalachicola River,674,1481406.509
+23,Elkhorn Slough,1602,5683732.956
+23,Fallsburg Creek-Hudson River,1132,3718060.071
+23,Furnace Brook-Hudson River,2318,12767065.8
+23,Great Bay,1004,2526506.227
+23,Great Bay-Frontal Atlantic Ocean,485,3750882.111
+23,Henderson Creek-Barron River Frontal,1324,7495223.264
+23,Hope Creek-Edisto River,29,40222.26563
+23,Hyannis Harbor-Frontal Nantucket Sound,16091,88401476.18
+23,Joe Leary Slough-Frontal Padilla Bay,1606,5517390.542
+23,Jones Creek-York River,258,649038.208
+23,Lakes Kill-Saw Kill,685,1722858.563
+23,Lamprey River,478,1198312.509
+23,Lower Ashepoo River,91,120794.6777
+23,Lower Cooper River,3721,19902396.31
+23,Lower Fish River,1251,3698931.281
+23,Lower Mullica River,188,689197.3846
+23,Lower Saint Jones River,1030,4056662.109
+23,Magnolia River,821,1864235.77
+23,Masonboro Inlet-Mason Inlet,3242,14702249.24
+23,Mataponi Creek-Patuxent River,191,334397.5159
+23,Middle Mullica River,551,1416924.454
+23,Mill Creek-Hudson River,704,1380829.614
+23,Mill Creek-Pamunkey River,350,1086106.036
+23,Monie Bay,83,92181.61011
+23,Mudder Kill-Hudson River,782,2048094.292
+23,Nacote Creek,816,3028664.053
+23,Novato Creek-Frontal San Pablo Bay Estuaries,2630,14877093.68
+23,Old Woman Creek,374,740223.8525
+23,Outlet Waccamaw River-Atlantic Intracoastal Waterway,726,1656908.844
+23,Oyster River,1053,3460153.285
+23,Padilla Bay-Strait of Georgia,262,520151.0181
+23,Pellicer Creek,277,583943.7744
+23,Pellicer Creek-Big Mulberry Branch Frontal,2674,12694808.03
+23,Pokegama River,241,544298.9296
+23,Poquoson River-Frontal Chesapeake Bay,1419,6822972.51
+23,Pt Aux Chenes Bay-Mississippi Sound,52,229301.8066
+23,Richardson Bay-San Francisco Bay,655,928111.0388
+23,Rooker Bay,1471,14761264.72
+23,Saint Louis River,3299,22119355.94
+23,San Antonio Bay-Espiritu Santo Bay,1098,3371091.724
+23,San Diego Bay,3020,58346986.99
+23,San Pablo Bay,51,75686.29761
+23,Sarah Creek-York River,564,1745095.303
+23,Skimino Creek-York River,228,703696.5912
+23,South Edisto River-Atlantic Intracoastal Waterway,302,1050682.983
+23,Spirit Lake-Saint Louis River,1415,6332035.137
+23,Squamscott River,1152,3617354.086
+23,St. George Sound,1432,3915430.746
+23,Stevens Brook-Frontal Atlantic Ocean,2303,9314718.407
+23,Stony Creek,490,749025.0961
+23,Store Creek,97,128246.4844
+23,Suisun Bay Estuaries,1532,5994123.926
+23,Swan Lake-Copano Bay,74,90474.60937
+23,Tijuana River-Frontal Pacific Ocean,1175,17258911.55
+23,Tolomato River-Moses Creek Frontal,1559,8316229.752
+23,Town of Southport-Cape Fear River,622,2149697.269
+23,Tuckerton Creek-Little Egg Harbor,1064,4729352.591
+23,Upper East Passage,1214,8122590.72
+23,Upper Saint Jones River,1981,9444708.627
+23,Upper Tolomato River,2046,7923957.55
+23,Upper West Passage,662,2210585.806
+23,Winchester Creek,191,473227.4889
+23,Winyah Bay,368,917142.627
+24,Apalachicola Bay,307,729964.5996
+24,Aransas Bay,1741,6558914.108
+24,Bayou Casotte-Pt Aux Chenes Bay,628,4420698.376
+24,Bayou Heron-Grand Bay Swamp,4,5400
+24,Blackbird Creek-Frontal Delaware River,73,117881.6528
+24,Branch Brook-Merriland River,90,834050.0061
+24,Bush River,382,2054623.837
+24,Cape Saint George Shoal-Gulf of Mexico,63,156409.8267
+24,Carter Creek-York River,254,883159.0851
+24,Chappel Creek,58,107225.9033
+24,Charles Branch-Western Branch Patuxent River,431,1903834.094
+24,Coos Bay,607,4026676.216
+24,Corpus Christi Bay,950,3168721.609
+24,Dawho River-North Edisto River,26,68348.91358
+24,Debidue Creek,49,67187.65869
+24,Doboy Sound-Frontal Atlantic Ocean,41,102328.9673
+24,East River-Apalachicola River,191,412151.1108
+24,Elkhorn Slough,368,1581311.633
+24,Fallsburg Creek-Hudson River,254,1055339.374
+24,Furnace Brook-Hudson River,791,5632181.9
+24,Great Bay,195,1856901.064
+24,Great Bay-Frontal Atlantic Ocean,196,2234436.108
+24,Henderson Creek-Barron River Frontal,546,2444710.941
+24,Hope Creek-Edisto River,2,1515.234375
+24,Hyannis Harbor-Frontal Nantucket Sound,3242,16783033.1
+24,Joe Leary Slough-Frontal Padilla Bay,465,2412494.509
+24,Jones Creek-York River,101,142767.7185
+24,Lakes Kill-Saw Kill,118,252497.4884
+24,Lamprey River,66,228425.7156
+24,Lower Ashepoo River,9,7776.5625
+24,Lower Cooper River,1685,13437362.44
+24,Lower Fish River,219,789788.2874
+24,Lower Mullica River,59,244947.9858
+24,Lower Saint Jones River,359,1522150.818
+24,Magnolia River,115,334343.985
+24,Masonboro Inlet-Mason Inlet,992,4443878.842
+24,Mataponi Creek-Patuxent River,22,106568.5913
+24,Middle Mullica River,97,528806.7169
+24,Mill Creek-Hudson River,95,264624.1837
+24,Mill Creek-Pamunkey River,115,657071.3287
+24,Monie Bay,6,5401.922607
+24,Mudder Kill-Hudson River,168,407829.7485
+24,Nacote Creek,174,663718.7714
+24,Novato Creek-Frontal San Pablo Bay Estuaries,933,10304303.49
+24,Old Woman Creek,97,208986.5616
+24,Outlet Waccamaw River-Atlantic Intracoastal Waterway,121,196237.9578
+24,Oyster River,252,1006765.15
+24,Padilla Bay-Strait of Georgia,123,338033.2206
+24,Pellicer Creek,91,164970.7031
+24,Pellicer Creek-Big Mulberry Branch Frontal,809,1859817.398
+24,Pokegama River,41,140081.5269
+24,Poquoson River-Frontal Chesapeake Bay,465,1555658.542
+24,Pt Aux Chenes Bay-Mississippi Sound,27,62438.43384
+24,Richardson Bay-San Francisco Bay,440,1360354.478
+24,Rooker Bay,1596,3272002.322
+24,Saint Louis River,1344,16182921.37
+24,San Antonio Bay-Espiritu Santo Bay,282,857232.5317
+24,San Diego Bay,2545,41681583.76
+24,San Pablo Bay,20,63859.48105
+24,Sarah Creek-York River,214,439894.6106
+24,Skimino Creek-York River,57,269990.0299
+24,South Edisto River-Atlantic Intracoastal Waterway,91,120607.5806
+24,Spirit Lake-Saint Louis River,478,2161554.943
+24,Squamscott River,224,1328128.802
+24,St. George Sound,603,2099679.785
+24,Stevens Brook-Frontal Atlantic Ocean,689,2910559.515
+24,Stony Creek,64,94731.83899
+24,Store Creek,21,20991.79688
+24,Suisun Bay Estuaries,532,4500616.395
+24,Swan Lake-Copano Bay,21,22753.125
+24,Tijuana River-Frontal Pacific Ocean,1035,8418409.621
+24,Tolomato River-Moses Creek Frontal,483,1341982.315
+24,Town of Southport-Cape Fear River,189,726231.0333
+24,Tuckerton Creek-Little Egg Harbor,280,3850451.23
+24,Upper East Passage,681,2775836.879
+24,Upper Saint Jones River,610,4216453.693
+24,Upper Tolomato River,431,944029.9622
+24,Upper West Passage,184,2837481.715
+24,Winchester Creek,49,305374.3874
+24,Winyah Bay,116,236825.7385
+31,<Null>,1,615.686703
+31,Apalachicola Bay,619,8219133.325
+31,Aransas Bay,2412,14348313.83
+31,Bayou Casotte-Pt Aux Chenes Bay,202,2623700.967
+31,Bayou Heron-Grand Bay Swamp,10,37067.45911
+31,Blackbird Creek-Frontal Delaware River,12,27319.92188
+31,Branch Brook-Merriland River,100,593751.8188
+31,Bush River,40,94074.52698
+31,Cape Saint George Shoal-Gulf of Mexico,37,82515.01465
+31,Carter Creek-York River,38,69836.13281
+31,Chappel Creek,5,7200
+31,Charles Branch-Western Branch Patuxent River,90,890475.238
+31,Coos Bay,515,3459231.679
+31,Corpus Christi Bay,977,7276721.429
+31,Dawho River-North Edisto River,127,1235995.093
+31,Debidue Creek,89,755959.8999
+31,Doboy Sound-Frontal Atlantic Ocean,181,2393525.5
+31,East River-Apalachicola River,406,1098195.502
+31,Elkhorn Slough,48,441587.3411
+31,Fallsburg Creek-Hudson River,147,223157.8674
+31,Furnace Brook-Hudson River,169,947116.7358
+31,Great Bay,59,162888.8763
+31,Great Bay-Frontal Atlantic Ocean,140,1568730.46
+31,Henderson Creek-Barron River Frontal,61,168018.9697
+31,Hope Creek-Edisto River,3,9000
+31,Hyannis Harbor-Frontal Nantucket Sound,2172,20466312.96
+31,Joe Leary Slough-Frontal Padilla Bay,30,162153.3915
+31,Jones Creek-York River,8,8068.359375
+31,Lakes Kill-Saw Kill,21,52519.07043
+31,Lamprey River,62,333340.6448
+31,Lower Ashepoo River,58,215800.1038
+31,Lower Cooper River,513,4556189.74
+31,Lower Fish River,169,1194958.521
+31,Lower Mullica River,34,110100.1465
+31,Lower Saint Jones River,61,363946.4813
+31,Magnolia River,100,594194.101
+31,Masonboro Inlet-Mason Inlet,293,2192140.75
+31,Mataponi Creek-Patuxent River,125,518716.7908
+31,Middle Mullica River,20,66912.89063
+31,Mill Creek-Hudson River,30,98009.29413
+31,Mill Creek-Pamunkey River,46,232262.1826
+31,Monie Bay,42,47770.3125
+31,Mudder Kill-Hudson River,194,940259.1248
+31,Nacote Creek,21,63028.61938
+31,Novato Creek-Frontal San Pablo Bay Estuaries,285,1114408.571
+31,Old Woman Creek,34,111448.8281
+31,Outlet Waccamaw River-Atlantic Intracoastal Waterway,55,207934.6619
+31,Oyster River,129,674847.0154
+31,Padilla Bay-Strait of Georgia,1264,2546833.697
+31,Pellicer Creek,77,243511.0565
+31,Pellicer Creek-Big Mulberry Branch Frontal,501,2011339.819
+31,Pokegama River,61,224785.3477
+31,Poquoson River-Frontal Chesapeake Bay,139,190829.7455
+31,Pt Aux Chenes Bay-Mississippi Sound,45,1236734.5
+31,Richardson Bay-San Francisco Bay,48,53104.39453
+31,Rooker Bay,278,1850556.473
+31,Saint Louis River,296,734110.7094
+31,San Antonio Bay-Espiritu Santo Bay,1601,10945536.38
+31,San Diego Bay,123,732517.1768
+31,San Pablo Bay,6,5400
+31,Sarah Creek-York River,87,118251.5625
+31,Skimino Creek-York River,28,272894.9524
+31,South Edisto River-Atlantic Intracoastal Waterway,166,816903.5889
+31,Spirit Lake-Saint Louis River,142,523345.4475
+31,Squamscott River,102,224696.1731
+31,St. George Sound,978,12735150.05
+31,Stevens Brook-Frontal Atlantic Ocean,332,992912.1735
+31,Stony Creek,11,14653.125
+31,Store Creek,27,107944.2444
+31,Suisun Bay Estuaries,208,935963.213
+31,Swan Lake-Copano Bay,100,130263.1897
+31,Tijuana River-Frontal Pacific Ocean,89,501968.6897
+31,Tolomato River-Moses Creek Frontal,153,1365160.831
+31,Town of Southport-Cape Fear River,225,2943080.997
+31,Tuckerton Creek-Little Egg Harbor,98,927409.2957
+31,Upper East Passage,129,400217.569
+31,Upper Saint Jones River,29,108245.3247
+31,Upper Tolomato River,135,348867.9932
+31,Upper West Passage,98,331069.2764
+31,Winchester Creek,135,315080.2598
+31,Winyah Bay,169,2042936.389
+41,Apalachicola Bay,3,5400
+41,Aransas Bay,1096,22308614.62
+41,Bayou Casotte-Pt Aux Chenes Bay,6,4830.46875
+41,Bayou Heron-Grand Bay Swamp,9,10067.51404
+41,Blackbird Creek-Frontal Delaware River,792,11642431.75
+41,Branch Brook-Merriland River,621,5448013.069
+41,Bush River,653,15284956.92
+41,Carter Creek-York River,1008,6604511.27
+41,Chappel Creek,292,15381157.46
+41,Charles Branch-Western Branch Patuxent River,1040,55081894.73
+41,Coos Bay,655,1214739.681
+41,Corpus Christi Bay,8,117836.4166
+41,Dawho River-North Edisto River,85,163699.4202
+41,Debidue Creek,2,6300
+41,Doboy Sound-Frontal Atlantic Ocean,53,153508.5846
+41,Elkhorn Slough,1,900
+41,Fallsburg Creek-Hudson River,765,48452783.18
+41,Furnace Brook-Hudson River,1039,49611506.84
+41,Great Bay,768,8127755.722
+41,Great Bay-Frontal Atlantic Ocean,142,1041284.18
+41,Hope Creek-Edisto River,33,89119.55566
+41,Hyannis Harbor-Frontal Nantucket Sound,2573,14575587.66
+41,Joe Leary Slough-Frontal Padilla Bay,239,1165192.752
+41,Jones Creek-York River,506,2055554.269
+41,Lakes Kill-Saw Kill,689,28667579.32
+41,Lamprey River,750,6823228.162
+41,Lower Ashepoo River,199,644377.8625
+41,Lower Cooper River,80,438844.8669
+41,Lower Fish River,14,14717.9718
+41,Lower Mullica River,305,1798705.728
+41,Lower Saint Jones River,106,700864.3707
+41,Magnolia River,8,13601.95313
+41,Masonboro Inlet-Mason Inlet,2,1515.234375
+41,Mataponi Creek-Patuxent River,1034,28779374.32
+41,Middle Mullica River,828,10396407.95
+41,Mill Creek-Hudson River,595,20501436.54
+41,Mill Creek-Pamunkey River,778,3554004.886
+41,Monie Bay,43,100330.2246
+41,Mudder Kill-Hudson River,552,33995870.49
+41,Nacote Creek,914,10388479.15
+41,Novato Creek-Frontal San Pablo Bay Estuaries,15,41731.34766
+41,Old Woman Creek,327,12777932.24
+41,Outlet Waccamaw River-Atlantic Intracoastal Waterway,34,65579.80957
+41,Oyster River,1125,8793570.863
+41,Padilla Bay-Strait of Georgia,22,26100
+41,Pellicer Creek,394,1065149.89
+41,Pellicer Creek-Big Mulberry Branch Frontal,229,296918.3167
+41,Pokegama River,1016,13668105.06
+41,Poquoson River-Frontal Chesapeake Bay,369,852717.2882
+41,Rooker Bay,1,900
+41,Saint Louis River,608,15560452.41
+41,San Antonio Bay-Espiritu Santo Bay,77,275297.9919
+41,Sarah Creek-York River,179,397597.9889
+41,Skimino Creek-York River,777,3054118.112
+41,South Edisto River-Atlantic Intracoastal Waterway,26,97912.8479
+41,Spirit Lake-Saint Louis River,1478,34851488.29
+41,Squamscott River,630,8054750.212
+41,St. George Sound,2,1800
+41,Stevens Brook-Frontal Atlantic Ocean,1394,12687188.9
+41,Stony Creek,567,19351420.85
+41,Store Creek,30,93535.34546
+41,Suisun Bay Estuaries,4,11226.0498
+41,Swan Lake-Copano Bay,2,4500
+41,Tolomato River-Moses Creek Frontal,397,1725470.013
+41,Town of Southport-Cape Fear River,1,615.234375
+41,Tuckerton Creek-Little Egg Harbor,529,5391800.848
+41,Upper East Passage,374,2295617.143
+41,Upper Saint Jones River,679,7378847.809
+41,Upper Tolomato River,172,290731.6406
+41,Upper West Passage,245,9242463.771
+41,Winchester Creek,184,207745.9867
+41,Winyah Bay,35,54839.63013
+42,Apalachicola Bay,1415,11576753.28
+42,Aransas Bay,148,631614.3585
+42,Bayou Casotte-Pt Aux Chenes Bay,207,4496281.1
+42,Bayou Heron-Grand Bay Swamp,392,4947819.379
+42,Blackbird Creek-Frontal Delaware River,13,346266.2933
+42,Branch Brook-Merriland River,912,8615541.948
+42,Bush River,8,25175.77515
+42,Carter Creek-York River,1262,11929032.53
+42,Chappel Creek,5,13194.14063
+42,Charles Branch-Western Branch Patuxent River,37,166540.7867
+42,Coos Bay,1220,47054148.78
+42,Corpus Christi Bay,2,3680.859375
+42,Dawho River-North Edisto River,873,17277418.21
+42,Debidue Creek,398,10047790.17
+42,Doboy Sound-Frontal Atlantic Ocean,1118,52051987.46
+42,East River-Apalachicola River,384,3723183.957
+42,Elkhorn Slough,1126,30201264.56
+42,Fallsburg Creek-Hudson River,182,673691.3635
+42,Furnace Brook-Hudson River,109,154874.295
+42,Great Bay,666,7673960.152
+42,Great Bay-Frontal Atlantic Ocean,78,580063.4583
+42,Henderson Creek-Barron River Frontal,55,277780.6549
+42,Hope Creek-Edisto River,240,12921204.25
+42,Hyannis Harbor-Frontal Nantucket Sound,8479,77681331.44
+42,Joe Leary Slough-Frontal Padilla Bay,176,1265781.812
+42,Jones Creek-York River,914,9230859.476
+42,Lakes Kill-Saw Kill,179,975156.3171
+42,Lamprey River,825,9257131.055
+42,Lower Ashepoo River,631,14225486.57
+42,Lower Cooper River,941,5402443.799
+42,Lower Fish River,1406,18830301.39
+42,Lower Mullica River,229,2396871.936
+42,Lower Saint Jones River,11,98982.42187
+42,Magnolia River,874,10157230.32
+42,Masonboro Inlet-Mason Inlet,1512,11293940.59
+42,Mataponi Creek-Patuxent River,106,554185.1349
+42,Middle Mullica River,1100,14632727.15
+42,Mill Creek-Hudson River,307,2845851.141
+42,Mill Creek-Pamunkey River,1130,17804992.35
+42,Monie Bay,325,6551311.652
+42,Mudder Kill-Hudson River,241,1183585.048
+42,Nacote Creek,359,2427180.688
+42,Novato Creek-Frontal San Pablo Bay Estuaries,17,207135.2666
+42,Old Woman Creek,19,66547.62268
+42,Outlet Waccamaw River-Atlantic Intracoastal Waterway,1018,16294802.84
+42,Oyster River,954,10023973.28
+42,Padilla Bay-Strait of Georgia,378,724696.3115
+42,Pellicer Creek,918,26997623
+42,Pellicer Creek-Big Mulberry Branch Frontal,1099,29894501.49
+42,Pokegama River,170,1688108.67
+42,Poquoson River-Frontal Chesapeake Bay,1597,12303766.41
+42,Richardson Bay-San Francisco Bay,4,15398.87695
+42,Rooker Bay,21,80650.66223
+42,Saint Louis River,38,150536.9064
+42,San Antonio Bay-Espiritu Santo Bay,136,485884.6985
+42,San Diego Bay,7,38456.34384
+42,Sarah Creek-York River,591,3400953.827
+42,Skimino Creek-York River,966,11171434.57
+42,South Edisto River-Atlantic Intracoastal Waterway,450,5569811.005
+42,Spirit Lake-Saint Louis River,364,2189657.407
+42,Squamscott River,609,4924638.034
+42,St. George Sound,427,3573824.606
+42,Stevens Brook-Frontal Atlantic Ocean,1999,19955772.98
+42,Stony Creek,94,550740.7425
+42,Store Creek,711,27491265.75
+42,Suisun Bay Estuaries,2,3290.625
+42,Tolomato River-Moses Creek Frontal,937,18825535
+42,Town of Southport-Cape Fear River,508,9679104.767
+42,Tuckerton Creek-Little Egg Harbor,599,6748191.101
+42,Upper East Passage,88,295989.3677
+42,Upper Saint Jones River,7,29156.83594
+42,Upper Tolomato River,1946,24693764.94
+42,Upper West Passage,86,441462.5931
+42,Winchester Creek,560,49422974.48
+42,Winyah Bay,985,28509813.56
+43,Aransas Bay,606,1785354.813
+43,Bayou Casotte-Pt Aux Chenes Bay,18,63177.67639
+43,Bayou Heron-Grand Bay Swamp,52,157177.0569
+43,Blackbird Creek-Frontal Delaware River,135,554301.0681
+43,Branch Brook-Merriland River,1199,29353842.07
+43,Bush River,260,1852782.138
+43,Carter Creek-York River,1646,22179769.9
+43,Chappel Creek,212,808371.8124
+43,Charles Branch-Western Branch Patuxent River,683,2509969.949
+43,Coos Bay,2647,14435546.15
+43,Corpus Christi Bay,7,21167.57813
+43,Dawho River-North Edisto River,149,971920.1294
+43,Debidue Creek,1,615.234375
+43,Doboy Sound-Frontal Atlantic Ocean,12,14576.57776
+43,East River-Apalachicola River,9,15048.98987
+43,Elkhorn Slough,990,9315709.011
+43,Fallsburg Creek-Hudson River,543,3253850.217
+43,Furnace Brook-Hudson River,379,1172364.67
+43,Great Bay,1190,8588915.03
+43,Great Bay-Frontal Atlantic Ocean,210,2138443.259
+43,Henderson Creek-Barron River Frontal,21,47764.51721
+43,Hope Creek-Edisto River,48,96303.40576
+43,Hyannis Harbor-Frontal Nantucket Sound,8804,86494343.46
+43,Joe Leary Slough-Frontal Padilla Bay,349,2867178.862
+43,Jones Creek-York River,1019,16454741.01
+43,Lakes Kill-Saw Kill,519,2287967.651
+43,Lamprey River,1375,13021551.33
+43,Lower Ashepoo River,137,326194.8486
+43,Lower Cooper River,26,71484.35669
+43,Lower Fish River,146,407031.5094
+43,Lower Mullica River,435,6064108.841
+43,Lower Saint Jones River,75,275363.4705
+43,Magnolia River,89,269849.7345
+43,Masonboro Inlet-Mason Inlet,13,19451.95313
+43,Mataponi Creek-Patuxent River,1231,8623739.053
+43,Middle Mullica River,1403,30551239.87
+43,Mill Creek-Hudson River,556,2553142.181
+43,Mill Creek-Pamunkey River,1565,25865335.99
+43,Monie Bay,234,746721.936
+43,Mudder Kill-Hudson River,634,2593022.127
+43,Nacote Creek,1153,13064281.95
+43,Novato Creek-Frontal San Pablo Bay Estuaries,57,226728.5005
+43,Old Woman Creek,286,959632.1823
+43,Outlet Waccamaw River-Atlantic Intracoastal Waterway,5,8625.970459
+43,Oyster River,1746,21496752.63
+43,Padilla Bay-Strait of Georgia,13,14755.51758
+43,Pellicer Creek,335,940266.8976
+43,Pellicer Creek-Big Mulberry Branch Frontal,237,590102.655
+43,Pokegama River,641,3903475.314
+43,Poquoson River-Frontal Chesapeake Bay,1200,6830913.016
+43,Richardson Bay-San Francisco Bay,5,4176.5625
+43,Saint Louis River,345,1375163.079
+43,San Antonio Bay-Espiritu Santo Bay,134,521673.6237
+43,San Diego Bay,11,25637.36572
+43,Sarah Creek-York River,444,3364005.954
+43,Skimino Creek-York River,1153,32791551.11
+43,South Edisto River-Atlantic Intracoastal Waterway,118,331567.1631
+43,Spirit Lake-Saint Louis River,1263,7418611.079
+43,Squamscott River,1117,8463301.941
+43,St. George Sound,10,15500.39062
+43,Stevens Brook-Frontal Atlantic Ocean,2764,52402778.09
+43,Stony Creek,314,1020743.097
+43,Store Creek,157,378819.2505
+43,Suisun Bay Estuaries,6,6300
+43,Tolomato River-Moses Creek Frontal,310,739341.156
+43,Town of Southport-Cape Fear River,1,2700
+43,Tuckerton Creek-Little Egg Harbor,728,12113566.23
+43,Upper East Passage,460,3514144.867
+43,Upper Saint Jones River,103,389563.1928
+43,Upper Tolomato River,220,451910.1105
+43,Upper West Passage,305,1936055.333
+43,Winchester Creek,1335,6728022.902
+43,Winyah Bay,7,10167.1875
+52,Apalachicola Bay,723,4084225.021
+52,Aransas Bay,688,2997071.219
+52,Bayou Casotte-Pt Aux Chenes Bay,102,335286.4197
+52,Bayou Heron-Grand Bay Swamp,204,1827798.047
+52,Blackbird Creek-Frontal Delaware River,84,241599.1058
+52,Branch Brook-Merriland River,237,1253504.292
+52,Bush River,110,338746.344
+52,Carter Creek-York River,220,777455.2551
+52,Chappel Creek,15,79809.43909
+52,Charles Branch-Western Branch Patuxent River,342,1715527.606
+52,Coos Bay,704,7353502.148
+52,Corpus Christi Bay,230,952197.6379
+52,Dawho River-North Edisto River,163,640109.1248
+52,Debidue Creek,51,74764.16016
+52,Doboy Sound-Frontal Atlantic Ocean,418,2324312.759
+52,East River-Apalachicola River,194,583477.8992
+52,Elkhorn Slough,1667,18931703.72
+52,Fallsburg Creek-Hudson River,103,656342.3584
+52,Furnace Brook-Hudson River,211,1201460.696
+52,Great Bay,39,160479.5471
+52,Great Bay-Frontal Atlantic Ocean,18,84071.88721
+52,Henderson Creek-Barron River Frontal,43,285005.3741
+52,Hope Creek-Edisto River,89,1017429.071
+52,Hyannis Harbor-Frontal Nantucket Sound,1067,6581995.422
+52,Joe Leary Slough-Frontal Padilla Bay,165,649204.305
+52,Jones Creek-York River,154,1958077.496
+52,Lakes Kill-Saw Kill,72,360523.0591
+52,Lamprey River,88,530551.3596
+52,Lower Ashepoo River,265,1766753.311
+52,Lower Cooper River,292,662800.8362
+52,Lower Fish River,297,1535293.845
+52,Lower Mullica River,36,141363.9954
+52,Lower Saint Jones River,16,47482.03125
+52,Magnolia River,155,784207.1777
+52,Masonboro Inlet-Mason Inlet,725,1945673.602
+52,Mataponi Creek-Patuxent River,284,1351716.943
+52,Middle Mullica River,172,635774.5239
+52,Mill Creek-Hudson River,74,284231.3736
+52,Mill Creek-Pamunkey River,235,2334648.862
+52,Monie Bay,53,126023.1262
+52,Mudder Kill-Hudson River,78,208719.8273
+52,Nacote Creek,209,841678.5278
+52,Novato Creek-Frontal San Pablo Bay Estuaries,138,906952.5887
+52,Old Woman Creek,9,55754.54407
+52,Outlet Waccamaw River-Atlantic Intracoastal Waterway,244,1072405.646
+52,Oyster River,162,864398.2132
+52,Padilla Bay-Strait of Georgia,12,10476.34277
+52,Pellicer Creek,647,6084545.554
+52,Pellicer Creek-Big Mulberry Branch Frontal,415,1433748.395
+52,Pokegama River,139,1049007.987
+52,Poquoson River-Frontal Chesapeake Bay,297,1139277.475
+52,Richardson Bay-San Francisco Bay,69,74860.2356
+52,Rooker Bay,6,19121.48437
+52,Saint Louis River,164,643543.7599
+52,San Antonio Bay-Espiritu Santo Bay,673,3925956.006
+52,San Diego Bay,249,1369050.856
+52,San Pablo Bay,5,4500
+52,Sarah Creek-York River,186,531361.5051
+52,Skimino Creek-York River,166,839439.5416
+52,South Edisto River-Atlantic Intracoastal Waterway,90,262435.144
+52,Spirit Lake-Saint Louis River,131,429638.0425
+52,Squamscott River,65,216698.5382
+52,St. George Sound,250,735401.3489
+52,Stevens Brook-Frontal Atlantic Ocean,177,842775.1968
+52,Stony Creek,68,378163.1195
+52,Store Creek,110,334330.0049
+52,Suisun Bay Estuaries,101,257354.3501
+52,Swan Lake-Copano Bay,4,4500
+52,Tijuana River-Frontal Pacific Ocean,260,6083660.598
+52,Tolomato River-Moses Creek Frontal,499,2976573.532
+52,Town of Southport-Cape Fear River,233,738570.7947
+52,Tuckerton Creek-Little Egg Harbor,56,816799.5209
+52,Upper East Passage,81,350011.4777
+52,Upper Saint Jones River,91,192857.6569
+52,Upper Tolomato River,545,3407745.905
+52,Upper West Passage,70,196244.8242
+52,Winchester Creek,295,7202287.311
+52,Winyah Bay,163,689959.5337
+71,<Null>,2,1230.770874
+71,Apalachicola Bay,468,1655093.381
+71,Aransas Bay,2350,30499782.55
+71,Bayou Casotte-Pt Aux Chenes Bay,149,1170077.261
+71,Bayou Heron-Grand Bay Swamp,125,724957.3608
+71,Blackbird Creek-Frontal Delaware River,8,18878.90625
+71,Branch Brook-Merriland River,290,2765795.76
+71,Bush River,61,373421.0358
+71,Carter Creek-York River,167,826679.5258
+71,Chappel Creek,29,85682.48291
+71,Charles Branch-Western Branch Patuxent River,374,2334017.01
+71,Coos Bay,526,2569064.998
+71,Corpus Christi Bay,963,18436932.2
+71,Dawho River-North Edisto River,132,471593.573
+71,Debidue Creek,57,240698.0896
+71,Doboy Sound-Frontal Atlantic Ocean,275,1669742.963
+71,East River-Apalachicola River,143,516886.9629
+71,Elkhorn Slough,1882,40434029.92
+71,Fallsburg Creek-Hudson River,189,860326.3092
+71,Furnace Brook-Hudson River,217,775182.5958
+71,Great Bay,158,560246.1411
+71,Great Bay-Frontal Atlantic Ocean,61,96268.35938
+71,Henderson Creek-Barron River Frontal,132,1536739.233
+71,Hope Creek-Edisto River,48,230929.9805
+71,Hyannis Harbor-Frontal Nantucket Sound,3066,14119947.08
+71,Joe Leary Slough-Frontal Padilla Bay,188,1109354.938
+71,Jones Creek-York River,103,397505.5115
+71,Lakes Kill-Saw Kill,104,369092.6147
+71,Lamprey River,121,516573.6328
+71,Lower Ashepoo River,205,1139533.786
+71,Lower Cooper River,212,591026.6052
+71,Lower Fish River,637,4658964.066
+71,Lower Mullica River,103,539746.0785
+71,Lower Saint Jones River,31,68531.83594
+71,Magnolia River,304,1725551.175
+71,Masonboro Inlet-Mason Inlet,238,674636.1603
+71,Mataponi Creek-Patuxent River,236,1595024.78
+71,Middle Mullica River,147,737050.177
+71,Mill Creek-Hudson River,111,386012.9196
+71,Mill Creek-Pamunkey River,333,4657550.894
+71,Monie Bay,21,32990.81726
+71,Mudder Kill-Hudson River,153,857883.2245
+71,Nacote Creek,86,413869.043
+71,Novato Creek-Frontal San Pablo Bay Estuaries,1291,10471115.62
+71,Old Woman Creek,71,362712.3459
+71,Outlet Waccamaw River-Atlantic Intracoastal Waterway,188,604183.0627
+71,Oyster River,216,856646.9055
+71,Padilla Bay-Strait of Georgia,124,181931.881
+71,Pellicer Creek,304,2738575.745
+71,Pellicer Creek-Big Mulberry Branch Frontal,342,978059.8938
+71,Pokegama River,106,397509.549
+71,Poquoson River-Frontal Chesapeake Bay,139,233795.2698
+71,Pt Aux Chenes Bay-Mississippi Sound,10,9903.515625
+71,Richardson Bay-San Francisco Bay,17,23076.34277
+71,Rooker Bay,53,134915.0482
+71,Saint Louis River,131,818157.6027
+71,San Antonio Bay-Espiritu Santo Bay,2163,75725561.54
+71,San Diego Bay,231,1187016.579
+71,San Pablo Bay,2,1800
+71,Sarah Creek-York River,59,96994.47327
+71,Skimino Creek-York River,105,1375622.177
+71,South Edisto River-Atlantic Intracoastal Waterway,90,278640.1978
+71,Spirit Lake-Saint Louis River,231,760093.4509
+71,Squamscott River,77,336893.7469
+71,St. George Sound,265,1036543.277
+71,Stevens Brook-Frontal Atlantic Ocean,271,1235577.818
+71,Stony Creek,59,241746.1304
+71,Store Creek,82,260402.5085
+71,Suisun Bay Estuaries,951,10881634.05
+71,Swan Lake-Copano Bay,62,177994.0613
+71,Tijuana River-Frontal Pacific Ocean,510,11711891.36
+71,Tolomato River-Moses Creek Frontal,352,2007112.335
+71,Town of Southport-Cape Fear River,121,450040.8417
+71,Tuckerton Creek-Little Egg Harbor,164,1388230.444
+71,Upper East Passage,282,1231627.382
+71,Upper Saint Jones River,36,147387.6892
+71,Upper Tolomato River,492,2882515.594
+71,Upper West Passage,115,591859.0668
+71,Winchester Creek,203,5442643.897
+71,Winyah Bay,294,2938902.979
+81,Aransas Bay,117,170739.1296
+81,Bayou Casotte-Pt Aux Chenes Bay,11,151635.2783
+81,Bayou Heron-Grand Bay Swamp,262,6843830.521
+81,Blackbird Creek-Frontal Delaware River,113,627145.9991
+81,Branch Brook-Merriland River,172,1763916.284
+81,Bush River,134,313217.5507
+81,Carter Creek-York River,386,654241.3605
+81,Chappel Creek,395,5642192.532
+81,Charles Branch-Western Branch Patuxent River,697,9705672.702
+81,Coos Bay,40,75983.62627
+81,Dawho River-North Edisto River,377,7472529.492
+81,Debidue Creek,2,5400
+81,Doboy Sound-Frontal Atlantic Ocean,34,165789.8163
+81,Elkhorn Slough,495,7150381.785
+81,Fallsburg Creek-Hudson River,504,5123517.902
+81,Furnace Brook-Hudson River,317,1118268.127
+81,Great Bay,380,6271175.13
+81,Great Bay-Frontal Atlantic Ocean,24,49440.48157
+81,Henderson Creek-Barron River Frontal,42,792166.3879
+81,Hope Creek-Edisto River,67,680013.0615
+81,Hyannis Harbor-Frontal Nantucket Sound,503,1591709.312
+81,Joe Leary Slough-Frontal Padilla Bay,833,17797634.92
+81,Jones Creek-York River,222,472644.4977
+81,Lakes Kill-Saw Kill,580,11469915.91
+81,Lamprey River,312,5938277.44
+81,Lower Ashepoo River,170,2243290.1
+81,Lower Cooper River,139,899866.3513
+81,Lower Fish River,1211,19863887.06
+81,Lower Mullica River,41,89725.83618
+81,Lower Saint Jones River,54,195847.0917
+81,Magnolia River,762,13232456.13
+81,Masonboro Inlet-Mason Inlet,63,110141.922
+81,Mataponi Creek-Patuxent River,681,8759821.481
+81,Middle Mullica River,82,162658.7952
+81,Mill Creek-Hudson River,559,17119651.19
+81,Mill Creek-Pamunkey River,147,335662.7289
+81,Monie Bay,63,412573.8373
+81,Mudder Kill-Hudson River,567,9469379.91
+81,Nacote Creek,258,674199.4263
+81,Novato Creek-Frontal San Pablo Bay Estuaries,226,5512756.666
+81,Old Woman Creek,362,5795836.661
+81,Outlet Waccamaw River-Atlantic Intracoastal Waterway,69,259280.5847
+81,Oyster River,336,5316418.515
+81,Padilla Bay-Strait of Georgia,25,392302.5272
+81,Pellicer Creek,55,158665.7318
+81,Pellicer Creek-Big Mulberry Branch Frontal,66,597110.8887
+81,Pokegama River,269,6449743.117
+81,Poquoson River-Frontal Chesapeake Bay,539,949326.6083
+81,Saint Louis River,168,511808.4778
+81,San Antonio Bay-Espiritu Santo Bay,1135,45978956.1
+81,San Diego Bay,9,24408.59985
+81,Sarah Creek-York River,205,427066.507
+81,Skimino Creek-York River,264,1132812.433
+81,South Edisto River-Atlantic Intracoastal Waterway,93,732750.6775
+81,Spirit Lake-Saint Louis River,494,1910658.616
+81,Squamscott River,327,4246302.681
+81,Stevens Brook-Frontal Atlantic Ocean,330,2617832.483
+81,Stony Creek,619,17096445.48
+81,Store Creek,273,3661104.639
+81,Suisun Bay Estuaries,76,306448.1375
+81,Tijuana River-Frontal Pacific Ocean,139,2129100.149
+81,Tolomato River-Moses Creek Frontal,60,183113.1683
+81,Town of Southport-Cape Fear River,11,21832.03125
+81,Tuckerton Creek-Little Egg Harbor,30,52506.54602
+81,Upper East Passage,175,1516372.421
+81,Upper Saint Jones River,53,320896.7194
+81,Upper Tolomato River,79,201398.1812
+81,Upper West Passage,32,303955.6229
+81,Winchester Creek,27,40184.50442
+81,Winyah Bay,38,115930.0415
+82,Aransas Bay,13,88531.64978
+82,Bayou Heron-Grand Bay Swamp,90,7413211.203
+82,Blackbird Creek-Frontal Delaware River,383,28853564.8
+82,Branch Brook-Merriland River,1,39660.23254
+82,Bush River,114,3018351.791
+82,Carter Creek-York River,243,7385407.141
+82,Chappel Creek,182,48530199.01
+82,Charles Branch-Western Branch Patuxent River,168,4515814.407
+82,Coos Bay,1,3754.6875
+82,Dawho River-North Edisto River,60,1518460.455
+82,Elkhorn Slough,337,21060087.04
+82,Fallsburg Creek-Hudson River,4,11034.03626
+82,Furnace Brook-Hudson River,1,576.5625
+82,Great Bay,9,179488.71
+82,Great Bay-Frontal Atlantic Ocean,22,118246.9208
+82,Hope Creek-Edisto River,11,240860.4675
+82,Hyannis Harbor-Frontal Nantucket Sound,176,3191392.667
+82,Joe Leary Slough-Frontal Padilla Bay,288,52254077.97
+82,Jones Creek-York River,315,7480951.584
+82,Lakes Kill-Saw Kill,13,537366.0278
+82,Lamprey River,3,13918.35938
+82,Lower Ashepoo River,13,482503.7109
+82,Lower Fish River,315,25987592.01
+82,Lower Mullica River,32,479759.848
+82,Lower Saint Jones River,288,22817408.67
+82,Magnolia River,293,51913031.07
+82,Masonboro Inlet-Mason Inlet,43,365847.0062
+82,Mataponi Creek-Patuxent River,206,11336456.91
+82,Middle Mullica River,181,13612886.75
+82,Mill Creek-Hudson River,99,5020047.524
+82,Mill Creek-Pamunkey River,216,15635656.74
+82,Monie Bay,96,13171244.92
+82,Mudder Kill-Hudson River,15,309464.5386
+82,Nacote Creek,157,5825381.616
+82,Novato Creek-Frontal San Pablo Bay Estuaries,525,60257214.73
+82,Old Woman Creek,171,26863060.76
+82,Outlet Waccamaw River-Atlantic Intracoastal Waterway,2,11700
+82,Oyster River,5,315268.6432
+82,Padilla Bay-Strait of Georgia,34,8050526.674
+82,Poquoson River-Frontal Chesapeake Bay,139,2009231.57
+82,Richardson Bay-San Francisco Bay,1,900
+82,San Antonio Bay-Espiritu Santo Bay,28,2160885.306
+82,San Diego Bay,2,2700
+82,Sarah Creek-York River,192,2712496.454
+82,Skimino Creek-York River,322,9780273.441
+82,South Edisto River-Atlantic Intracoastal Waterway,5,429098.4558
+82,Spirit Lake-Saint Louis River,24,102980.0514
+82,Squamscott River,18,902390.9546
+82,Stevens Brook-Frontal Atlantic Ocean,1,34214.59808
+82,Stony Creek,69,3812102.037
+82,Store Creek,26,2468693.408
+82,Suisun Bay Estuaries,235,4154253.866
+82,Tijuana River-Frontal Pacific Ocean,39,206814.0152
+82,Town of Southport-Cape Fear River,32,1883344.4
+82,Tuckerton Creek-Little Egg Harbor,11,55002.80457
+82,Upper East Passage,29,559288.2294
+82,Upper Saint Jones River,546,32724454.42
+82,Upper Tolomato River,7,45425.22583
+82,Upper West Passage,2,12414.68811
+82,Winyah Bay,8,78717.20581
+90,<Null>,1,615.234375
+90,Apalachicola Bay,944,49525721.96
+90,Aransas Bay,688,4504459.378
+90,Bayou Casotte-Pt Aux Chenes Bay,369,14379247.49
+90,Bayou Heron-Grand Bay Swamp,290,56907035.4
+90,Blackbird Creek-Frontal Delaware River,789,16178892.9
+90,Branch Brook-Merriland River,390,16951071.05
+90,Bush River,693,8773981.485
+90,Cape Saint George Shoal-Gulf of Mexico,1,615.234375
+90,Carter Creek-York River,993,16343393.14
+90,Chappel Creek,188,842961.1267
+90,Charles Branch-Western Branch Patuxent River,221,7269034.103
+90,Coos Bay,402,1699795.247
+90,Corpus Christi Bay,51,159210.2692
+90,Dawho River-North Edisto River,1021,13611540.01
+90,Debidue Creek,243,28601900.63
+90,Doboy Sound-Frontal Atlantic Ocean,1459,20684113.44
+90,East River-Apalachicola River,557,109156031.3
+90,Elkhorn Slough,464,1799729.882
+90,Fallsburg Creek-Hudson River,450,4047550.076
+90,Furnace Brook-Hudson River,321,2341420.834
+90,Great Bay,550,7292879.311
+90,Great Bay-Frontal Atlantic Ocean,217,4579344.141
+90,Henderson Creek-Barron River Frontal,1509,244583380.9
+90,Hope Creek-Edisto River,729,30023911.61
+90,Hyannis Harbor-Frontal Nantucket Sound,1588,15146804.33
+90,Joe Leary Slough-Frontal Padilla Bay,318,4173669.09
+90,Jones Creek-York River,522,6507922.906
+90,Lakes Kill-Saw Kill,426,5777068.771
+90,Lamprey River,501,8333941.196
+90,Lower Ashepoo River,850,21884945.58
+90,Lower Cooper River,795,6873552.795
+90,Lower Fish River,898,24911556.15
+90,Lower Mullica River,466,39301935.45
+90,Lower Saint Jones River,379,6647884.36
+90,Magnolia River,503,15414607.37
+90,Masonboro Inlet-Mason Inlet,638,6487057.123
+90,Mataponi Creek-Patuxent River,392,5647574.048
+90,Middle Mullica River,535,52762660.57
+90,Mill Creek-Hudson River,277,3569144.019
+90,Mill Creek-Pamunkey River,977,13652216.84
+90,Monie Bay,385,31140128.1
+90,Mudder Kill-Hudson River,182,2825958.939
+90,Nacote Creek,347,21596292.03
+90,Novato Creek-Frontal San Pablo Bay Estuaries,37,107015.7598
+90,Old Woman Creek,83,685117.1173
+90,Outlet Waccamaw River-Atlantic Intracoastal Waterway,1230,25464658.45
+90,Oyster River,551,7618627.18
+90,Padilla Bay-Strait of Georgia,70,216792.0413
+90,Pellicer Creek,660,11855582.97
+90,Pellicer Creek-Big Mulberry Branch Frontal,768,27047782.32
+90,Pokegama River,781,18334323.55
+90,Poquoson River-Frontal Chesapeake Bay,1312,18823384.4
+90,Pt Aux Chenes Bay-Mississippi Sound,5,4500
+90,Richardson Bay-San Francisco Bay,6,6655.517578
+90,Rooker Bay,1103,94809770.95
+90,Saint Louis River,524,11861475.69
+90,San Antonio Bay-Espiritu Santo Bay,1243,4581678.213
+90,San Diego Bay,2,2700
+90,San Pablo Bay,5,4500
+90,Sarah Creek-York River,494,7198552.744
+90,Skimino Creek-York River,657,9312131.305
+90,South Edisto River-Atlantic Intracoastal Waterway,732,8744698.114
+90,Spirit Lake-Saint Louis River,1260,64412857.38
+90,Squamscott River,436,6578718.434
+90,St. George Sound,454,18513670.72
+90,Stevens Brook-Frontal Atlantic Ocean,992,31601514.73
+90,Stony Creek,336,9007355.086
+90,Store Creek,697,17965444.26
+90,Suisun Bay Estuaries,83,90230.25284
+90,Tijuana River-Frontal Pacific Ocean,105,1718063.395
+90,Tolomato River-Moses Creek Frontal,544,9236401.529
+90,Town of Southport-Cape Fear River,358,3818126.459
+90,Tuckerton Creek-Little Egg Harbor,170,6477408.243
+90,Upper East Passage,144,1903423.013
+90,Upper Saint Jones River,425,19457002.63
+90,Upper Tolomato River,1462,55395997.01
+90,Upper West Passage,100,1443188.425
+90,Winchester Creek,378,2075703.59
+90,Winyah Bay,1034,33186086.83
+95,<Null>,2,1516.029596
+95,Apalachicola Bay,1165,28671705.26
+95,Aransas Bay,2327,99158466.6
+95,Bayou Casotte-Pt Aux Chenes Bay,559,4172935.831
+95,Bayou Heron-Grand Bay Swamp,354,6541464.551
+95,Blackbird Creek-Frontal Delaware River,154,16231538.84
+95,Branch Brook-Merriland River,118,1098690.889
+95,Bush River,510,4133555.557
+95,Cape Saint George Shoal-Gulf of Mexico,1,1258.59375
+95,Carter Creek-York River,467,3530937.524
+95,Chappel Creek,12,86260.36377
+95,Charles Branch-Western Branch Patuxent River,103,849253.2166
+95,Coos Bay,649,14357605.56
+95,Corpus Christi Bay,981,37130687.98
+95,Dawho River-North Edisto River,572,42658939.93
+95,Debidue Creek,252,12442717.47
+95,Doboy Sound-Frontal Atlantic Ocean,607,138982657.7
+95,East River-Apalachicola River,1330,34457428.34
+95,Elkhorn Slough,736,11091872.05
+95,Fallsburg Creek-Hudson River,269,1120191.367
+95,Furnace Brook-Hudson River,413,2390102.792
+95,Great Bay,481,3584289.757
+95,Great Bay-Frontal Atlantic Ocean,291,67224790.56
+95,Henderson Creek-Barron River Frontal,4724,39972164.97
+95,Hope Creek-Edisto River,551,12724183.74
+95,Hyannis Harbor-Frontal Nantucket Sound,3060,27074635.18
+95,Joe Leary Slough-Frontal Padilla Bay,604,3952508.252
+95,Jones Creek-York River,314,1679905.344
+95,Lakes Kill-Saw Kill,103,208875.4486
+95,Lamprey River,222,945971.0541
+95,Lower Ashepoo River,511,110596334.6
+95,Lower Cooper River,957,36363238.82
+95,Lower Fish River,623,2196235.629
+95,Lower Mullica River,192,17610816.17
+95,Lower Saint Jones River,297,13514925.81
+95,Magnolia River,244,784475.9583
+95,Masonboro Inlet-Mason Inlet,717,19493164.6
+95,Mataponi Creek-Patuxent River,144,3674708.871
+95,Middle Mullica River,357,1909361.755
+95,Mill Creek-Hudson River,250,1729154.636
+95,Mill Creek-Pamunkey River,409,21673666.82
+95,Monie Bay,186,13733129.31
+95,Mudder Kill-Hudson River,189,2670623.63
+95,Nacote Creek,137,5063963.214
+95,Novato Creek-Frontal San Pablo Bay Estuaries,2270,126611753.7
+95,Old Woman Creek,53,858633.0688
+95,Outlet Waccamaw River-Atlantic Intracoastal Waterway,1010,18939437.84
+95,Oyster River,273,1420423.531
+95,Padilla Bay-Strait of Georgia,881,8668858.422
+95,Pellicer Creek,362,2502059.821
+95,Pellicer Creek-Big Mulberry Branch Frontal,844,18394464.44
+95,Pokegama River,548,2567348.712
+95,Poquoson River-Frontal Chesapeake Bay,945,15629930.23
+95,Pt Aux Chenes Bay-Mississippi Sound,44,46744978.08
+95,Richardson Bay-San Francisco Bay,23,31861.01074
+95,Rooker Bay,2369,7649483.286
+95,Saint Louis River,296,1243688.084
+95,San Antonio Bay-Espiritu Santo Bay,4381,190554539
+95,San Diego Bay,58,611136.4059
+95,San Pablo Bay,2,3600
+95,Sarah Creek-York River,389,1473501.434
+95,Skimino Creek-York River,281,5987005.225
+95,South Edisto River-Atlantic Intracoastal Waterway,415,38228333.64
+95,Spirit Lake-Saint Louis River,565,2542878.115
+95,Squamscott River,206,3008598.39
+95,St. George Sound,638,9595033.401
+95,Stevens Brook-Frontal Atlantic Ocean,402,8290538.416
+95,Stony Creek,194,602322.5143
+95,Store Creek,305,33798018
+95,Suisun Bay Estuaries,1179,220410847.9
+95,Swan Lake-Copano Bay,299,6888580.911
+95,Tijuana River-Frontal Pacific Ocean,187,4977653.233
+95,Tolomato River-Moses Creek Frontal,408,12416478.14
+95,Town of Southport-Cape Fear River,362,30382291.57
+95,Tuckerton Creek-Little Egg Harbor,164,31630452.51
+95,Upper East Passage,221,1247234.079
+95,Upper Saint Jones River,89,209903.0823
+95,Upper Tolomato River,1334,21543958.6
+95,Upper West Passage,107,1540781.735
+95,Winchester Creek,286,3201928.042
+95,Winyah Bay,697,63785583.93
