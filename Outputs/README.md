@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Outputs Folder  
 
 The structure of this folder mirrors that of `R/Analyses_for_paper`. Sub-folders exist for each of the different steps beyond the processed data.  
@@ -40,11 +45,23 @@ Individual station/parameter outputs from running the GAMs were saved as individ
 
 ## 04_compiled_predictors  
 
+This folder contains two csv files to potentially use in predictive modeling. The main file is `compiled_predictors.csv`; it contains one row per station, and one column for each parameter's median and trend at that station, as well as latitude. When DO<2 trend could not be calculated for 5 stations, the datasets were inspected, and DO<2 was always 0. As such, 0 was inserted for doLT2_trend for these stations.  
+
+`compiled_predictors_withExternalInfo.csv` is almost the same file, but with many parameters from SWMP CLUE ([overview](https://www.nerra.org/swmp-clue/); [parameters](https://docs.google.com/spreadsheets/d/1yfg62Fpfs8jZ2UnuCv2VA7wSfaAxVj0o/edit?gid=198754012#gid=198754012)) added as columns. **0s may not have been inserted for DO<2 trend, so double-check this if you want to use that column from this file.**   
+
 
 ## 05_predictive_modeling  
 
+This folder does not contain outputs because predictive modeling and evaluation was performed interactively. It remains here for consistency with `R/Analyses_for_paper`.  
+
 
 ## 06_model_selection  
+
+The most recent html files generated from model interpretation (`R/Analyses_for_paper/06b_model_interpretation`) are in this folder. Both files start with a date.  
+
+The file with `Model Outputs main` in the name contains outputs from model-averaging when delta AICc \< 4, as agreed by the work group. It starts with graphs and tables summarizing standardized coefficients from averaged models for each response. Then, the top several predictors for each response (and the response itself) are back-transformed to either original units or %/year change (when a log-transformation has happened), and graphs of the key predictors and their expected response values are provided. This is to help interpret the effect of each predictor, in more understandable units than standardized coefficients provide. There is some interpretation below many of these graphs and tables.  
+
+The file with `Model Outputs supplementary` in the name contains graphs and tables summarizing standardized coefficients using deltas of 2 and 6 as thresholds, for comparison to what will be reported in the main paper ("how does choice of delta AICc threshold affect the results?"). Individual predictor plots were not made in this file.
 
 ### R_objects folder  
 
@@ -72,10 +89,6 @@ This folder contains `.RData` objects for each response with output from model d
 
 ## 07_visualizations  
 
-This folder contains outputs from scripts in `R/Analyses_for_paper/07_visualizations`. At this point the files are exploring medians and long-term trends, but I expect this will be added to.  
+This folder contains outputs from scripts in `R/Analyses_for_paper/07_visualizations`. At this point the files are exploring medians and long-term trends, but I expect more will be added in the future.  
   
-
-# Statistical Methods  
-
-Explanations of station inclusion, data point inclusion, and trend calculation methods have been moved to the [`R/Analyses_for_paper` README](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#statistical-methods). Details on predictive modeling, model selection, and model averaging procedures are also in that README.    
 

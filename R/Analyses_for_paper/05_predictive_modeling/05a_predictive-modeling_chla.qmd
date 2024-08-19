@@ -81,6 +81,14 @@ performance::check_singularity(mod_chl)
 r.squaredGLMM(mod_chl)
 summary(mod_chl)
 
+mod_chl_norandom <- gls(as.formula(formula_nlme),
+                        data = dat_chl,
+                        method = "REML")
+
+AIC(mod_chl, mod_chl_norandom)
+
+# definitely keep the random effect
+
 # for leverage plots
 mod_chl_lmer <- lmer(as.formula(formula_chl),
                 data = dat_chl)

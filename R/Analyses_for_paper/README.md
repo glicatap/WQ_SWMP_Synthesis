@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # R/Analyses_for_paper Folder
 
 The structure of this folder mirrors that of the `Outputs` folder. Because this folder contains the code generating all calculations and analyses, further detail on statistical methods is below the explanation of this folder's contents.
@@ -36,19 +41,18 @@ Outputs were written to the `Outputs/04_compiled_predictors` folder.
 
 This folder contains one `.qmd` file for each response variable. In these files, the global model for each response (using predictors agreed upon by the data analysis team) is generated and evaluated by checking fit, residuals, and influential points. For details on the process, see the Modeling README. **LINK**
 
-`050_setup.R` is a helper file that reads in the data and compiled predictors, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median PAR, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. **If I do this, that file also constructs the data frames for each predictor model used in folders `05` and `06`.**
+`050_setup.R` is a helper file that reads in the data and compiled predictors from earlier steps, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median PAR, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. 
 
-Outputs from the `.qmd` files were written by default to the folder containing the script; these have been copied to the `Outputs/05_predictive_modeling` folder.
 
 ## 06_model_selection
 
-For details on model selection process decisions, see the Modeling README. **LINK**
+For details on model selection process decisions, see the detailed **Statistical Methods** section below.  
 
 Files in this folder implement all-subsets selection from the global models evaluated in folder `05_predictive_modeling`, and then implement model averaging for top-model sets. Each response variable gets its own scripts, of which there are two: `06a` for dredging (using `MuMIn::dredge()`), and `06b` for model averaging. The scripts have an abbreviation for the response variable in the names - e.g. the chlorophyll a trend model has all-subsets selection performed in `06a_chl_dredging.R`, then model averaging in `06b_chl_model-avgd_outputs.R`. DO mg/L trend is represented by 'domgl', and proportion of time DO \< 2 mg/L trend is represented by 'doLT2' (LT = "less than").
 
 `060_predicting_functions.R` contains functions to generate the same tables and graphs for different sets of models and parameters. It is used more in folder `06b_model_interpretation` than in this folder, but was created here before splitting the scripts further.
 
-Outputs were written to the `Outputs/06_model_selection` folder, in the subfolder `R_objects`. These objects have not been pushed to github due to size, but are available on Box. **LINK**
+Outputs were written to the `Outputs/06_model_selection` folder, in the subfolder `R_objects`. These objects are available in both the github repository and on Box. See the [06_model_selection section](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#06_model_selection) of the `Outputs` readme for details on data frames contained within each .RData object.  
 
 ## 06b_model_interpretation
 
@@ -60,7 +64,8 @@ This folder contains two `.qmd` files and their output: `Overall_Outputs.qmd` an
 
 Outputs of the `.qmd` files are by default saved in the R directory where the file is. The latest versions have been copied to the `Outputs/06_model_selection` folder.
 
-# Statistical Methods
+
+# Statistical Methods - Detailed  
 
 ## Station selection
 
@@ -106,19 +111,9 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 ### Constructing and evaluating global models
 
--   Selected predictors (incl. Par trend exclusion)
+All variables were centered and scaled to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model selection and averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
 
--   Collinearity
-
--   Latitudinal PCA
-
--   Influential observations
-
--   REML for checking random effects, then ML for model selection (Zuur et al. 2009, section 5.7)
-
--   Goodness of fit
-
--   Centering and scaling variables (including response, to get standardized coefficients), to streamline model convergence and help in model selection
+Global models were constructed with the predictors and a random effect for Reserve and fit using the `lme()` function of the R `nlme` package (v. 3.1.160; Pinherio et al. 2022) using Restricted Maximum Likelihood (REML). To determine whether the random effect was necessary, a simple linear model without the random effect was constructed via `nlme::gls()`, also using REML, to enable comparison via AIC (Zuur et al. 2009, section 5.7). When the random effect was required (chla models), the global model was then re-fit with Maximum Likelihood (ML) for subsequent model selection; when random effects are present but fixed effects vary, REML does not generate comparable AIC values (Zuur et al. 2009). When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()` (R Core Team 2022).
 
 ### Model selection and averaging
 
@@ -146,6 +141,10 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 # References
 
+Bartoń K (2023). _MuMIn: Multi-Model Inference_. R package version 1.47.5, <https://CRAN.R-project.org/package=MuMIn>.
+
+Beck MW (2016). “SWMPr: An R Package for Retrieving, Organizing, and Analyzing Environmental Data for Estuaries.” _The R Journal_, *8*(1), 219-232. doi:10.32614/RJ-2016-015 <https://doi.org/10.32614/RJ-2016-015>.
+
 Bolker, B. M., Brooks, M. E., Clark, C. J., Geange, S. W., Poulsen, J. R., Stevens, M. H. H., & White, J.-S. S. (2009). Generalized linear mixed models: A practical guide for ecology and evolution. *Trends in Ecology & Evolution*, *24*(3), Article 3. <https://doi.org/10.1016/j.tree.2008.10.008>
 
 Burnham, K. P., & Anderson, D. R. (Eds.). (2002). *Model Selection and Multimodel Inference*. Springer New York. <https://doi.org/10.1007/b97636>
@@ -154,14 +153,28 @@ Burnham, K. P., & Anderson, D. R. (2004). Multimodel Inference: Understanding AI
 
 Burnham, K. P., Anderson, D. R., & Huyvaert, K. P. (2011). AIC model selection and multimodel inference in behavioral ecology: Some background, observations, and comparisons. *Behavioral Ecology and Sociobiology*, *65*(1), 23–35. <https://doi.org/10.1007/s00265-010-1029-6>
 
+Cloern, J. E., & Jassby, A. D. (2008). Complex seasonal patterns of primary producers at the land–sea interface. Ecology Letters, 11(12), 1294–1303. https://doi.org/10.1111/j.1461-0248.2008.01244.x
+
 Grueber, C. E., Nakagawa, S., Laws, R. J., & Jamieson, I. G. (2011). Multimodel inference in ecology and evolution: Challenges and solutions. *Journal of Evolutionary Biology*, *24*(4), 699–711. <https://doi.org/10.1111/j.1420-9101.2010.02210.x>
 
 Harrison, X. A., Donaldson, L., Correa-Cano, M. E., Evans, J., Fisher, D. N., Goodwin, C. E. D., Robinson, B. S., Hodgson, D. J., & Inger, R. (2018). A brief introduction to mixed effects modelling and multi-model inference in ecology. *PeerJ*, *6*, e4794. <https://doi.org/10.7717/peerj.4794>
 
+Helsel, D. R. (2011). Statistics for censored environmental data using Minitab and R (Second edition). Wiley.  
+
+Lee L (2020). _NADA: Nondetects and Data Analysis for Environmental Data_. R package version 1.6-1.1, <https://CRAN.R-project.org/package=NADA>.
+
 Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed-effects models. *Methods in Ecology and Evolution*, *4*(2), 133–142. <https://doi.org/10.1111/j.2041-210x.2012.00261.x>
+
+Pinheiro J, Bates D, R Core Team (2022). _nlme: Linear and Nonlinear Mixed Effects Models_. R package version 3.1-160, <https://CRAN.R-project.org/package=nlme>.
+
+R Core Team (2022). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
 
 Richards, S. A. (2008). Dealing with overdispersed count data in applied ecology. *Journal of Applied Ecology*, *45*(1), 218–227. <https://doi.org/10.1111/j.1365-2664.2007.01377.x>
 
 Symonds, M. R. E., & Moussalli, A. (2011). A brief guide to model selection, multimodel inference and model averaging in behavioural ecology using Akaike’s information criterion. *Behavioral Ecology and Sociobiology*, *65*(1), 13–21. <https://doi.org/10.1007/s00265-010-1037-6>
+
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_, *4*(43), 1686. doi:10.21105/joss.01686 <https://doi.org/10.21105/joss.01686>.
+
+Wood, S.N. (2017). Generalized Additive Models: An Introduction with R (2nd edition). Chapman and Hall/CRC. <doi:10.1201/9781315370279>
 
 Zuur, A. F., Ieno, E. N., Walker, N. J., Saveliev, A. A., & Smith, G. M. (2009). *Mixed effects models and extensions in ecology with R*. Springer.
