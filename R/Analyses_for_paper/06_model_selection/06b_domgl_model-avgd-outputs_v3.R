@@ -1,36 +1,33 @@
 library(tidyverse)
-library(vegan)
-# library(lme4)
-# library(glmmTMB)
-library(nlme)
 library(MuMIn)
-#V3 version 
+library(vegan)
 
+# load things
 load(here::here("Outputs",
-                #"06_model_selection",
-                #"R_objects",
-                "chla_out_nlme_v3.RData"))
+             #   "06_model_selection",
+              #  "R_objects",
+                "domgl_out_v3.RData"))
+dat_all <- read.csv(here::here("Outputs",
+                               "04_compiled_predictors",
+                               "compiled_predictors_v3.csv"))
 
+# get dat_all set up properly, with PCA and log transformations etc.
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
                   "050_setup_v3.R"))
 
 rm(dat_all)
 
-mod_subsets <- chla_subsets
+mod_subsets <-  domgl_subsets
 
-# means and sds used to scale ----
-
-# start with dat_all; only keep what's in dat_chl and numeric
 dat_means <- dat_all3 |> 
-  select(any_of(names(dat_chl)),
+  select(any_of(names(dat_domgl)),
          -reserve) |> 
   summarize(across(everything(), mean))
 dat_sds <- dat_all3 |> 
-  select(any_of(names(dat_chl)),
+  select(any_of(names(dat_domgl)),
          -reserve) |> 
   summarize(across(everything(), sd))
-
 
 # get top models ----
 
@@ -59,7 +56,7 @@ top_modsd6_unnested <- subset(top_modsd6, !nested(.))
 mod_avgd2 <- model.avg(top_modsd2)
 mod_avgd6 <- model.avg(top_modsd6)
 
-# for main, use delta < 4
+# for main, use delta < 4 and fit them
 mod_avgd4 <- model.avg(top_modsd4, fit = TRUE)
 
 swdf <- data.frame(sw_all = sw(top_modsd4)) |> 
@@ -84,10 +81,10 @@ ggplot(swdf, aes(x = predictor)) +
   scale_color_brewer(palette = "Set1") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 40,
-                                    hjust = 1,
-                                    vjust = 1),
+                                   hjust = 1,
+                                   vjust = 1),
         legend.position = "bottom") +
-  labs(title = "Relative variable importance, chla",
+  labs(title = "Relative variable importance, domgl",
        subtitle = "models with delta < 4",
        x = "Predictor",
        y = "Sum of Akaike weights")
@@ -117,35 +114,16 @@ ggplot(coeffs_stnd) +
   khroma::scale_color_batlow(reverse = TRUE) +
   geom_vline(xintercept = 0,
              col = "gray40") +
-    #labs(title = "Standardized coefficients in averaged model for chl a trend",
-    labs(title = "Standardized coefficients in averaged model for chl a trend with LKS removed",
+  labs(title = "Standardized coefficients in averaged model for domgl trend",
        subtitle = "models with delta < 4",
        x = "Coefficient",
        y = "Term",
        col = "variable importance")
 
-ggplot(coeffs_stnd) +
-    geom_pointrange(aes(y = term,
-                        x = Estimate,
-                        xmin = ci_low,
-                        xmax = ci_high,
-                        col = sw_all)) +
-    khroma::scale_color_batlow(reverse = TRUE) +
-    geom_vline(xintercept = 0,
-               col = "gray40") +
-    #labs(title = "Standardized coefficients in averaged model for chl a trend",
-    labs(title = "Standardized coefficients in averaged model for chl a trend",
-         subtitle = "models with delta < 4",
-         x = "Coefficient",
-         y = "Term",
-         col = "variable importance")
-
-
-
 
 # save important outputs for predictor workup
-save(dat_chl,                              # data frame used for model
-     mod_chl,                              # global model
+save(dat_domgl,                              # data frame used for model
+     mod_domgl,                              # global model
      dat_means, dat_sds,                   # means and sds of predictors on original scales
      coeffs_stnd,                          # standardized coeffs for delta < 4; includes importance vals
      mod_avgd2, mod_avgd4, mod_avgd6,      # model avgd objects; avgd4 has full fits
@@ -153,7 +131,7 @@ save(dat_chl,                              # data frame used for model
      top_modsd4, top_modsd4_unnested,
      top_modsd6, top_modsd6_unnested,
      file = here::here("Outputs",
-                      # "06_model_selection",
-                      # "R_objects",
-                       "chla_post-averaging_v3.RData"),
+                       "06_model_selection",
+                       "R_objects",
+                       "domgl_post-averaging_v3.RData"),
      compress = "xz")

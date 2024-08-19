@@ -1,3 +1,5 @@
+library(gt)
+
 # have to fit the models inside model.avg in order to predict
 # modavg_all <- model.avg(test, fit = TRUE)
 

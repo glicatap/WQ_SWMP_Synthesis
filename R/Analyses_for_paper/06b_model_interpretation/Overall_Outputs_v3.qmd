@@ -1,0 +1,805 @@
+---
+title: "Graphs and Tables of averaged model outputs (delta < 4) V3"
+output-file: "2024-08-09 Model Outputs main"
+date: today
+format: 
+  pdf:
+    toc: true
+    fig-width: 6
+    fig-height: 4
+  html:
+    toc: true
+    toc-location: left
+    embed-resources: true
+    fig-width: 7
+    fig-height: 5
+echo: false
+warning: false
+message: false
+error: true
+---
+
+# Overview  
+
+
+This file contains information on model outputs for our three key responses, using model-averaging (full model method) on models with delta AICc < 4 from the top model.  
+
+
+## Some notes on coefficients and graphics  
+
+Standardized coefficients, as in the coefficient plots and the left columns of the coefficient tables, are interpreted on a scale of standard deviations: one standard deviation in [predictor] is expected to be associated with a [coefficient]-standard deviation change in [response].  
+
+In the tables, coefficients have also been back-transformed to the units of the predictors. We must keep in mind that the predictor units are generally not on the scales of variable measurements (nutrient and turbidity trends are "trend in the log-transformed [variable]", and nutrient and turbidity medians have also been log-transformed. precipitation trend is "trend in square-root of precipitation"). 
+
+In the partial effect plots, transformations to more intuitive associations have been made graphically. This was not done for the tables because such transformations are generally not linear, but rather multiplicative.    
+
+
+
+```{r}
+library(tidyverse)
+library(nlme)
+library(MuMIn)
+library(gt)
+```
+
+```{r}
+# get needed data frames and source functions
+chl_in <- load(here::here("Outputs",
+               # "06_model_selection",
+                #"R_objects",
+                "chla_post-averaging_v3.RData"))
+chl_list <- mget(chl_in)
+rm(list = chl_in)
+
+
+domgl_in <- load(here::here("Outputs",
+                "06_model_selection",
+                "R_objects",
+                "domgl_post-averaging.RData"))
+domgl_list <- mget(domgl_in)
+rm(list = domgl_in)
+
+
+doLT2_in <- load(here::here("Outputs",
+                "06_model_selection",
+                "R_objects",
+                "doLT2_post-averaging.RData"))
+doLT2_list <- mget(doLT2_in)
+rm(list = doLT2_in)
+
+
+source(here::here("R",
+                  "Analyses_for_paper",
+                  "06_model_selection",
+                  "060_predicting_functions.R"))
+```
+
+
+```{r}
+# compile coefficients
+
+# while we're in this step,
+# back-transform coefficients to original units:
+# both the coefficient and standard error can be
+# back-transformed by multiplying by (st.dev(Y)/ st.dev(X))
+
+
+# chl, and extract information on importance
+coeffs_chl <- chl_list$coeffs_stnd |> 
+  mutate(model = "Chl a trend",
+         sw = as.numeric(sw_all)) |> 
+  select(-sw_all, -sw_nonnested)
+nmods_chl <- data.frame("n.models" = attributes(chl_list$coeffs_stnd$sw_all)$n.models) |> 
+  tibble::rownames_to_column("term")
+coeffs_chl <- full_join(coeffs_chl, nmods_chl, by = "term")
+
+# back-transform
+sd_y <- chl_list$dat_sds$chla_trend
+transform_mults <- chl_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_chl = left_join(coeffs_chl, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
+
+# coeffs_chl |>
+#     arrange(desc(sw)) |>
+#     select(term, Estimate, Estimate.natural) |>
+#     mutate(across(c(Estimate, Estimate.natural),
+#                   \(x) round(x, 4))) |>
+#     gt::gt()
+
+
+# domgl
+coeffs_domgl <- domgl_list$coeffs_stnd |> 
+  mutate(model = "DO mg/L trend",
+         sw = as.numeric(sw_all)) |> 
+  select(-sw_all, -sw_nonnested)
+nmods_domgl <- data.frame("n.models" = attributes(domgl_list$coeffs_stnd$sw_all)$n.models) |> 
+  tibble::rownames_to_column("term")
+coeffs_domgl <- full_join(coeffs_domgl, nmods_domgl, by = "term")
+
+# back-transform
+sd_y <- domgl_list$dat_sds$domgl_trend
+transform_mults <- domgl_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_domgl = left_join(coeffs_domgl, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
+
+
+
+# do<2
+coeffs_doLT2 <- doLT2_list$coeffs_stnd |> 
+  mutate(model = "DO < 2 trend",
+         sw = as.numeric(sw_all)) |> 
+  select(-sw_all, -sw_nonnested)
+nmods_doLT2 <- data.frame("n.models" = attributes(doLT2_list$coeffs_stnd$sw_all)$n.models) |> 
+  tibble::rownames_to_column("term")
+coeffs_doLT2 <- full_join(coeffs_doLT2, nmods_doLT2, by = "term")
+
+# back-transform
+sd_y <- doLT2_list$dat_sds$doLT2_trend
+transform_mults <- doLT2_list$dat_sds |> 
+    pivot_longer(cols = everything(),
+                 names_to = "term",
+                 values_to = "sd_x") |> 
+    mutate(trans_mult = sd_y / sd_x)
+coeffs_doLT2 = left_join(coeffs_doLT2, transform_mults) |> 
+    mutate(Estimate.natural = Estimate * trans_mult,
+           Adjusted.SE.natural = Adjusted.SE * trans_mult)
+rm(nmods_chl, nmods_domgl, nmods_doLT2,
+   sd_y, transform_mults)
+```
+
+
+
+# Coefficient summaries  
+
+## Chl a  
+
+
+**Global model:**  
+
+```{r}
+formula(chl_list$mod_chl)
+```
+
+That formula doesn't show it, but `Reserve` was included as a random effect.  
+
+**# Candidate models:**  `r format(2^(length(fixef(chl_list$mod_chl)) - 1), big.mark = ",", scientific = FALSE)`
+
+**# models in top set (delta < 4):**  `r nrow(chl_list$top_modsd4)`
+
+
+```{r}
+graph_coeffs(chl_list$coeffs_stnd, title_param = "Chl a trend",
+             subtitle = "delta < 4")
+```
+
+What we see from the graph above and the table below is that we've got 3 really key predictors for chl trend: phosphate trend (positive association), turbidity trend (positive association), and ammonia trend (negative association). Spcond trend (positive), long-term median chlorophyll (positive), the latitudinal gradient (negative: so association b/t chl trend and latitude itself is negative; and b/t chl and median DO mgL & daily PAR are positive), and precipitation trend (positive) are of moderate importance.  
+
+
+```{r}
+table_coeffs(coeffs_chl, title_param = "Chl a trend", delta = 4)
+```
+
+
+## DO mg/L  
+
+**Global model:**  
+
+```{r}
+formula(domgl_list$mod_domgl)
+```
+
+
+**# Candidate models:**  `r format(2^(length(coef(domgl_list$mod_domgl)) - 1), big.mark = ",", scientific = FALSE)`
+
+**# models in top set (delta < 4):**  `r nrow(domgl_list$top_modsd4)`
+
+```{r}
+graph_coeffs(domgl_list$coeffs_stnd, title_param = "DO mg/L trend",
+             subtitle = "delta < 4")
+```
+
+From the graph above and the table below we see 4 important predictors for DO mg/L trend: median SpCond (positive association), Chl a trend (negative), temperature trend (negative),  and median Chl a (positive). Moderate predictors are ammonia trend (negative), SpCond trend (negative), and the latitudinal gradient (negative: so association b/t DO mg/L trend and latitude itself is negative; and b/t DO mg/L trend and median DO mgL & daily PAR are positive). 
+
+
+```{r}
+table_coeffs(coeffs_domgl, title_param = "DO mg/L trend", delta = 4)
+```
+
+
+
+## Proportion of time DO < 2 mg/L  
+
+**Global model:**  
+
+```{r}
+formula(doLT2_list$mod_doLT2)
+```
+
+
+**# Candidate models:**  `r format(2^(length(coef(doLT2_list$mod_doLT2)) - 1), big.mark = ",", scientific = FALSE)`
+
+**# models in top set (delta < 4):**  `r nrow(doLT2_list$top_modsd4)`
+
+```{r}
+graph_coeffs(doLT2_list$coeffs_stnd, 
+             title_param = "\ntrend in proportion of DO readings < 2 mg/L",
+             subtitle = "delta < 4")
+```
+
+
+The graph above and the table below indicate 3 major predictors for DO < 2 trend / hypoxia trend: NO23 trend and median precipitation, both negative; and PO4 trend, positive. Five predictors are moderate: median SpCond (negative), Chl a trend (positive), turbidity trend (negative), SpCond trend (positive), and median chl a (negative).   
+
+
+```{r}
+table_coeffs(coeffs_doLT2, title_param = "DO < 2 trend", delta = 4)
+```
+
+
+# Individual Predictor partial effect plots  
+
+These graphs have generally been created below for the top 5-6 predictors for each key response. The function defaults to predicting the response for a range of -3 to +3 standard deviations for the predictor's values. In some cases, when the range of predictor values was outside of that, the range has been specified as a function argument, to capture our expectations for the response, when all other predictors are held at their average value, over the range of predictor values in our dataset.  
+
+When possible, predictors and responses were back-transformed to their original scales. When trends of log-parameters were used, these were calculated to percent change per year (e.g. a linear trend in log-chl of 0.05 becomes a multiplicative trend for chl, exp(0.05) = approximately 1.05, or a 5% increase per year over year).  
+
+Some interpretations are below select graphs. Even if not explicitly stated, each interpretation includes an implicit "with all other predictors being held at their mean, we expect [interpretation here]".  
+
+## Chl a  
+
+```{r}
+#| include: false
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(chl_list, envir = .GlobalEnv)
+```
+
+### PO4 trend  
+
+```{r}
+po4trend_on_chl <- make_predictions(data = dat_chl,
+                                    response = "chla_trend",
+                                    predictor = "po4f_trend",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-3.7, 3.4),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = TRUE)
+
+graph_predictions(po4trend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of PO4 trend on Chl a trend",
+       x = "PO4 trend (% per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+
+**Unless PO4 is decreasing substantially, we expect chl to be increasing.**  
+
+The point estimate for where the chl trend should change from + to -, where the blue line crosses the x-axis, is at about a 12% per year decrease in PO4. Confidence bands are a bit wide so a decreasing chl trend could happen around a PO4 decrease of ~7% per year, or not until much lower than our data goes - we can't really say when we'd be confident of seeing a *decrease* in chl. But we're pretty confident that we have nothing but *increases* in chl (all else being equal) if PO4 isn't decreasing by at least 7% per year.  
+
+
+### Turbidity trend  
+
+```{r}
+turbtrend_on_chl <- make_predictions(data = dat_chl,
+                                     response = "chla_trend",
+                                    predictor = "turb_trend",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-5, 2),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = FALSE)
+
+graph_predictions(turbtrend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Turbidity trend on Chl a trend",
+       x = "Turbidity trend (NTU per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+### NH4 trend  
+
+```{r}
+nh4trend_on_chl <- make_predictions(data = dat_chl,
+                                    response = "chla_trend",
+                                   predictor = "nh4f_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = TRUE,
+                                   predictor.is.log.trend = TRUE)
+
+graph_predictions(nh4trend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of NH4 trend on Chl a trend",
+       x = "NH4 trend (% per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+This slope is negative; but even across our values for NH4 trend, when you hold all other predictors equal we're still generally expecting increasing chl. However, the size of the chl increases is negatively associated with NH4 change - the biggest increases in chl are expected to happen alongside the biggest decreases in NH4. 
+
+
+### SpCond trend  
+
+```{r}
+spctrend_on_chl <- make_predictions(data = dat_chl,
+                                    response = "chla_trend",
+                                   predictor = "spcond_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   sd.range = c(-2.3, 3.6),
+                                   response.is.log.trend = TRUE,
+                                   predictor.is.log.trend = FALSE)
+
+graph_predictions(spctrend_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond trend on Chl a trend",
+       x = "Specific Conductance trend (mS/cm per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+We're expecting increasing chl no matter what our SpCond trend is, though as the SpCond trends higher, we also expect the chl increase to be bigger.  
+
+### Chl a median  
+
+```{r}
+chlmedian_on_chl <- make_predictions(data = dat_chl,
+                                     response = "chla_trend",
+                                    predictor = "chla_median.log",
+                                    avgd_mod = mod_avgd4,
+                                    means = dat_means,
+                                    sds = dat_sds,
+                                    sd.range = c(-3.2, 2.1),
+                                    response.is.log.trend = TRUE,
+                                    predictor.is.log.trend = FALSE) 
+
+graph_predictions(chlmedian_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of log(chla median) on Chl a trend",
+       x = "log(Chl a long-term median (ug/L))",
+       y = "Expected Chl a trend (% per year)")
+
+# back-calculated to actual median
+# shape is a little weird because median chl was log-transformed prior to modeling
+chlmedian_on_chl <- chlmedian_on_chl |> 
+  mutate(predictor.natural = exp(predictor.natural))
+
+graph_predictions(chlmedian_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Chl a median on Chl a trend",
+       x = "Chl a long-term median (ug/L)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+
+We generally expect to see bigger increases in chl along with higher chl medians, but not in a linear way - the steepest increase is expected at lower median chl values.
+
+
+### Latitude / Temp / PAR / DO medians  
+
+This will take more work to pull out and has not been done yet.  
+
+```{r}
+# latitudinal PCA ----
+# this one is going to take some extra work to pull out temp, DO, latitude
+```
+
+### Precipitation trend  
+
+For trend calculation, precipitation was square-root transformed. This met regression assumpetions better than a log-transformation, but is not able to be calculated to something intuitive like % change per year.  
+
+```{r}
+precp_on_chl <- make_predictions(data = dat_chl,
+                                 response = "chla_trend",
+                                 predictor = "precp_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-3.4, 2.5),
+                                 response.is.log.trend = TRUE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(precp_on_chl,
+                  response.is.log.trend = TRUE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Precipitation trend on Chl a trend",
+       x = "Trend in square-root of precipitation (per year)",
+       y = "Expected Chl a trend (% per year)")
+```
+
+Generally always expecting chl a increases no matter what the precip trend is. When there is no precipitation change (when the line crosses the y-axis), we expect about a 2.5% per year increase in chl a. With increasing precipitation, we expect higher chl increases. When precipitation is decreasing, we still expect chl increases, but smaller ones.  
+
+
+```{r}
+# clean up the global environment again
+rm(list = chl_in)
+```
+
+
+## DO mg/L  
+
+**Do we want to change the units for DO into mg/L per decade? Per year is pretty low.**    
+
+```{r}
+#| include: false
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(domgl_list, envir = .GlobalEnv)
+```
+
+
+### SpCond median  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                 predictor = "spcond_median",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-1.7, 1.5),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond median on DO mg/L trend",
+       x = "long-term median Specific Conductance (mS/cm)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+
+Generally expecting decreases in DO through time. We expect the rate of decrease in DO to be smaller in higher-spcond areas - bigger decreases of DO in fresher sites than salty ones, all else being equal.  
+
+
+
+### Chl a trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                   predictor = "chla_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = FALSE,
+                                   predictor.is.log.trend = TRUE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of Chl a trend on DO mg/L trend",
+       x = "Chl a trend (%/yr)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+Again generally always expecting decreases in DO, no matter what the chl trend is. When there is no chl trend / chl is not changing (line crosses y-axis), we expect DO to be decreasing by about 0.01 mg/L per year, or about 0.1 mg/L per decade (1 mg/L per century - not a huge change). With higher chl trends, we expect bigger decreases in DO through time.  
+
+### Water temperature trend  
+
+**Possibly also change water temp to degrees C/decade, rather than /yr?**
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                 predictor = "temp_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-2.5, 3),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Temp trend on DO mg/L trend",
+       x = "Water Temperature trend (C/yr)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+We're generally always expecting decreases in DO, and those decreases get bigger as we get bigger increases (through time) in water temperature. Keep in mind the highest value we've got for temperature trend is about 0.1 degree C per DECADE.  
+
+
+### Chl a median  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                 predictor = "chla_median.log",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-3.2, 2.1),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of log(Chl a) median on DO mg/L trend",
+       x = "long-term log(Chl a (ug/L)) median",
+       y = "Expected DO trend (mg/L / yr)")
+
+pred_on_resp <- pred_on_resp |> 
+  mutate(predictor.natural = exp(predictor.natural))
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Chl a median on DO mg/L trend",
+       x = "long-term Chl a median (ug/L)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+This one is interesting to ponder. We're almost always expecting DO mg/L to be decreasing when median chl a is below 10 ug/L. Above that, we're much less certain.  On average start to expect a (very small, very uncertain) increase in DO mg/L when median chl a is above about 20 ug/L.  
+
+
+### Ammonia trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                   predictor = "nh4f_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = FALSE,
+                                   predictor.is.log.trend = TRUE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of NH4 trend on DO mg/L trend",
+       x = "NH4 trend (%/yr)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+Always expecting decrease in DO mg/L, but it decreases more when NH4 is increasing.  
+
+
+### SpCond trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_domgl,
+                                 response = "domgl_trend",
+                                 predictor = "spcond_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-2.3, 3.6),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond trend on DO mg/L trend",
+       x = "Specific Conductance trend (mS/cm / yr)",
+       y = "Expected DO trend (mg/L / yr)")
+```
+
+Again, expecting decreases in DO. Interestingly, as the trend in SpCond increases more, we expect DO to decrease more as well. (This is interesting because above, fresher areas were expected to have bigger decreases in DO than salty ones. But areas that are getting saltier are the ones we expect to have bigger decreases in DO. This could mean the areas that are getting saltier are the ones that are fresher in the first place? I thought we'd checked for collinearity here and didn't find anything major, so maybe there's another interpretation?)
+
+
+
+```{r}
+# clean up the global environment again
+rm(list = domgl_in)
+```
+
+
+
+## DO < 2  
+
+
+
+```{r}
+#| include: false
+
+# pull the pieces of the chl a outputs back into the global environment
+list2env(doLT2_list, envir = .GlobalEnv)
+```
+
+
+### NO23 trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                 predictor = "no23f_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-2.6, 3.2),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = TRUE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of NO23 trend on DO < 2 trend",
+       x = "NO23 trend (%/year)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+This line almost goes through the origin! With no change in NO23, we expect no change in hypoxia frequency. Interesting though is the direction: with decreasing NO23, we expect to see more readings of DO<2. As Carl mentioned in a data team meeting, we expect causality here to be DO on NO23; more DO means more N can oxidize to NO23. So this is very correlative.  
+
+### Precip median  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                 predictor = "precp_median",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-2.5, 1.5),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of median Precip on DO < 2 trend",
+       x = "long-term median monthly Precipitation (mm)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+
+All else being equal, we'd expect drier stations (those with with <70 mm/month of precip) to have increasing hypoxia, and wetter stations to have decreasing hypoxia.  
+
+
+### PO4 trend  
+
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                 predictor = "po4f_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-3.7, 3.4),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = TRUE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of PO4 trend on DO < 2 trend",
+       x = "PO4 trend (%/year)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+Again, pretty close to the origin. Expect increasing frequency of hypoxia when PO4 is increasing, and decreasing hypoxia when PO4 is decreasing.  
+
+### SpCond median  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 predictor = "spcond_median",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-1.7, 1.5),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond median on DO < 2 trend",
+       x = "long-term median Specific Conductance (mS/cm)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+
+
+### Chl a trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                   predictor = "chla_trend",
+                                   avgd_mod = mod_avgd4,
+                                   means = dat_means,
+                                   sds = dat_sds,
+                                   response.is.log.trend = FALSE,
+                                   predictor.is.log.trend = TRUE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = TRUE) +
+  labs(title = "Partial effect of Chl a trend on DO < 2 trend",
+       x = "Chl a trend (%/year)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+
+With increasing chl, we expect increasing hypoxia. (and, from the DO mg/L graphs, we expect decreasing DO trends - makes sense that decreasing DO and increasing hypoxia would go together.)  
+
+### Turbidity Trend  
+
+
+
+
+
+### SpCond trend  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                 predictor = "spcond_trend",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-2.3, 3.6),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of SpCond trend on DO < 2 trend",
+       x = "Specific Conductance trend (mS/cm / yr)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+
+### Chl a median  
+
+```{r}
+pred_on_resp <- make_predictions(data = dat_doLT2,
+                                 response = "doLT2_trend",
+                                 predictor = "chla_median.log",
+                                 avgd_mod = mod_avgd4,
+                                 means = dat_means,
+                                 sds = dat_sds,
+                                 sd.range = c(-3.2, 2.1),
+                                 response.is.log.trend = FALSE,
+                                 predictor.is.log.trend = FALSE)
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of log(Chl a) median on DO < 2 trend",
+       x = "long-term log(Chl a (ug/L)) median",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+
+pred_on_resp <- pred_on_resp |> 
+  mutate(predictor.natural = exp(predictor.natural))
+
+graph_predictions(pred_on_resp,
+                  response.is.log.trend = FALSE,
+                  predictor.is.log.trend = FALSE) +
+  labs(title = "Partial effect of Chl a median on DO < 2 trend",
+       x = "long-term Chl a median (ug/L)",
+       y = "Expected DO < 2 trend (proportion of readings / yr)")
+```
+
+
+```{r}
+# clean up the global environment again
+rm(list = doLT2_in)
+```
+
