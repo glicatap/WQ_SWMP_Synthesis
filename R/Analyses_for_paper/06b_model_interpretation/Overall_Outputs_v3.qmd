@@ -55,7 +55,7 @@ rm(list = chl_in)
 domgl_in <- load(here::here("Outputs",
                 "06_model_selection",
                 "R_objects",
-                "domgl_post-averaging.RData"))
+                "domgl_post-averaging_v3.RData"))
 domgl_list <- mget(domgl_in)
 rm(list = domgl_in)
 

@@ -134,6 +134,10 @@ p2 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = station, color = cluste
   geom_vline(xintercept=0, color="black", linetype="dashed", size=1) +
   scale_color_manual(values = cluster_colors)#+facet_wrap(~cluster,scales="free_y")
 
+ordered_chla$cluster <- 
+    factor(ordered_chla$cluster, levels = rev(levels(factor(ordered_chla$cluster))))
+
+
 # Ridge plot of chlorophyll-a trends by cluster
 p3 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = cluster, fill = cluster)) +
   geom_density_ridges(scale = 2, alpha = 0.7) +
@@ -163,6 +167,9 @@ ordered_do <- do_trend %>%
 
 # Reorder the 'station' factor based on the sorted data
 ordered_do$station <- factor(ordered_do$station, levels = unique(ordered_do$station))
+
+ordered_do$cluster <- 
+    factor(ordered_do$cluster, levels = rev(levels(factor(ordered_do$cluster))))
 
 
 # Plot DO slopes with confidence intervals by station, with facets
