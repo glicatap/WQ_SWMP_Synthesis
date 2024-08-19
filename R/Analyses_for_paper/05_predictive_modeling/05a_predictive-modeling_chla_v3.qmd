@@ -1,5 +1,5 @@
 ---
-title: "Predictive Modeling - chl a trends"
+title: "Predictive Modeling - chl a trends V3"
 format: 
   html:
     toc: true
@@ -29,7 +29,7 @@ library(car)
 ```{r}
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup.R"))
+                  "050_setup_v3.R"))
 ```
 
 

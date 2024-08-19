@@ -3,14 +3,14 @@ library(dplyr)
 #Remove LKS sites
 # import predictor data frames ----
 
-dat_all3 <- read.csv(here::here("Outputs", 
+dat_all <- read.csv(here::here("Outputs", 
                                "04_compiled_predictors", 
                                "compiled_predictors.csv"))
 
 
 # PCA on temp/par/latitude ----
 
-tpl <- dat_all3 |> 
+tpl <- dat_all |> 
   select(temp_median,
          dailyPAR_median,
          latitude)
@@ -25,7 +25,7 @@ pca_tpl <- prcomp(tpl, scale. = TRUE)
 
 
 # adding domgl_median to the pca ----
-tpld <- dat_all3 |> 
+tpld <- dat_all |> 
   select(temp_median,
          dailyPAR_median,
          latitude,
@@ -46,7 +46,7 @@ pca_tpld <- prcomp(tpld, scale. = TRUE)
 # because PAR trends were removed from model 8/6/24
 # and we think medians are fine to leave in
 # but want to demonstrate 
-tld <- dat_all3 |> 
+tld <- dat_all |> 
   select(temp_median,
          latitude,
          domgl_median)
@@ -64,7 +64,7 @@ pca_tld <- prcomp(tld, scale. = TRUE)
 
 
 # subset dfs, add PC score ----
-dat_all3 <- dat_all3 |> 
+dat_all <- dat_all |> 
   mutate(across(c(chla_median,
                   nh4f_median,
                   no23f_median,
@@ -78,9 +78,9 @@ dat_all3 <- dat_all3 |>
          po4_median.log = po4f_median)
 # add PC1 score to dat_all
 #Kait change to repdict from base R - scores was not working
-dat_all3$tpl_PC1 <- predict(pca_tpl)[,1]
-dat_all3$tpld_PC1 <- predict(pca_tpld)[,1]
-dat_all3$tld_PC1 <- predict(pca_tld)[,1]
+dat_all$tpl_PC1 <- predict(pca_tpl)[,1]
+dat_all$tpld_PC1 <- predict(pca_tpld)[,1]
+dat_all$tld_PC1 <- predict(pca_tld)[,1]
 
 # PC1 from versions with/without PAR are ideally 1:1
 # let's check
@@ -100,5 +100,5 @@ stations_to_remove <- c("lksbl", "lksol", "lksba", "lkspo")
 #, "marsc", "marcw"
 
 # Filter out the rows with the specified station names
-dat_all3 <- dat_all3 %>%
+dat_all3 <- dat_all %>%
   filter(!station %in% stations_to_remove)
