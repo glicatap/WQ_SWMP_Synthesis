@@ -113,7 +113,8 @@ ggplot(coeffs_stnd) +
                       x = Estimate,
                       xmin = ci_low,
                       xmax = ci_high,
-                      col = sw_all)) +
+                      col = sw_all,
+                      size = sw_all)) +
   khroma::scale_color_batlow(reverse = TRUE) +
   geom_vline(xintercept = 0,
              col = "gray40") +

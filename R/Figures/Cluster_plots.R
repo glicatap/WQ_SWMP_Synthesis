@@ -139,7 +139,7 @@ d <- inner_join(coords, cluster_upper, by = c("station", "Reserve"))
 
 # Calculate average lat and lon for each Reserve
 avg_coords <- d %>%
-  group_by(Reserve,cluster) %>%
+  group_by(Reserve,cluster,station) %>%
   summarise(lat = mean(lat), lon = mean(lon)) 
 
 avg_coords2 <-avg_coords %>%
