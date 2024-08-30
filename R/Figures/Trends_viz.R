@@ -11,6 +11,9 @@ library(ggridges)
 cluster <- read.csv("Clusters.csv")
 nut_trends <- read.csv("NUT_trends_back-transformed.csv")
 all_trends <- read.csv("long-term-trends.csv")
+all_trends <- read.csv(here::here("Outputs",
+                                  "02_calculated_long-term-trends",
+                                  "long-term-trends_v2.csv"))
 
 # Preprocess and merge data
 subset_trends <- all_trends %>%
