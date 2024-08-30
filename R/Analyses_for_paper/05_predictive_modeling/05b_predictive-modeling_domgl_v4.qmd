@@ -1,0 +1,294 @@
+---
+title: "Predictive Modeling - DO mg/L trends V3"
+format: 
+  html:
+    toc: true
+    code-fold: true
+warning: false
+message: false
+error: true
+embed-resources: true
+
+---
+
+# Setup  
+
+```{r}
+library(tidyverse)
+library(MuMIn)
+library(doParallel)
+library(lme4)
+library(nlme)
+library(car)
+library(tictoc)
+library(vegan)
+library(ggfortify)
+library(performance)
+```
+
+```{r}
+source(here::here("R", "Analyses_for_paper",
+                  "05_predictive_modeling",
+                  "050_setup_v5.R"))
+```
+
+
+Natural-log transforming nutrient medians and turbidity, to ensure linearity of effects and stabilize variance.  
+
+Centering and standardizing (1SD) predictors to make sure model converges and aid in relative interpretation (comparing effect sizes among variables on very different scales); once we have a top model set/averaged model, we can back-transform and interpret slopes in their raw units.  
+
+
+```{r}
+# pick the specific predictors we've agreed on
+# center and scale all but response
+
+dat_domgl <- dat_all3 |> 
+  select(reserve,
+         domgl_trend,
+         # lat/temp/DO PCA
+         tld_PC1,
+         # wq medians
+         spcond_median, turb_median.log, 
+         # wq trends
+         temp_trend, spcond_trend, turb_trend,
+         # nut medians
+         chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
+         # nut trends
+         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         # met
+         precp_median, precp_trend) |> 
+  mutate(across(!reserve,
+                function(x) as.vector(scale(x))))
+
+formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "), " + (1|reserve)")
+
+formula_nlme <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+
+# generate formula without random effect
+# due to singular fit when including random effect
+formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
+```
+
+# Models     
+
+## Create and evaluate global models    
+
+### DO mgl  
+
+Standardizing the coefficients and response makes the random term actually nonzero, so we don't have a problem with a singular fit. Testing here to make sure we don't need the random effect in the model. Per Zuur et al. 2009, need to use REML for both models in order to compare models with the same fixed effect structure but different random structures, and can do this using nlme::gls. AIC is within 2 and the p-value is 0.82, so we do not need the random effect.   
+
+Will be using ML in the model dredging and averaging steps (also per Zuur et al 2009 - can't use REML to compare models with different fixed effect structures).  
+
+```{r}
+# for model averaging (lme4 doesn't give ses on predictions; nlme does)
+mod_domgl <- lme(as.formula(formula_nlme),
+                data = dat_domgl,
+                random = ~ 1|reserve,
+                method = "REML")
+
+performance::check_singularity(mod_domgl)
+VarCorr(mod_domgl)
+
+mod_domgl_linear_reml <- gls(as.formula(formula_fixed_domgl),
+                            data = dat_domgl,
+                            method = "REML")
+
+anova(mod_domgl, mod_domgl_linear_reml)
+# AIC is within 2, and the p-value is high - do not need the more complicated model.  
+
+
+# drop random factor 
+mod_domgl <- lm(as.formula(formula_fixed_domgl),
+                data = dat_domgl)
+performance::check_singularity(mod_domgl)
+
+r2(mod_domgl)
+check_collinearity(mod_domgl)
+summary(mod_domgl)
+```
+
+R^2 0.350; Adjusted R^2 0.228  
+
+
+#### Evaluate diagnostics - original model  
+
+```{r}
+# assign model at top so this code chunk can be reused
+mod = mod_domgl
+
+
+# this code shows a variety of plots, which is nice
+performance::check_model(mod)
+
+# what are those VIFs
+sort(car::vif(mod), decreasing = TRUE)
+# temp, do, no23 medians.
+
+
+# we'll look at other plots ourselves
+
+# pull out pearson residuals
+resids <- resid(mod, type = "pearson")
+
+op <- par()
+
+# pull out predictor data frame
+preds_df <- mod$model[2:ncol(mod$model)]
+
+# set up a 4-plot layout
+par(mfrow = c(2, 2))
+
+# plot the main diagnostic graphs
+plot(resids ~ fitted.values(mod),
+     xlab = "fitted",
+     ylab = "residual")
+abline(h = 0, col = "red3")
+hist(resids, breaks = 20)
+qqnorm(resids)
+qqline(resids, col = "gray60", lty = 2)
+
+# set up a bigger plot layout
+par(mfrow = c(4, 5))
+
+# plot residuals against every predictor
+for(i in 1:ncol(preds_df)){
+  plot(resids ~ preds_df[[i]],
+       xlab = names(preds_df)[i],
+       ylab = "pearson residuals")
+  abline(h = 0, col = "red3")
+}
+
+# go back to normal plot layout
+par(op)
+
+```
+
+# Evaluate possibly influential observations  
+
+```{r}
+
+# # look at some plots of leverage and influence
+# plot(hatvalues(mod_domgl), resids)
+# influencePlot(mod_domgl)
+# cooks <- cooks.distance(mod_domgl)
+# 
+# 
+# # look at some potential problem predictors - we just don't want to see big values at the edges
+# plot(hatvalues(mod_domgl) ~ preds_df$spcond_trend)
+# plot(cooks ~ preds_df$spcond_trend)
+# plot(hatvalues(mod_domgl) ~ preds_df$temp_trend)
+# plot(cooks ~ preds_df$temp_trend)
+```
+
+
+The plot below graphs residual on the y-axis, hat-value (leverage) on the x-axis, and Cook's distance as size. Possibly influential data points are identified by row number. Note, we want to look at Pearson residuals for mixed models, and this shows studentized residuals - so my own plots will be a little different than this output. But it does identify the potentially problematic points, which I'll identify in a data frame (using the row numbers) and plot in a few various ways.  
+
+
+```{r}
+influencePlot(mod_domgl)
+```
+
+Only two points with high Cok's D relative to the rest, and neither has much leverage. They are the ones with the biggest residuals. What are the 4 points that the code above highlighted for us?  
+
+```{r}
+
+#infls <- c(9, 13, 45, 67)
+infls <- c(87)
+
+preds_df$possibly_influential <- FALSE
+preds_df$possibly_influential[c(9)] <- 'cbmmc'
+preds_df$possibly_influential[c(13)] <- 'cbvgi'
+preds_df$possibly_influential[c(45)] <- 'kacss'
+preds_df$possibly_influential[c(67)] <- 'owcdr'
+preds_df$possibly_influential[c(87)] <- 'welin'
+
+preds_df$hats <- hatvalues(mod_domgl)
+preds_df$cooks <- cooks.distance(mod_domgl)
+preds_df$resids <- resid(mod_domgl, type = "pearson")
+preds_df$fitted <- fitted(mod_domgl)
+
+preds_df_long <- preds_df |> 
+    pivot_longer(tld_PC1:precp_trend,
+                 names_to = "predictor",
+                 values_to = "value")
+
+cbind("station" = dat_all3$station[infls], dat_domgl[infls, c("no23_median.log", "turb_trend", "precp_trend", "tld_PC1")], "Pearson residual" = preds_df$resids[infls])
+```
+
+cbmmc and owcdr  
+
+```{r}
+ggplot(preds_df_long,
+       aes(x = value,
+           y = cooks,
+           col = possibly_influential)) +
+    geom_point(size = 3, 
+               alpha = 0.6) +
+    facet_wrap(~predictor) +
+    labs(title = "Cook's distances by predictor",
+         subtitle = "DO mg/L model",
+         x = "standardized predictor value",
+         y = "Cook's D")
+
+ggplot(preds_df_long,
+       aes(x = value,
+           y = resids,
+           col = possibly_influential)) +
+    geom_point(size = 3, 
+               alpha = 0.6) +
+    facet_wrap(~predictor) +
+    geom_hline(yintercept = 0, col = "gray40") +
+    labs(title = "Residuals by predictor",
+         subtitle = "DO mg/L model",
+         x = "standardized predictor value",
+         y = "Pearson residual")
+
+preds_df$domgl_trend <- dat_domgl$domgl_trend
+
+ggplot(preds_df,
+       aes(x = fitted,
+           y = domgl_trend,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    geom_abline(slope = 1, intercept = 0,
+                linetype = "dashed") +
+    labs(title = "Observed vs. fitted, DO mg/L",
+         x = "Fitted domgl trend (standardized)",
+         y = "Observed domgl trend (standardized)")
+
+ggplot(preds_df,
+       aes(x = fitted,
+           y = resids,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    geom_hline(yintercept = 0, col = "gray40") +
+    labs(title = "Residuals vs. fitted, DO mg/L",
+         x = "Fitted domgl trend (standardized)",
+         y = "Pearson residual")
+
+
+
+ggplot(preds_df,
+       aes(x = domgl_trend,
+           y = cooks,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    labs(title = "Cook's distance and observed trends",
+         x = "Observed domgl trend (standardized)",
+         y = "Cook's D")
+
+
+ggplot(preds_df,
+       aes(x = fitted,
+           y = cooks,
+           col = possibly_influential)) +
+    geom_point(size = 3,
+               alpha = 0.6) +
+    labs(title = "Cook's distance and fitted trends",
+         x = "Fitted domgl trend (standardized)",
+         y = "Cook's D")
+```
+
