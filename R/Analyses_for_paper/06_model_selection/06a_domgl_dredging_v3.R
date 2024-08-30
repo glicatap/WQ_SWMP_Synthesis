@@ -19,8 +19,8 @@ source(here::here("R", "Analyses_for_paper",
 dat_domgl <- dat_all3 |> 
   select(reserve,
          domgl_trend,
-         # lat/temp/par PCA
-         tpld_PC1,
+         # lat/temp/do PCA
+         tld_PC1,
          # wq medians
          spcond_median, turb_median.log, 
          # wq trends

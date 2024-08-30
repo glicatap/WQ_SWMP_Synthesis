@@ -4,7 +4,7 @@ library(vegan)
 # library(glmmTMB)
 library(nlme)
 library(MuMIn)
-#V3 version 
+#V3 version removing LKS
 
 load(here::here("Outputs",
                 #"06_model_selection",
