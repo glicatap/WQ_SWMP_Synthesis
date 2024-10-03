@@ -14,7 +14,7 @@ cluster_colors <- c("A" = viridis(4)[1],   # Replace with actual colors or modif
                     "C" = viridis(4)[3],
                     "D" = viridis(4)[4])
 
-clusters<-read.csv("data_for_map_4clusters.csv")
+clusters<-read.csv("data_for_map_spc4clusters.csv")
 
 clusters <- clusters %>%
   select(station = code, Reserve = Map.Code,cluster=cluster)

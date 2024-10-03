@@ -12,8 +12,12 @@ library(sf)
 
 # Read data
 cluster <- read.csv("Clusters.csv")
-nut_trends <- read.csv("NUT_trends_back-transformed.csv")
-all_trends <- read.csv("long-term-trends.csv")
+nut_trends <- read.csv(here::here("Outputs",
+                                  "02_calculated_long-term-trends",
+                                  "NUT_trends_back-transformed_MDL.csv"))
+all_trends <- read.csv(here::here("Outputs","02_calculated_long-term-trends",
+                                  "bam_outputs_MDL",
+                                  "long-term-trends.csv"))
 
 # Preprocess and merge data
 subset_trends <- all_trends %>%
@@ -146,7 +150,7 @@ ggplot() +
          subtitle = "Filled circles indicate p < 0.05") +
     theme(panel.background = element_blank()) +
     geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
-    scale_color_gradient(low = "red", high = "blue", name = "Temp trend, C/yr") +
+    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
     scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
     theme(legend.position = "bottom")
 

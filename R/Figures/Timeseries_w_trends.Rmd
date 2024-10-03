@@ -38,11 +38,11 @@ load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyMET.RData"))
 
 trends<- read.csv(here::here("Outputs", 
                              "04_compiled_predictors",
-                             "trend_intrcpt.csv"))
+                             "trend_MDL.csv"))
 
 trends_met<- read.csv(here::here("Outputs", 
                              "04_compiled_predictors",
-                             "trend_intrcpt_met.csv"))
+                             "trend_MDL_met.csv"))
 
 
 dat_wq <- wq |> 

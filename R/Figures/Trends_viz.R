@@ -9,11 +9,12 @@ library(ggridges)
 
 # Read data
 cluster <- read.csv("Clusters.csv")
-nut_trends <- read.csv("NUT_trends_back-transformed.csv")
-all_trends <- read.csv("long-term-trends.csv")
-all_trends <- read.csv(here::here("Outputs",
+nut_trends <- read.csv(here::here("Outputs",
                                   "02_calculated_long-term-trends",
-                                  "long-term-trends_v2.csv"))
+                                  "NUT_trends_back-transformed_MDL.csv"))
+all_trends <- read.csv(here::here("Outputs","02_calculated_long-term-trends",
+                                  "bam_outputs_MDL",
+                                  "long-term-trends.csv"))
 
 # Preprocess and merge data
 subset_trends <- all_trends %>%
@@ -30,8 +31,8 @@ subset_trends0 <- subset_trends %>%
 
 subset_trends <- subset_trends %>%
   filter(!parameter %in% c("dailyPAR_median", "do_pct_median",
-                           "do_proportion_below5","sal_median","nh4f",
-                           "po4f","no23f","chla_n","atemp_median"))
+                           "do_proportion_below5","sal_median","nh4f_mdl",
+                           "po4f_mdl","no23f_mdl","chla_n","atemp_median"))
 
 subset_nut_trends <- nut_trends %>%
   mutate(station = substr(station, 1, 5))
@@ -56,6 +57,10 @@ subset_nut_trends <- subset_nut_trends |>
 
 merged_df <- merged_df |> 
     filter(!(station %in% remove_stns))
+
+merged_nut_df <- merged_nut_df |> 
+    filter(!(station %in% remove_stns))
+
 
 
 

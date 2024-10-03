@@ -14,7 +14,7 @@ cbmmb,A,cbm
 cbmmc,A,cbm
 cbmoc,A,cbm
 cbmrr,A,cbm
-cbvcb,A,cbv
+cbvcb,D,cbv
 cbvgi,B,cbv
 cbvsh,A,cbv
 cbvsp,A,cbv
@@ -33,7 +33,7 @@ gndbl,B,gnd
 gndpc,B,gnd
 grbgb,C,grb
 grblr,A,grb
-grbor,A,grb
+grbor,D,grb
 grbsq,A,grb
 gtmfm,D,gtm
 gtmpc,D,gtm

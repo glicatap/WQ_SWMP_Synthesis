@@ -9,8 +9,16 @@ library(ggridges)
 
 # Read data
 cluster <- read.csv("Clusters.csv")
-nut_trends <- read.csv("NUT_trends_back-transformed.csv")
-all_trends <- read.csv("long-term-trends.csv")
+nut_trends <- read.csv(here::here("Outputs",
+                                  "02_calculated_long-term-trends",
+                                  "NUT_trends_back-transformed_MDL.csv"))
+all_trends <- read.csv(here::here("Outputs","02_calculated_long-term-trends",
+                                  "bam_outputs_MDL",
+                                  "long-term-trends.csv"))
+
+#Remove LKS Stations
+remove_stns <- c("pdbgd", "kachd", "kacsd", "sfbfm","lksbl", "lksol", "lksba", "lkspo")
+
 
 # Preprocess and merge data
 subset_trends <- all_trends %>%
@@ -28,6 +36,12 @@ subset_trends <- subset_trends %>%
 
 subset_nut_trends <- nut_trends %>%
     mutate(station = substr(station, 1, 5))
+
+subset_nut_trends <- subset_nut_trends |> 
+    filter(!(station %in% remove_stns))
+
+subset_trends <- subset_trends |> 
+    filter(!(station %in% remove_stns))
 
 merged_df <- subset_trends %>%
     inner_join(cluster, by = "station")
