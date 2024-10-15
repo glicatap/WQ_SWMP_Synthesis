@@ -29,7 +29,7 @@ library(car)
 ```{r}
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup_v3.R"))
+                  "050_setup_MDL.R"))
 ```
 
 
@@ -37,11 +37,10 @@ Natural-log transforming nutrient medians and turbidity, to ensure linearity of 
 
 Centering and standardizing (1SD) predictors to make sure model converges and aid in relative interpretation (comparing effect sizes among variables on very different scales); once we have a top model set/averaged model, we can back-transform and interpret slopes in their raw units.  
 
-
-
 ```{r}
 # pick the specific predictors we've agreed on
 # center and scale all but response 
+#no PAR
 dat_chl <- dat_all3 |> 
   select(reserve,
          chla_trend,
@@ -54,7 +53,7 @@ dat_chl <- dat_all3 |>
          # nut medians
          chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
-         nh4f_trend, no23f_trend, po4f_trend,
+         nh4f_mdl_trend, no23f_mdl_trend, po4f_mdl_trend,
          # met
          precp_median, precp_trend) |> 
   mutate(across(!reserve,
@@ -63,6 +62,8 @@ dat_chl <- dat_all3 |>
 
 formula_chl <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "), " + (1|reserve)")
 formula_nlme <- paste0("chla_trend ~ ", paste(names(dat_chl[3:ncol(dat_chl)]), collapse = " + "))
+
+formula_nlme2 <- paste0("chla_trend ~ ", paste(names(dat_chl[c(5,9,13,15)]), collapse = " + "))
 
 ```
 
@@ -84,6 +85,18 @@ mod_chl <- lme(as.formula(formula_nlme),
 performance::check_singularity(mod_chl)
 r.squaredGLMM(mod_chl)
 summary(mod_chl)
+
+
+mod_chl2 <- lme(as.formula(formula_nlme2),
+                data = dat_chl,
+                random = ~ 1|reserve,
+                method = "REML")
+performance::check_singularity(mod_chl2)
+r.squaredGLMM(mod_chl2)
+summary(mod_chl2)
+
+try<-lm(mod_chl2)
+summary(try)
 
 # for leverage plots
 mod_chl_lmer <- lmer(as.formula(formula_chl),

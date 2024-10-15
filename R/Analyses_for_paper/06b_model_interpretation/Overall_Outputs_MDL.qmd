@@ -47,7 +47,7 @@ library(gt)
 chl_in <- load(here::here("Outputs",
                # "06_model_selection",
                 #"R_objects",
-                "chla_post-averaging_v3.RData"))
+                "chla_post-averaging_v3_mdl.RData"))
 chl_list <- mget(chl_in)
 rm(list = chl_in)
 
@@ -55,7 +55,7 @@ rm(list = chl_in)
 domgl_in <- load(here::here("Outputs",
                 "06_model_selection",
                 "R_objects",
-                "domgl_post-averaging_v3.RData"))
+                "domgl_post-averaging_v3_mdl.RData"))
 domgl_list <- mget(domgl_in)
 rm(list = domgl_in)
 
@@ -211,7 +211,7 @@ list2env(chl_list, envir = .GlobalEnv)
 ```{r}
 po4trend_on_chl <- make_predictions(data = dat_chl,
                                     response = "chla_trend",
-                                    predictor = "po4f_trend",
+                                    predictor = "po4f_mdl_trend",
                                     avgd_mod = mod_avgd4,
                                     means = dat_means,
                                     sds = dat_sds,
@@ -259,7 +259,7 @@ graph_predictions(turbtrend_on_chl,
 ```{r}
 nh4trend_on_chl <- make_predictions(data = dat_chl,
                                     response = "chla_trend",
-                                   predictor = "nh4f_trend",
+                                   predictor = "nh4f_mdl_trend",
                                    avgd_mod = mod_avgd4,
                                    means = dat_means,
                                    sds = dat_sds,

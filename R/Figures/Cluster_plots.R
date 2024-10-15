@@ -165,7 +165,7 @@ pca_1 <- ggplot(cluster_data, aes(x = PC1, y = PC2, color = cluster)) +
                  arrow = arrow(length = unit(0.3, "cm")), color = "black", size = 1) +
     geom_text(data = loadings, aes(x = PC1 * 5, y = PC2 * 5, label = variable), 
               hjust = 1.5, vjust = 1.5, color = "black", size = 5, fontface = "bold") +
-    geom_text(aes(label = code), hjust = 0, vjust = 1, size = 3) + 
+    #geom_text(aes(label = code), hjust = 0, vjust = 1, size = 3) + 
     labs(x = "PC1 (32.4%)", y = "PC2 (25.9%)") +
     theme_minimal() +
     scale_color_manual(values = cluster_colors) +
@@ -192,7 +192,7 @@ pca_2 <- ggplot(cluster_data, aes(x = PC1, y = PC3, color = cluster)) +
     geom_text(data = loadings, aes(x = PC1 * 5, y = -PC3 * 5, label = variable), 
               hjust = 1.5, vjust = 1.5, color = "black", size = 5, fontface = "bold") +
     
-    geom_text(aes(label = code), hjust = 0, vjust = 1, size = 3) + 
+    #geom_text(aes(label = code), hjust = 0, vjust = 1, size = 3) + 
     labs(x = "PC1 (32.4%)", y = "PC3 (15.9%)") +
     theme_minimal() +
     scale_color_manual(values = cluster_colors) +
@@ -215,7 +215,7 @@ cluster_data3 <- cluster_data2 %>%
 
 long_data <- pivot_longer(
   cluster_data3, 
-  cols = starts_with(c("Sal", "Temp", "DO", "pH", "Turb", "Chla", "NH4", "NO23", "PO4")),
+  cols = starts_with(c("SpCond", "Temp", "DO", "pH", "Turb", "Chla", "NH4", "NO23", "PO4")),
   names_to = "Parameter",
   values_to = "Value"
 )
@@ -239,7 +239,7 @@ long_data_nutchla$cluster <- factor(long_data_nutchla$cluster, levels = rev(leve
 p1 <- ggplot(long_data_wq, aes(x = Value, y = cluster, fill = cluster)) + 
     geom_density_ridges(scale = 2, alpha = 0.7, show.legend = FALSE) +
     facet_wrap(~ Parameter, scales = "free", labeller = labeller(Parameter = c(
-        Sal = "Sal ppt",
+        SpCond = "Sp. Cond mS/cm",
         Temp = "Temp deg C",
         DO = "DO mg/L",
         pH = "pH"
@@ -251,13 +251,37 @@ p1 <- ggplot(long_data_wq, aes(x = Value, y = cluster, fill = cluster)) +
 
 p1
 
+data_summary <- function(x) {
+    m <- mean(x)
+    ymin <- m-sd(x)
+    ymax <- m+sd(x)
+    return(c(y=m,ymin=ymin,ymax=ymax))
+}
+
+p1.2 <- ggplot(long_data_wq, aes(y = Value, x = factor(cluster, levels = rev(levels(factor(cluster)))), fill = cluster)) + 
+    geom_violin() +
+    facet_wrap(~ Parameter, scales = "free", labeller = labeller(Parameter = c(
+        SpCond = "Sp. Cond mS/cm",
+        Temp = "Temp deg C",
+        DO = "DO mg/L",
+        pH = "pH"
+    ))) +
+    ylab("") + xlab("Median values") +
+    scale_fill_manual(values = cluster_colors,guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(values = cluster_colors,guide = guide_legend(reverse = TRUE)) +
+    theme_minimal()+
+    theme(strip.background = element_rect(fill = "lightgrey", color = "black"))
+
+
+p1.2
+
 p2 <- ggplot(long_data_nutchla, aes(x = Value, y = cluster, fill = cluster)) + 
     geom_density_ridges(scale = 2, alpha = 0.7, show.legend = FALSE) +
     facet_wrap(~ Parameter, scales = "free", labeller = labeller(Parameter = c(
         Chla = "Chl-a ug/L",
-        NH4 = "NH4 ug/L",
-        NO23 = "NO23 ug/L",
-        PO4 = "PO4 ug/L",
+        NH4 = "NH4 mg/L",
+        NO23 = "NO23 mg/L",
+        PO4 = "PO4 mg/L",
         Turb = "Turb NTU"
     ))) +
     ylab("") + xlab("Median values (log scale)") +
@@ -268,6 +292,24 @@ p2 <- ggplot(long_data_nutchla, aes(x = Value, y = cluster, fill = cluster)) +
 
 p2
 
+p2.2 <- ggplot(long_data_nutchla, aes(y = Value, x = factor(cluster, levels = rev(levels(factor(cluster)))),fill=cluster))+ 
+    geom_violin() +
+    facet_wrap(~ Parameter, scales = "free", labeller = labeller(Parameter = c(
+        Chla = "Chl-a ug/L",
+        NH4 = "NH4 mg/L",
+        NO23 = "NO23 mg/L",
+        PO4 = "PO4 mg/L",
+        Turb = "Turb NTU"
+    ))) +
+    ylab("") + xlab("Median values (log scale)") +
+    scale_fill_manual(values = cluster_colors,guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(values = cluster_colors,guide = guide_legend(reverse = TRUE)) +
+    scale_y_log10(labels = scales::scientific) +  # Control the number of x-axis labels
+    theme_minimal() +
+    theme(strip.background = element_rect(fill = "lightgrey", color = "black"))
+
+p2.2
+
 # Combine plots with the first plot being larger
 combined_plot <- p1 + p2 +
     plot_layout(guides = "collect", widths = c(1, 2)) & 
@@ -277,11 +319,20 @@ combined_plot <- p1 + p2 +
 combined_plot
 
 
+# Combine plots with the first plot being larger
+combined_plot <- p1.2 / p2.2 +
+    plot_layout(guides = "collect") & 
+    theme(legend.position = "right")
+
+# Display the combined plot
+combined_plot
+
+
 
 #####################
 
-combined_plot2  <- (pca_1 / pca_2) +
-    plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+combined_plot2  <- (pca_1 | pca_2) +
+    plot_layout(guides = "collect") & theme(legend.position = 'right')
 
 combined_plot2
 
@@ -290,9 +341,11 @@ combined_plot2  <- (pca_1 | pca_2) +
 
 combined_plot2
 
-combined_plot1 <- p1 / p2 +
+combined_plot1 <- p1.2 / p2.2 +
     plot_layout(guides = "collect", widths = c(1, 2)) & 
     theme(legend.position = "bottom")
+
+combined_plot1
 
 # Combine the two combined plots into a final layout with height adjustment
 final_patchwork <- combined_plot1 | combined_plot2 + 

@@ -325,19 +325,12 @@ subset_df <- function(type, main_df, station, parameter){
     # then log-transform nutrient, and create a censored column for lognut 
     # as of 5/29/2024 this is natural-log, not log10  
     # will work with mgcv's gam functions
-    if(type == "nut"){
-        cens_col <- paste0(parameter, "_cens")
-        sub_df <- main_df |> 
+    if(type == "nut"){sub_df <- main_df |> 
             filter(station == {{station}}) |> 
             select(station, year, month,
-                   "value" = all_of({{parameter}}),
-                   "cens" = all_of({{cens_col}})) |> 
-            mutate(lognut = log(value),
-                   cens_lognut = case_when(cens == 0 ~ lognut,    # extra censoring column for gam
-                                           cens == 1 ~ -Inf))
-        # also create response matrix column for mgcv gam functions
-        sub_df$lognut_mat <- cbind(sub_df$lognut, sub_df$cens_lognut)
-    }
+                   "value" = all_of({{parameter}})) |> 
+            mutate(lognut = log(value))
+        }
     
     # for all: make sure all year-month combinations are represented,
     # even if blank
@@ -371,8 +364,8 @@ run_bam_nut <- function(data, k){
     # (in case missing/unevenly spaced data messed up the true ACF)
     # then get the lag-1 acf estimate
     # to use in what will be the "real" bam
-    dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = k),
-                   family = cnorm(),
+    dat_bam <- bam(lognut ~ dec_date + s(month, bs = "cc", k = k),
+                   family = gaussian(),
                    discrete = TRUE,
                    AR.start = ARrestart,
                    rho = 0.0001,
@@ -388,11 +381,11 @@ run_bam_nut <- function(data, k){
     
     if(abs(use_this_rho) > rho_threshold){
         model_refit <- TRUE
-        dat_bam <- bam(lognut_mat ~ dec_date + s(month, bs = "cc", k = k),
-                       family = cnorm(),
+        dat_bam <- bam(lognut ~ dec_date + s(month, bs = "cc", k = k),
+                       family = gaussian(),
                        discrete = TRUE,
                        AR.start = ARrestart,
-                       rho = use_this_rho,
+                       rho = 0.0001,
                        data = dat,
                        method = "fREML")
     }
@@ -589,6 +582,12 @@ tidy_bam_output <- function(bam_obj){
                statistic,
                p.value)
     
+    bam_intercept <- bam_tidy |> 
+        filter(term == "Intercept") |> 
+        select(station,
+               parameter,
+               "Intercept" = estimate)
+    
     bam_seas <- bam_tidy |> 
         filter(term == "Seasonality") |> 
         select(station,
@@ -605,7 +604,7 @@ tidy_bam_output <- function(bam_obj){
         Dev_expl = summary(bam_out)$dev.expl
     )
     
-    out <- dplyr::left_join(bam_trend, bam_seas) |> 
+    out <- dplyr::left_join(bam_trend, bam_intercept) |> 
         dplyr::left_join(bam_r2) |> 
         mutate(model_error = FALSE)
     

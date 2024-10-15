@@ -29,7 +29,7 @@ library(performance)
 ```{r}
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup_v5.R"))
+                  "050_setup_MDL.R"))
 ```
 
 
@@ -45,7 +45,7 @@ Centering and standardizing (1SD) predictors to make sure model converges and ai
 dat_domgl <- dat_all3 |> 
   select(reserve,
          domgl_trend,
-         # lat/temp/DO PCA
+          # lat/temp/domgl PCA
          tld_PC1,
          # wq medians
          spcond_median, turb_median.log, 
@@ -54,7 +54,7 @@ dat_domgl <- dat_all3 |>
          # nut medians
          chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         chla_trend, nh4f_mdl_trend, no23f_mdl_trend, po4f_mdl_trend,
          # met
          precp_median, precp_trend) |> 
   mutate(across(!reserve,
@@ -192,15 +192,13 @@ Only two points with high Cok's D relative to the rest, and neither has much lev
 
 ```{r}
 
-#infls <- c(9, 13, 45, 67)
-infls <- c(87)
+infls <- c(9, 13, 45, 64)
 
 preds_df$possibly_influential <- FALSE
 preds_df$possibly_influential[c(9)] <- 'cbmmc'
 preds_df$possibly_influential[c(13)] <- 'cbvgi'
 preds_df$possibly_influential[c(45)] <- 'kacss'
-preds_df$possibly_influential[c(67)] <- 'owcdr'
-preds_df$possibly_influential[c(87)] <- 'welin'
+preds_df$possibly_influential[c(64)] <- 'owcdr'
 
 preds_df$hats <- hatvalues(mod_domgl)
 preds_df$cooks <- cooks.distance(mod_domgl)

@@ -7,15 +7,12 @@ library(vegan)
 load(here::here("Outputs",
              #   "06_model_selection",
               #  "R_objects",
-                "domgl_out_v3.RData"))
-dat_all <- read.csv(here::here("Outputs",
-                               "04_compiled_predictors",
-                               "compiled_predictors_v3.csv"))
+                "domgl_out_v3_mdl.RData"))
 
 # get dat_all set up properly, with PCA and log transformations etc.
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup_v3.R"))
+                  "050_setup_MDL.R"))
 
 rm(dat_all)
 
@@ -121,6 +118,35 @@ ggplot(coeffs_stnd) +
        y = "Term",
        col = "variable importance")
 
+ggplot(coeffs_stnd) +
+    geom_pointrange(aes(y = term,
+                        x = Estimate,
+                        xmin = ci_low,
+                        xmax = ci_high,
+                        col = sw_all,
+                        size = sw_all)) +
+    khroma::scale_color_batlow(reverse = TRUE) +
+    scale_size_continuous(range = c(0.5, 3), guide = "legend") +  # Adjust point sizes
+    geom_vline(xintercept = 0,
+               col = "gray40") +
+    labs(title = "Standardized coefficients in averaged model for domgl trend ",
+         subtitle = "models with delta < 4",
+         x = "Coefficient",
+         y = "Term",
+         col = "Variable Importance",
+         size = "Variable Importance") +
+    guides(colour = guide_legend(reverse = TRUE, title = "Variable Importance"),
+           size = guide_legend(reverse = TRUE, title = "Variable Importance"))+
+    theme(
+        plot.title = element_text(size = 16, face = "bold"),  # Title size
+        plot.subtitle = element_text(size = 14),  # Subtitle size
+        axis.title.x = element_text(size = 12),  # X-axis label size
+        axis.title.y = element_text(size = 12),  # Y-axis label size
+        axis.text = element_text(size = 14),  # Axis text size
+        legend.title = element_text(size = 12),  # Legend title size
+        legend.text = element_text(size = 10)  # Legend text size
+    )
+
 
 # save important outputs for predictor workup
 save(dat_domgl,                              # data frame used for model
@@ -134,5 +160,5 @@ save(dat_domgl,                              # data frame used for model
      file = here::here("Outputs",
                        "06_model_selection",
                        "R_objects",
-                       "domgl_post-averaging_v3.RData"),
+                       "domgl_post-averaging_v3_mdl.RData"),
      compress = "xz")

@@ -154,7 +154,8 @@ p3 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = cluster, fill = cluster
   xlab("Chl-a Trend Percentage per Year") +
   scale_fill_manual(values = cluster_colors) +
   geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))
+  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))+
+    theme_bw()
 
 p3
 
@@ -200,7 +201,8 @@ p5 <- ggplot(ordered_do, aes(x = Slope, y = cluster, fill = cluster)) +
   xlab("DO trend mg/L per year") +
   scale_fill_manual(values = cluster_colors) +
   geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))
+  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))+
+    theme_bw()
 
 p5
 
@@ -210,7 +212,7 @@ patchwork_DO <- (p4 |p5) +
 patchwork_DO
 
 
-patchwork_DOChla_Ridge <- (p3 /p5) +
+patchwork_DOChla_Ridge <- (p3 |p5) +
   plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
 patchwork_DOChla_Ridge

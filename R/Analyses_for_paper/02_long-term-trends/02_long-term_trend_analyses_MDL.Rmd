@@ -33,7 +33,7 @@ library(gtsummary)
 
 
 source(here::here("helper_files", "definitions.R"))
-source(here::here("helper_files", "functions.R"))
+source(here::here("helper_files", "functions_MDL.R"))
 
 load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyWQ.RData"))
 load(here::here("Data", "QAQCd_monthly_byType", "SWMP_monthlyNUT.RData"))
@@ -141,6 +141,13 @@ dat_nut <- nut |>
          DIN_to_DIP_censBoth = case_when(DIN_to_DIP_censNum + DIN_to_DIP_censDenom == 2 ~ 1,
                                          .default = 0))
 
+
+
+dat_nut <- dat_nut %>% 
+  mutate(no23f_mdl = if_else(no23f_cens > 0, no23f / 2, no23f),
+         nh4f_mdl = if_else(nh4f_cens > 0, nh4f / 2, nh4f),
+         po4f_mdl = if_else(po4f_cens > 0, po4f / 2, po4f))
+
 # DIN_to_DIP may also need to be treated in a non-gaussian way
 
 ```
@@ -150,7 +157,7 @@ dat_nut <- nut |>
 wq_grid <- expand.grid(station = unique(dat_wq$station), 
                        param = names(dat_wq[4:9]))
 nut_grid <- expand.grid(station = unique(dat_nut$station), 
-                       param = names(dat_nut[4:7]))
+                       param = names(dat_nut[c(4,17:19)]))
 met_grid <- expand.grid(station = unique(dat_met$station), 
                        param = names(dat_met[c(4, 6, 7)]))
 
@@ -239,7 +246,7 @@ for(i in 1:nrow(wq_grid)){
   if(exists("bam_out")){
     
     # save the entire bam object, including autocorrelation info
-    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs",
+    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs_MDL",
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
@@ -318,6 +325,7 @@ for(i in 1:nrow(wq_grid)){
   rm(out)
 }
 
+beepr::beep(8)
 ```
 
 ```{r}
@@ -325,9 +333,9 @@ trends_df <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                is.na(p.value) ~ NA_character_,
                                .default = "no"),
-         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     is.na(Seas_p.val) ~ NA_character_,
-                                     .default = "no"),
+         #sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+                             #        is.na(Seas_p.val) ~ NA_character_,
+                                    # .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
                                   is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
@@ -347,6 +355,19 @@ trends_df |>
             parameters = paste(unique(parameter), collapse = "; ")) |> 
   arrange(station) |> 
   gt(caption = "WQ stations where the model did not run")
+```
+
+
+# Save trend tables  
+
+```{r}
+save(trends_df, file = here::here("Outputs", 
+                                               "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                              "wq-trends.RData"))
+
+write.csv(trends_df, file = here::here("Outputs",
+                                         "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                        "wq-trends.csv"))
 ```
 
 
@@ -428,7 +449,7 @@ for(i in 1:nrow(do_grid)){
   if(exists("bam_out")){
     
     # save the entire bam object, including autocorrelation info
-    file_out <- here::here("Outputs", "calculated_trends", "bam_outputs",
+    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs_MDL",
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
@@ -509,6 +530,8 @@ for(i in 1:nrow(do_grid)){
   rm(out)
 }
 
+beepr::beep(8)
+
 ```
 
 ```{r}
@@ -516,9 +539,9 @@ trends_df_do <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                is.na(p.value) ~ NA_character_,
                                .default = "no"),
-         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     is.na(Seas_p.val) ~ NA_character_,
-                                     .default = "no"),
+        # sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+           #                          is.na(Seas_p.val) ~ NA_character_,
+              #                       .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
                                   is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
@@ -535,6 +558,17 @@ trends_df_do |>
   gt(caption = "WQ stations where the model did not run")
 ```
 
+# Save trend tables  
+
+```{r}
+save(trends_df_do, file = here::here("Outputs", 
+                                               "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                              "doprop-trends.RData"))
+
+write.csv(trends_df_do, file = here::here("Outputs",
+                                         "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                        "doprop-trends.csv"))
+```
 
 ### bind to other wq trends  
 
@@ -618,7 +652,7 @@ for(i in 1:nrow(met_grid)){
   if(exists("bam_out")){
     
     # save the entire bam object, including autocorrelation info
-    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs",
+    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs_MDL",
                            paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
@@ -694,6 +728,8 @@ for(i in 1:nrow(met_grid)){
   rm(out)
 }
 
+beepr::beep(8)
+
 ```
 
 ```{r}
@@ -701,9 +737,9 @@ trends_met <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                is.na(p.value) ~ NA_character_,
                                .default = "no"),
-         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     is.na(Seas_p.val) ~ NA_character_,
-                                     .default = "no"),
+         #sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+          #                           is.na(Seas_p.val) ~ NA_character_,
+           #                          .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
                                   is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
@@ -720,6 +756,18 @@ trends_met |>
             parameters = paste(unique(parameter), collapse = "; ")) |> 
   arrange(station) |> 
   gt(caption = "MET stations where the model did not run")
+```
+
+# Save trend tables  
+
+```{r}
+save(trends_met, file = here::here("Outputs", 
+                                               "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                              "met-trends.RData"))
+
+write.csv(trends_met, file = here::here("Outputs",
+                                         "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                        "met-trends.csv"))
 ```
 
 
@@ -759,6 +807,8 @@ for(i in 1:nrow(nut_grid)){
   
   # subset to that stn/param combo
   tmp <- subset_df("nut", dat_nut, stn, param)
+
+##################
   
   # capture some info about the station and time series:
   ts_chars <- data.frame(ts_start = min(tmp$dec_date, na.rm = TRUE),
@@ -766,7 +816,7 @@ for(i in 1:nrow(nut_grid)){
                          ts_length = max(tmp$dec_date, na.rm = TRUE) - min(tmp$dec_date, na.rm = TRUE),
                          n_points = sum(!is.na(tmp$value)))
   
-  
+        
   # if the below statement is true, there was an error in the model
   # and we need to do something, and move to the next item in the loop
   # if it was false, we can move on
@@ -812,8 +862,8 @@ for(i in 1:nrow(nut_grid)){
   if(exists("bam_out")){
     
     # save the entire bam object, including autocorrelation info
-    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs",
-                           paste0(stn, "_", param, "_bam_test.RData"))
+    file_out <- here::here("Outputs", "02_calculated_long-term-trends", "bam_outputs_MDL",
+                           paste0(stn, "_", param, "_bam.RData"))
     save(bam_out, file = file_out)
     
     out <- tidy_bam_output(bam_obj = bam_out)
@@ -892,6 +942,9 @@ for(i in 1:nrow(nut_grid)){
   trends_out[[i]] <- out
   rm(out)
 }
+
+beepr::beep(8)
+
 ```
 
 ```{r}
@@ -899,9 +952,9 @@ trends_nut <- dplyr::bind_rows(trends_out) |>
   mutate(sig_trend = case_when(p.value <= 0.05 ~ "yes",
                                is.na(p.value) ~ NA_character_,
                                .default = "no"),
-         sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
-                                     is.na(Seas_p.val) ~ NA_character_,
-                                     .default = "no"),
+    #     sig_seasonality = case_when(Seas_p.val <= 0.05 ~ "yes",
+     #                                is.na(Seas_p.val) ~ NA_character_,
+      #                               .default = "no"),
          sig_autocorr = case_when(model_refit == TRUE ~ "yes",
                                   is.na(model_refit) ~ NA_character_,
                                   .default = "no"))
@@ -925,13 +978,26 @@ trends_nut |>
 # Save trend tables  
 
 ```{r}
+save(trends_nut, file = here::here("Outputs", 
+                                               "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                              "nut-trends.RData"))
+
+write.csv(trends_nut, file = here::here("Outputs",
+                                         "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                        "nut-trends.csv"))
+```
+
+
+# Save trend tables  
+
+```{r}
 save(trends_df, trends_met, trends_nut, file = here::here("Outputs", 
-                                              "02_calculated_long-term-trends",
+                                               "02_calculated_long-term-trends", "bam_outputs_MDL",
                                               "long-term-trends.RData"))
 
 trends_all <- bind_rows(trends_df, trends_met, trends_nut)
 write.csv(trends_all, file = here::here("Outputs",
-                                        "02_calculated_long-term-trends",
+                                         "02_calculated_long-term-trends", "bam_outputs_MDL",
                                         "long-term-trends.csv"))
 ```
 

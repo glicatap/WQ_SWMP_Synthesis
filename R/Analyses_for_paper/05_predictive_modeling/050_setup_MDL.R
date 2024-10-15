@@ -5,7 +5,7 @@ library(dplyr)
 
 dat_all <- read.csv(here::here("Outputs", 
                                "04_compiled_predictors", 
-                               "compiled_predictors.csv"))
+                               "compiled_predictors_MDL.csv"))
 
 
 # PCA on temp/par/latitude ----

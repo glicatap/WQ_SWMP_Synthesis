@@ -133,51 +133,32 @@ Criteria for inclusion:
 ### Deal with censoring  
 
 
-Using the NADA package, we have to remove NAs, but can calculate the median, mean and sd in all the ways. The NADA functions compute the mean slightly too high, so use EnvStats for mean.  
-
-NADA can handle it when there aren't any censored values (e.g. NH4 at acebbnut) but the MLE estimated median is off (apparently this is due to how MLE calculates things).
-
-Below is a function I wrote where I take the nutrient and its censoring column, remove NAs, and calculate the thing.  
-
-It uses the value of the ROS-calculated median (robust Regression on Order Statistics). MLE or Kaplan-Meier values could also be used here, but Helsel calls ROS the most flexible of the methods.  
+Censored data is being recalculated as 1/2 MDL  
 
 
 ```{r}
-censMed_fun <- function(df, nut, cens){
+censMed_fun <- function(df, nut, cens, mdl){
   tmp <- data.frame("param" = df[[nut]],
                     "censoring" = df[[cens]]) 
   
   # if all values are NA, return NA
   if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
   
-  # if there aren't at least 10 values, return NA
+  # if there aren't at least 5 values, return NA
   if(nrow(tmp) < 5) return(NA)
   
-  # otherwise calculate the median
+  # replace censored values with 1/2 MDL and then calculate the median
   tmp <- tmp |> 
     mutate(censoring = as.logical(censoring),
            censoring = case_when(param == 0 ~ TRUE,
                                  .default = censoring),
-           param = case_when(param == 0 ~ 0.01,
+           param = case_when(param == 0 ~ 0.01,  # replacing 0 values with a small value (optional)
+                             censoring ~ param / 2,  # replace censored values with 1/2 MDL
                              .default = param)) |> 
     na.omit()
-  # median(cenfit(tmp$param, tmp$censoring))  # kaplan-meier
-  median(cenros(tmp$param, tmp$censoring))  # ROS
-  #  censtats(tmp$param, tmp$censoring)  # all 3 methods, for comparison - also tells % censored
+  
+  median(tmp$param)  # calculate the median of the updated values
 }
-
-
-# test <- filter(nut, station == "gndbhnut")  # about 53% of po4 values are censored
-# test <- filter(nut, station == "gndhsnut")  # po4 'dropped censored values that exceeded highest non censored value' - still comes out very close to others
-# test <- filter(nut, station == "gndblnut")  # >80% of no23 values are censored - median more similar to MLE, but not far off from K-M
-# test <- filter(nut, station == "acebbnut")  # has no censored values for nh4 or chl
-# test <- filter(nut, station == "owcbrnut")  # has exact 0s
-# test <- filter(nut, station == "tjrhpnut")  # only one row in data frame
-# censMed_fun(test, "nh4f", "nh4f_cens")
-# censMed_fun(test, "no23f", "no23f_cens")
-# censMed_fun(test, "po4f", "po4f_cens")
-# censMed_fun(test, "chla_n", "chla_n_cens")
-
 
 ```
 
@@ -197,6 +178,7 @@ nut <- nut |>
 
 
 ```{r}
+
 nut_meds_cens <- nut |> 
   mutate(station = substr(station, 1, 5)) |> 
   summarize(.by = station,
@@ -211,6 +193,7 @@ nut_meds_cens <- nut |>
             no23f = censMed_fun(.data, nut = "no23f", cens = "no23f_cens"),
             po4f = censMed_fun(.data, nut = "po4f", cens = "po4f_cens")
             )
+
 
 # censMed_fun(nut, "po4f", "po4f_cens")
 ```
@@ -292,7 +275,7 @@ dat_out <- left_join(all_meds,
 write.csv(dat_out,
           here::here("Outputs",
                      "01_calculated_medians",
-                     "WQ-NUT_overallMedians.csv"))
+                     "WQ-NUT_overallMedians_MDL.csv"))
 ```
 
 

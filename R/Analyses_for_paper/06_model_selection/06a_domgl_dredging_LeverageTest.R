@@ -28,7 +28,7 @@ dat_domgl <- dat_all3 |>
          # nut medians
          chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         chla_trend, nh4f_mdl_trend, no23f_mdl_trend, po4f_mdl_trend,
          # met
          precp_median, precp_trend) |> 
   mutate(across(!reserve,
@@ -63,5 +63,5 @@ save(dat_domgl, mod_domgl, domgl_subsets,
      file = here::here("Outputs",
                        #"06_model_selection",
                      #  "R_objects",
-                       "domgl_out_v4.RData"),
+                       "domgl_out_v4_mdl.RData"),
      compress = "xz")

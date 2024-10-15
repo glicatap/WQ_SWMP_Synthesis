@@ -9,11 +9,11 @@ library(MuMIn)
 load(here::here("Outputs",
                 #"06_model_selection",
                 #"R_objects",
-                "chla_out_nlme_v3.RData"))
+                "chla_out_nlme_v3_mdl.RData"))
 
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup_v3.R"))
+                  "050_setup_MDL.R"))
 
 rm(dat_all)
 
@@ -97,33 +97,32 @@ ggplot(swdf, aes(x = predictor)) +
 
 
 # put in order by variable importance rather than coefficient
-coeffs_stnd <- data.frame(summary(mod_avgd4)$coefmat.full) |> 
-  rownames_to_column("term") |> 
-  mutate(ci_low = Estimate - 1.96*Adjusted.SE,
-         ci_high = Estimate + 1.96*Adjusted.SE,
-         term = str_remove(term, "cond\\("),
-         term = str_remove(term, "\\)")) |> 
-  left_join(swdf, by = c("term" = "predictor")) |> 
-  filter(!str_starts(term, "\\(Int")) |> 
-  arrange(sw_all) |> 
-  mutate(term = fct_inorder(term))
-
 ggplot(coeffs_stnd) +
-  geom_pointrange(aes(y = term,
-                      x = Estimate,
-                      xmin = ci_low,
-                      xmax = ci_high,
-                      col = sw_all,
-                      size = sw_all)) +
-  khroma::scale_color_batlow(reverse = TRUE) +
-  geom_vline(xintercept = 0,
-             col = "gray40") +
-    #labs(title = "Standardized coefficients in averaged model for chl a trend",
+    geom_pointrange(aes(y = term,
+                        x = Estimate,
+                        xmin = ci_low,
+                        xmax = ci_high,
+                        col = sw_all,
+                        size = sw_all), 
+                    show.legend = c(size = FALSE)) +  # Remove size legend
+    khroma::scale_color_batlow(reverse = TRUE) +
+    scale_size_continuous(range = c(0.5, 3))+
+    geom_vline(xintercept = 0, col = "gray40") +
     labs(title = "Standardized coefficients in averaged model for chl a trend with LKS removed",
-       subtitle = "models with delta < 4",
-       x = "Coefficient",
-       y = "Term",
-       col = "variable importance")
+         subtitle = "models with delta < 4",
+         x = "Coefficient",
+         y = "Term",
+         col = "Variable Importance") +  # Adjust col title in legend
+    theme(
+        plot.title = element_text(size = 16, face = "bold"),  # Title size
+        plot.subtitle = element_text(size = 14),  # Subtitle size
+        axis.title.x = element_text(size = 12),  # X-axis label size
+        axis.title.y = element_text(size = 12),  # Y-axis label size
+        axis.text = element_text(size = 14),  # Axis text size
+        legend.title = element_text(size = 12),  # Legend title size
+        legend.text = element_text(size = 10)  # Legend text size
+    )
+
 
 ggplot(coeffs_stnd) +
     geom_pointrange(aes(y = term,
@@ -132,6 +131,7 @@ ggplot(coeffs_stnd) +
                         xmax = ci_high,
                         col = sw_all)) +
     khroma::scale_color_batlow(reverse = TRUE) +
+    #scale_size_continuous(range = c(0.5, 3))+
     geom_vline(xintercept = 0,
                col = "gray40") +
     #labs(title = "Standardized coefficients in averaged model for chl a trend",
@@ -140,6 +140,38 @@ ggplot(coeffs_stnd) +
          x = "Coefficient",
          y = "Term",
          col = "variable importance")
+
+
+ggplot(coeffs_stnd) +
+    geom_pointrange(aes(y = term,
+                        x = Estimate,
+                        xmin = ci_low,
+                        xmax = ci_high,
+                        col = sw_all,
+                        size = sw_all)) +
+    khroma::scale_color_batlow(reverse = TRUE, guide = "legend") +  # Use single guide
+    scale_size_continuous(range = c(0.5, 3), limits = c(0, 1), guide = "legend") +  # Adjust size range and limits
+    geom_vline(xintercept = 0, col = "gray40") +
+    labs(title = "Standardized coefficients in averaged model for chl a trend",
+         subtitle = "models with delta < 4",
+         x = "Coefficient",
+         y = "Term",
+         col = "Variable Importance",
+         size = "Variable Importance") +
+    guides(colour = guide_legend(reverse = TRUE, title = "Variable Importance"),
+           size = guide_legend(reverse = TRUE, title = "Variable Importance")) +
+    theme(
+        plot.title = element_text(size = 16, face = "bold"),  # Title size
+        plot.subtitle = element_text(size = 14),  # Subtitle size
+        axis.title.x = element_text(size = 12),  # X-axis label size
+        axis.title.y = element_text(size = 12),  # Y-axis label size
+        axis.text = element_text(size = 14),  # Axis text size
+        legend.title = element_text(size = 12),  # Legend title size
+        legend.text = element_text(size = 10)  # Legend text size
+    )
+
+
+
 
 
 
@@ -156,5 +188,5 @@ save(dat_chl,                              # data frame used for model
      file = here::here("Outputs",
                       # "06_model_selection",
                       # "R_objects",
-                       "chla_post-averaging_v3.RData"),
+                       "chla_post-averaging_v3_mdl.RData"),
      compress = "xz")

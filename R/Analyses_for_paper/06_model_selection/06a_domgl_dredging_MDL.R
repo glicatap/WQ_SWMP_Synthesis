@@ -12,7 +12,7 @@ library(MuMIn)
 # re-running because copying and pasting is easier....
 source(here::here("R", "Analyses_for_paper",
                   "05_predictive_modeling",
-                  "050_setup_v3.R"))
+                  "050_setup_MDL.R"))
 
 # pick the specific predictors we've agreed on
 # center and scale all but response 
@@ -28,7 +28,7 @@ dat_domgl <- dat_all3 |>
          # nut medians
          chla_median.log, nh4_median.log, no23_median.log, po4_median.log,
          # nut trends
-         chla_trend, nh4f_trend, no23f_trend, po4f_trend,
+         chla_trend, nh4f_mdl_trend, no23f_mdl_trend, po4f_mdl_trend,
          # met
          precp_median, precp_trend) |> 
   mutate(across(!reserve,
@@ -63,5 +63,6 @@ save(dat_domgl, mod_domgl, domgl_subsets,
      file = here::here("Outputs",
                        #"06_model_selection",
                      #  "R_objects",
-                       "domgl_out_v3.RData"),
+                       "domgl_out_v3_mdl.RData"),
      compress = "xz")
+

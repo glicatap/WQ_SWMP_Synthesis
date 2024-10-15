@@ -179,6 +179,31 @@ censMed_fun <- function(df, nut, cens){
 # censMed_fun(test, "chla_n", "chla_n_cens")
 
 
+
+censMed_fun2 <- function(df, nut, cens, mdl){
+  tmp <- data.frame("param" = df[[nut]],
+                    "censoring" = df[[cens]]) 
+  
+  # if all values are NA, return NA
+  if(sum(is.na(tmp$param)) == nrow(tmp)) return(NA)
+  
+  # if there aren't at least 5 values, return NA
+  if(nrow(tmp) < 5) return(NA)
+  
+  # replace censored values with 1/2 MDL and then calculate the median
+  tmp <- tmp |> 
+    mutate(censoring = as.logical(censoring),
+           censoring = case_when(param == 0 ~ TRUE,
+                                 .default = censoring),
+           param = case_when(param == 0 ~ 0.01,  # replacing 0 values with a small value (optional)
+                             censoring ~ param / 2,  # replace censored values with 1/2 MDL
+                             .default = param)) |> 
+    na.omit()
+  
+  median(tmp$param)  # calculate the median of the updated values
+}
+
+
 ```
 
 Substitute NO3 for NO23 for the HUD stations.  
@@ -212,7 +237,51 @@ nut_meds_cens <- nut |>
             po4f = censMed_fun(.data, nut = "po4f", cens = "po4f_cens")
             )
 
+
+nut_meds_cens2 <- nut |> 
+  mutate(station = substr(station, 1, 5)) |> 
+  summarize(.by = station,
+            yr_start_nut = min(year, na.rm = TRUE),
+            yr_end_nut = max(year, na.rm = TRUE),
+            chla_nMonths = sum(!is.na(chla_n)),
+            nh4f_nMonths = sum(!is.na(nh4f)),
+            no23_nMonths = sum(!is.na(no23f)),
+            po4f_nMonths = sum(!is.na(po4f)),
+            chla = censMed_fun2(.data, nut = "chla_n", cens = "chla_n_cens"),
+            nh4f = censMed_fun2(.data, nut = "nh4f", cens = "nh4f_cens"),
+            no23f = censMed_fun2(.data, nut = "no23f", cens = "no23f_cens"),
+            po4f = censMed_fun2(.data, nut = "po4f", cens = "po4f_cens")
+            )
+
 # censMed_fun(nut, "po4f", "po4f_cens")
+```
+```{r}
+# Base plot
+plot(nut_meds_cens$no23f, nut_meds_cens2$no23f,
+     xlab = "ROS Method", 
+     ylab = "1/2 MDL Method", 
+     main = "Comparison of no23f Values", 
+     pch = 16, # Add a solid circle as a point character
+     col = "blue") # Choose a color for the points
+
+# Add a 1:1 reference line
+abline(0, 1, col = "red", lty = 2) # Red dashed line for emphasis
+
+
+
+
+# Base plot
+plot(nut_meds_cens$no23f, nut_meds_cens2$no23f,
+     xlab = "ROS Method", 
+     ylab = "1/2 MDL Method", 
+     main = "Comparison of no23f Values", 
+     pch = 16, # Add a solid circle as a point character
+     col = "blue",
+     log="xy") # Choose a color for the points
+
+# Add a 1:1 reference line
+abline(0, 1, col = "red", lty = 2) # Red dashed line for emphasis
+
 ```
 
 

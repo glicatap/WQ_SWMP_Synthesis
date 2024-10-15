@@ -5,7 +5,7 @@ library(dplyr)
 
 dat_all <- read.csv(here::here("Outputs", 
                                "04_compiled_predictors", 
-                               "compiled_predictors.csv"))
+                               "compiled_predictors_MDL.csv"))
 
 
 # PCA on temp/par/latitude ----
@@ -95,7 +95,7 @@ dat_all$tld_PC1 <- predict(pca_tld)[,1]
 #####################
 
 
-stations_to_remove <- c("lksbl", "lksol", "lksba", "lkspo", "cbmmc","owcdr")
+stations_to_remove <- c("lksbl", "lksol", "lksba", "lkspo", "cbmmc","owcdr",'welin')
 #stations_to_remove <- c("lksbl", "lksol", "lksba", "lkspo")
 
 #, "marsc", "marcw"

@@ -28,8 +28,9 @@ library(tidyverse)
 Read in the output from `02_long-term-trend__calculation_analyses.Rmd` - this file has all the standard errors, p-values, and everything else that didn't get incorporated into the `compiled predictors` data frame.  
 
 ```{r}
-trnds <- read.csv(here::here("Outputs", "02_calculated_long-term-trends",
-                    "long-term-trends.csv"))
+trnds <- read.csv(here::here("Outputs",
+                  "02_calculated_long-term-trends", "bam_outputs_MDL",
+                                        "long-term-trends.csv"))
 ```
 
 Remove certain stations; those below are removed during data frame combining.    
@@ -37,7 +38,7 @@ Remove certain stations; those below are removed during data frame combining.
 ```{r}
 # stations we'll remove due to being too deep or problematic in some other way
 # but where trends were mostly calculated, so we'll keep them until the end
-remove_stns <- c("pdbgd", "kachd", "kacsd", "sfbfm")
+remove_stns <- c("pdbgd", "kachd", "kacsd", "sfbfm","lksol","lkspo","lksba","lksbl")
 
 # need to affix wq and nut to them though  
 remove_stns <- c(paste0(remove_stns, "wq"), paste0(remove_stns, "nut"))
@@ -81,6 +82,16 @@ ggplot(trnds,
   theme(legend.position = "bottom") +
   labs(title = "Histograms of slope (change/yr) for each parameter",
        fill = "p < 0.05?")
+```
+```{r}
+trnds1 <- trnds %>%
+  mutate(station_prefix = substr(station, 1, 5)) %>% 
+    filter(parameter == "do_mgl_median")
+
+hist(trnds1$ts_length, 
+     xlab = "Time Series Length, Years", 
+     ylab = "Count", 
+     main = " ")
 ```
 
 

@@ -21,13 +21,12 @@ library(tidyverse)
 ```
 
 ```{r}
-trends_in <- here::here("Outputs",
-                        "02_calculated_long-term-trends",
-                        "long-term-trends.csv")
+trends_in <- here::here("Outputs",                          "02_calculated_long-term-trends","bam_outputs_MDL",
+                                        "long-term-trends.csv")
 
 nut_trends_out <- here::here("Outputs",
                         "02_calculated_long-term-trends",
-                        "NUT_trends_back-transformed.csv")
+                        "NUT_trends_back-transformed_MDL.csv")
 ```
 
 ```{r}
@@ -37,16 +36,17 @@ trnds <- read.csv(trends_in)
 ```{r}
 trnds2 <- trnds |> 
   filter(parameter %in% c("chla_n",
-                          "nh4f",
-                          "no23f",
-                          "po4f")) |> 
+                          "nh4f_mdl",
+                          "no23f_mdl",
+                          "po4f_mdl")) |> 
   select(station,
          param = parameter,
          trend_in_log = Slope,
          ciLow_trend = conf.low,
          ciHigh_trend = conf.high,
          p_trend = p.value,
-         sig_seasonality)
+    #     sig_seasonality
+         )
 
 trnds3 <- trnds2 |> 
   mutate(trend_multiplicative = round(exp(trend_in_log), 4),
