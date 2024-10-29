@@ -60,6 +60,55 @@ ggplot(chla_long_v2)+
     ylab("% Cover")+theme_bw()+xlab("Chl-a Trend %/Yr")
 
 
+po4_df <- combined_data[, c(1:4, 14, 55:61,71:75)]
+
+
+po4_long <- po4_df %>%
+    pivot_longer(
+        cols = ends_with("pctTotal"), # Adjust based on your land use columns' naming pattern
+        names_to = "landuse",
+        values_to = "value"
+    )
+
+ggplot(po4_long)+
+    geom_point(aes(x=po4f_mdl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
+    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("PO4 Trend %/Yr")
+
+
+nh4_df <- combined_data[, c(1:4, 13, 55:61,71:75)]
+
+
+nh4_long <- nh4_df %>%
+    pivot_longer(
+        cols = ends_with("pctTotal"), # Adjust based on your land use columns' naming pattern
+        names_to = "landuse",
+        values_to = "value"
+    )
+
+ggplot(nh4_long)+
+    geom_point(aes(x=nh4f_mdl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
+    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("nh4 Trend %/Yr")
+
+
+no23_df <- combined_data[, c(1:4, 12, 55:61,71:75)]
+
+
+no23_long <- no23_df %>%
+    pivot_longer(
+        cols = ends_with("pctTotal"), # Adjust based on your land use columns' naming pattern
+        names_to = "landuse",
+        values_to = "value"
+    )
+
+ggplot(no23_long)+
+    geom_point(aes(x=no23f_mdl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
+    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("no23 Trend %/Yr")
+
+
+##########################
+#Chla CLUE
+
+
 ggplot(combined_data,aes(x=TidalFlowType, y=chla_n))+
     geom_boxplot()+
     geom_jitter(aes(color=cluster),size=3,width=0.1)+
