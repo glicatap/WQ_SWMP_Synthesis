@@ -647,16 +647,27 @@ ggplot(combined_data, aes(x = po4f_mdl_trend, y = nh4f_mdl_trend)) +
     annotate("text", x = Inf, y = -Inf, label = "+ PO4, - NH4", hjust = 1.1, vjust = -0.1)
 
 ggplot(combined_data, aes(x = po4f_mdl_trend, y = no23f_mdl_trend)) +
-    geom_point(aes(color = cluster), size = 3) +
-    scale_color_manual(values = cluster_colors) +
+    geom_point(aes(color = temp_trend), size = 4) +
+    #scale_color_manual(values = cluster_colors) +
     xlab("PO4 Trend %/yr") + ylab("no23 Trend %/yr") +
     geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
     scale_fill_manual(values = cluster_colors) +
-    theme_minimal() +
+    theme_minimal()+
+    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
     annotate("text", x = Inf, y = Inf, label = "+ PO4 & NO23", hjust = 1.1, vjust = 1.1) +
     annotate("text", x = -Inf, y = Inf, label = "- PO4, + NO23", hjust = -0.1, vjust = 1.1) +
     annotate("text", x = -Inf, y = -Inf, label = "- PO4 & NO23", hjust = -0.1, vjust = -0.1) +
     annotate("text", x = Inf, y = -Inf, label = "+ PO4, - NO23", hjust = 1.1, vjust = -0.1)
+
+
+ggplot(combined_data, aes(x = temp_median, y = temp_trend)) +
+    geom_point(aes(color = cluster), size = 4) +
+    scale_color_manual(values = cluster_colors) +
+    xlab("Median Temp") + ylab("Temp Trend C/yr") +
+    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
+    scale_fill_manual(values = cluster_colors) +
+    theme_minimal()
+   # scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") 
 
 
 ggplot(combined_data, aes(x = no23f_mdl_trend, y = nh4f_mdl_trend)) +
@@ -670,3 +681,11 @@ ggplot(combined_data, aes(x = no23f_mdl_trend, y = nh4f_mdl_trend)) +
     annotate("text", x = -Inf, y = Inf, label = "- NO23, + NH4", hjust = -0.1, vjust = 1.1) +
     annotate("text", x = -Inf, y = -Inf, label = "- NO23 & NH4", hjust = -0.1, vjust = -0.1) +
     annotate("text", x = Inf, y = -Inf, label = "+ NO23, - NH4", hjust = 1.1, vjust = -0.1)
+
+
+N.P_subset<-combined_data[(combined_data$no23f_mdl_trend<0 & combined_data$po4f_mdl_trend>0),]
+
+N.P_stations<-N.P_subset[c("reserve","station")]
+
+write.csv(N.P_stations, "NP_stations.csv")
+

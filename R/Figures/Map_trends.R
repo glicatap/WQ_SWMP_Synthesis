@@ -12,6 +12,9 @@ library(sf)
 
 # Read data
 cluster <- read.csv("Clusters.csv")
+
+NP_stations <- read.csv("NP_stations.csv")
+
 nut_trends <- read.csv(here::here("Outputs",
                                   "02_calculated_long-term-trends",
                                   "NUT_trends_back-transformed_MDL.csv"))
@@ -312,5 +315,31 @@ ggplot() +
     geom_point(data = df_sf, aes(x = jittered_long, y = jittered_lat, color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 4) +
     #scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "no23 trend, percent/year") +
     scale_color_gradient(low = "darkblue", high = "red", name = "no23 trend, percent/year") +
+    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
+    theme(legend.position = "bottom")
+
+
+#############################################
+
+merged_df_NP <- subset_trends %>%
+    inner_join(NP_stations, by = c("station","reserve"))
+
+
+# Merge temp trends with coordinates
+map_NP <- merged_df_NP %>%
+    left_join(coords, by = "station")
+
+# Convert  temp trends data to sf object and shift geometry
+df_sf <- st_as_sf(map_NP, coords = c("lon", "lat"), crs = 4326) %>%
+    tigris::shift_geometry()
+
+# Plot map of temp trends
+ggplot() +
+    geom_sf(data = us_sf) +
+    labs(title = "Trends in Water Temp",
+         subtitle = "Filled circles indicate p < 0.05") +
+    theme(panel.background = element_blank()) +
+    geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
+    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
     scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
     theme(legend.position = "bottom")
