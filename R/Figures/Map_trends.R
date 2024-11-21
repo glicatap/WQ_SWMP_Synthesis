@@ -133,213 +133,176 @@ merged_no23 <- no23_trend_pct %>%
 ########################
 ### MAPS
 
+# Get US states shapefile and shift geometry
+us_sf <- states(cb = TRUE, resolution = "20m") %>%
+    shift_geometry()
+
 # Read coordinates data
 coords <- read.csv("coords.csv", header = TRUE)
 coords <- coords %>%
   mutate(station = tolower(station)) %>%
   mutate(station = substr(station, 1, 5))
 
-# Merge chlorophyll-a trends with coordinates
-map_chla <- merged_chla %>%
-  left_join(coords, by = "station")
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(tigris)
 
-# Get US states shapefile and shift geometry
+# Load US states shapefile and ensure correct CRS
 us_sf <- states(cb = TRUE, resolution = "20m") %>%
-  shift_geometry()
-
-# Convert chlorophyll-a trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_chla, coords = c("lon", "lat"), crs = 4326) %>%
-  tigris::shift_geometry()
-
-# Plot map of chlorophyll-a trends
-ggplot() +
-  geom_sf(data = us_sf) +
-  labs(title = "Trends in Chl-a",
-       subtitle = "Filled circles indicate p < 0.05") +
-  theme(panel.background = element_blank()) +
-  geom_sf(data = df_sf, aes(color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 4) +
-  scale_color_gradient(low = "blue1", high = "forestgreen", name = "Chla trend, percent/year") +
-  scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-  theme(legend.position = "bottom")
-
-# Merge dissolved oxygen trends with coordinates
-map_do <- do_trend %>%
-  left_join(coords, by = "station")
-
-# Convert dissolved oxygen trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_do, coords = c("lon", "lat"), crs = 4326) %>%
-  tigris::shift_geometry()
-
-# Plot map of dissolved oxygen trends
-ggplot() +
-  geom_sf(data = us_sf) +
-  labs(title = "Trends in DO",
-       subtitle = "Filled circles indicate p < 0.05") +
-  theme(panel.background = element_blank()) +
-  geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
-  scale_color_gradient(low = "orange", high = "blue", name = "DO trend, mg/L/yr") +
-  scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-  theme(legend.position = "bottom")
+    shift_geometry() %>%
+    st_transform(crs = 4326) # Transform to WGS 84
 
 
-# Merge temp trends with coordinates
-map_temp <- temp_trend %>%
-    left_join(coords, by = "station")
-
-# Convert  temp trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_temp, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
-
-# Plot map of temp trends
-ggplot() +
-    geom_sf(data = us_sf) +
-    labs(title = "Trends in Water Temp",
-         subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
-    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
-
-
-# Merge  po4 trends with coordinates
-map_po4 <- merged_po4 %>%
-    left_join(coords, by = "station")
-
-# Get US states shapefile and shift geometry
-us_sf <- states(cb = TRUE, resolution = "20m") %>%
-    shift_geometry()
-
-# Convert po4 trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_po4, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
-
-# Plot map of po4 trends
-ggplot() +
-    geom_sf(data = us_sf) +
-   # labs(title = "Trends in po4",
-   #      subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 5) +
-    scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "PO4 trend, percent/year") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
-
-
-# Merge  nh4 trends with coordinates
-map_nh4 <- merged_nh4 %>%
-    left_join(coords, by = "station")
-
-# Get US states shapefile and shift geometry
-us_sf <- states(cb = TRUE, resolution = "20m") %>%
-    shift_geometry()
-
-# Convert nh4 trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_nh4, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
-
-# Plot map of nh4 trends
-ggplot() +
-    geom_sf(data = us_sf) +
-   # labs(title = "Trends in nh4",
-   #      subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 5) +
-    scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "nh4 trend, percent/year") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
-
-
-# Merge  no23 trends with coordinates
-map_no23 <- merged_no23 %>%
-    left_join(coords, by = "station")
-
-# Get US states shapefile and shift geometry
-us_sf <- states(cb = TRUE, resolution = "20m") %>%
-    shift_geometry()
-
-# Convert no23 trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_no23, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
-
-# Plot map of no23 trends
-ggplot() +
-    geom_sf(data = us_sf) +
-   # labs(title = "Trends in no23",
-    #     subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 5) +
-    scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "no23 trend, percent/year") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
+plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, variable_name, color_gradient, title, subtitle, color_label) {
+    # Merge trends with coordinates
+    map_data <- data %>%
+        left_join(coords, by = "station")
+    
+    # Apply adjustments to specific reserves (e.g., KAC and JOB)
+    map_data$lon[map_data$Reserve == "kac"] <- lon_adjustments["kac"]
+    map_data$lat[map_data$Reserve == "kac"] <- lat_adjustments["kac"]
+    map_data$lon[map_data$Reserve == "job"] <- lon_adjustments["job"]
+    map_data$lat[map_data$Reserve == "job"] <- lat_adjustments["job"]
+    
+    # Add jitter to latitude and longitude
+    map_data_jittered <- map_data %>%
+        mutate(
+            lon_jittered = lon + runif(n(), min = -1, max = 1),
+            lat_jittered = lat + runif(n(), min = -1, max = 1)
+        )
+    
+    # Convert to sf object
+    df_sf_jittered <- st_as_sf(
+        map_data_jittered,
+        coords = c("lon_jittered", "lat_jittered"),
+        crs = 4326
+    )
+    
+    # Create the map
+    ggplot() +
+        geom_sf(data = us_sf, fill = "lightgray", color = "white") +
+        geom_sf(
+            data = df_sf_jittered,
+            aes(color = !!sym(variable_name), shape = as.factor(sig_trend)),
+            size = 3
+        ) +
+        labs(
+            title = title,
+            subtitle = subtitle,
+            color = color_label
+        ) +
+        scale_color_gradient2(
+            low = color_gradient$low,
+            mid = color_gradient$mid,
+            high = color_gradient$high,
+            midpoint = color_gradient$midpoint,
+            name = color_label
+        ) +
+        scale_shape_manual(
+            values = c("yes" = 16, "no" = 21),
+            guide = "none"
+        ) +
+        theme_minimal() +
+        theme(
+            panel.background = element_rect(fill = "white"),
+            panel.grid = element_blank(),
+            plot.title = element_text(size = 16, face = "bold", color = "black", hjust = 0.5),
+            plot.subtitle = element_text(size = 12, face = "italic", color = "black", hjust = 0.5),
+            legend.position = "bottom",
+            legend.title = element_text(size = 12, face = "bold", color = "black"),
+            legend.text = element_text(size = 10, color = "black"),
+            axis.text = element_text(size = 10, color = "black"),
+            axis.title = element_blank()
+        ) +
+        coord_sf(
+            xlim = c(-130, -60),
+            ylim = c(15, 55),
+            expand = FALSE
+        ) +
+        guides(
+            color = guide_colorbar(
+                barwidth = 15, barheight = 0.5, ticks.colour = "black", frame.colour = "black"
+            )
+        )
+}
 
 
+plot_variable_map(
+    data = do_trend,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "Slope",
+    color_gradient = list(low = "orange", mid = "white", high = "blue", midpoint = 0),
+    title = "Trends in Dissolved Oxygen",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "DO trend (mg/L/yr)"
+)
 
-# Merge turb trends with coordinates
-map_turb <- turb_trend %>%
-    left_join(coords, by = "station")
 
-# Convert turb trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_turb, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
+plot_variable_map(
+    data = temp_trend,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "Slope",
+    color_gradient = list(low = "blue", mid = "white", high = "red", midpoint = 0),
+    title = "Trends in Water Temperature",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "Temperature trend (°C/yr)"
+)
 
-# Plot map of turb trends
-ggplot() +
-    geom_sf(data = us_sf) +
-    labs(title = "Trends in Turbidity",
-         subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
-    scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "Turbidity, NTU/yr") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
+
+plot_variable_map(
+    data = merged_po4,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "trend_pctPerYear",
+    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    title = "Trends in Phosphorus (PO4)",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "PO4 trend (%/yr)"
+)
+
+
+plot_variable_map(
+    data = merged_nh4,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "trend_pctPerYear",
+    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    title = "Trends in Ammonium (NH4)",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "NH4 trend (%/yr)"
+)
+
+
+plot_variable_map(
+    data = merged_no23,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "trend_pctPerYear",
+    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    title = "Trends in Nitrate (NO23)",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "NO23 trend (%/yr)"
+)
 
 
 
-##################################################################################################
-# Apply jitter and create new geometries
-set.seed(123)  # For reproducibility
-jittered_coords <- st_coordinates(df_sf$geometry) + matrix(rnorm(nrow(df_sf) * 2, sd = 0.01), ncol = 2)
 
-# Create jittered geometry
-df_sf$jittered_geometry <- st_sfc(st_point(jittered_coords), crs = st_crs(df_sf))
-
-# Convert to sf object
-df_sf <- st_as_sf(df_sf)
-
-ggplot() +
-    geom_sf(data = us_sf) +
-    # labs(title = "Trends in no23",
-    #     subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_point(data = df_sf, aes(x = jittered_long, y = jittered_lat, color = trend_pctPerYear, shape = as.factor(sig_trend)), size = 4) +
-    #scale_color_gradient2(low = "darkblue", mid = "white", high = "red", midpoint = 0, name = "no23 trend, percent/year") +
-    scale_color_gradient(low = "darkblue", high = "red", name = "no23 trend, percent/year") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
-
-
-#############################################
-
-merged_df_NP <- subset_trends %>%
-    inner_join(NP_stations, by = c("station","reserve"))
-
-
-# Merge temp trends with coordinates
-map_NP <- merged_df_NP %>%
-    left_join(coords, by = "station")
-
-# Convert  temp trends data to sf object and shift geometry
-df_sf <- st_as_sf(map_NP, coords = c("lon", "lat"), crs = 4326) %>%
-    tigris::shift_geometry()
-
-# Plot map of temp trends
-ggplot() +
-    geom_sf(data = us_sf) +
-    labs(title = "Trends in Water Temp",
-         subtitle = "Filled circles indicate p < 0.05") +
-    theme(panel.background = element_blank()) +
-    geom_sf(data = df_sf, aes(color = Slope, shape = as.factor(sig_trend)), size = 4) +
-    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
-    scale_shape_manual(values = c("yes" = 16, "no" = 21), guide = "none") +
-    theme(legend.position = "bottom")
+plot_variable_map(
+    data = merged_chla,
+    coords = coords,
+    lon_adjustments = c("kac" = -118, "job" = -88),
+    lat_adjustments = c("kac" = 26, "job" = 25),
+    variable_name = "trend_pctPerYear",
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "green", midpoint = 0),
+    title = "Trends in Chlorophyll-a",
+    subtitle = "Filled circles indicate p < 0.05",
+    color_label = "Chla trend (%/yr)"
+)
