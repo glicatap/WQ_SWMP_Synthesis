@@ -68,158 +68,181 @@ merged_nut_df <- merged_nut_df |>
 colors <- viridis::viridis(5)
 custom_colors <- colors[c(1, 3, 4, 5)]
 
-# Histogram of slopes
-plot1 <- ggplot() +
-  geom_histogram(data = subset_trends, aes(x = Slope, fill = sig_trend), color = "black") +
-  facet_wrap(parameter ~ ., scales = "free") +
-  geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-  scale_fill_manual(values = custom_colors) +
-  theme_minimal()
+# Create a named vector for renaming facets
+facet_labels <- c(
+    "do_mgl_median" = "Dissolved Oxygen (mg/L)",
+    "do_proportion_below2" = "DO Proportion Below 2 mg/L",
+    "spcond_median" = "Specific Conductivity (mS/cm)",
+    "chla_n" = "Chlorophyll-a (ug/L)",
+    "nh4f_mdl" = "Ammonium (mg/L)",
+    "sqrt_precp_total" = "Sqrt Precipitation (mm)",
+    "temp_median" = "Temperature (°C)",
+    "turb_median" = "Turbidity (NTU)",
+    "no23f_mdl" = "Nitrate + Nitrite (mg/L)",
+    "po4f_mdl" = "Phosphate (mg/L)"
+)
 
-plot1
+
+plot1 <- ggplot() +
+    geom_histogram(data = subset_trends, aes(x = Slope, fill = sig_trend), color = "black") +
+    facet_wrap(parameter ~ ., scales = "free", labeller = labeller(parameter = facet_labels)) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    scale_fill_manual(values = custom_colors) +
+    theme_minimal() +
+    theme(
+        strip.text = element_text(size = 10, face = "bold", color = "black"),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 9, color = "black"),
+        legend.title = element_text(size = 10, color = "black"),
+        legend.text = element_text(size = 9, color = "black")
+    ) +
+    labs(
+        x = "Slope (Unit per Year)",
+        y = "Count",
+        fill = "Significant Trend (p<0.05)"
+    )
 
 subset_nut_trends$sig_trend<-ifelse(subset_nut_trends$p_trend<0.05,"yes","no")
 
+# Update the second plot with black text
 plot2 <- ggplot() +
     geom_histogram(data = subset_nut_trends, aes(x = trend_pctPerYear, fill = sig_trend), color = "black") +
-    facet_wrap(param ~ ., scales = "free") +
+    facet_wrap(param ~ ., scales = "free", labeller = labeller(param = facet_labels)) +
     geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-    scale_fill_manual(values = custom_colors) +
-    theme_minimal()
+    scale_fill_manual(values = custom_colors) + ylab ("")+
+    theme_minimal() +
+    theme(
+        strip.text = element_text(size = 10, face = "bold", color = "black"),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 9, color = "black"),
+        legend.title = element_text(size = 10, color = "black"),
+        legend.text = element_text(size = 9, color = "black")
+    ) +
+    labs(
+        x = "Trend (% per Year)",
+        y = "Count",
+        fill = "Significant Trend (p<0.05)"
+    )
 
-plot2
-
-# Combine plots with the first plot being larger
+# Combine the plots
 combined_plot <- plot1 + plot2 +
     plot_layout(guides = "collect", widths = c(2, 1)) & 
-    theme(legend.position = "bottom")
+    theme(
+        legend.position = "bottom",
+        text = element_text(color = "black")
+    )
 
 # Display the combined plot
 combined_plot
 
+###########################################
+##Slope distributions by cluster
 
-# Slopes by cluster
-cluster_colors <- c("A" = viridis(4)[1], "B" = viridis(4)[2], "C" = viridis(4)[3], "D" = viridis(4)[4])
+# Define cluster colors
+cluster_colors <- viridis::viridis(4)
+names(cluster_colors) <- c("A", "B", "C", "D")
 
-# Filter and merge data for chlorophyll-a trends
+# Chlorophyll-a (Chla) trends
+# Filter and merge data for Chla trends
 chla_trend_log <- merged_df %>%
-  filter(parameter == "chla_n")
+    filter(parameter == "chla_n")
 
 chla_sig <- chla_trend_log %>%
-  select(station, sig_trend)
+    select(station, sig_trend)
 
 chla_trend_pct <- merged_nut_df %>%
-  filter(param == "chla_n")
+    filter(param == "chla_n")
 
 merged_chla <- chla_trend_pct %>%
-  inner_join(chla_sig, by = "station")
+    inner_join(chla_sig, by = "station")
 
-# Order data by cluster and then by slope in descending order
+# Order data by cluster and slope
 ordered_chla <- merged_chla %>%
-  arrange(cluster, desc(trend_pctPerYear))
+    arrange(cluster, desc(trend_pctPerYear)) %>%
+    mutate(
+        station = factor(station, levels = unique(station)),
+        cluster = factor(cluster, levels = rev(unique(cluster)))
+    )
 
-# Plot slopes with confidence intervals by station
+# Plot Chla slopes with confidence intervals by station
 p1 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = reorder(station, trend_pctPerYear), color = cluster)) +
-  geom_point(aes(shape=sig_trend),size=2) +
-  geom_segment(aes(x = ciLow_pctPerYear, xend = ciHigh_pctPerYear, y = station, yend = station,linetype=sig_trend), linewidth = 1) +
-  labs(title = "Chla slopes with Confidence Intervals by Station", x = "Trend Percentage per Year", y = "Station") +
-  theme_minimal() +
-  scale_linetype_manual(values = c("dashed","solid"))+
-  scale_color_manual(values = cluster_colors)
+    geom_point(aes(shape = sig_trend), size = 2) +
+    geom_segment(aes(x = ciLow_pctPerYear, xend = ciHigh_pctPerYear, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
+    labs(title = "Chla Slopes with Confidence Intervals by Station", x = "Trend (% per Year)", y = "Station") +
+    theme_minimal() +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    scale_color_manual(values = cluster_colors)
 
-p1
-
-# Reorder the 'station' factor based on the sorted data
-ordered_chla$station <- factor(ordered_chla$station, levels = unique(ordered_chla$station))
-
-# Plot chla slopes with confidence intervals by station, with facets
-p2 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = station, color = cluster)) +
-  geom_point(aes(shape = sig_trend), size = 2) +
-  geom_segment(aes(x = ciLow_pctPerYear, xend = ciHigh_pctPerYear, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
-  labs(title = "Chla slopes with Confidence Intervals by Station", x = "Chla trend Percentage per Year", y = "Station") +
-  theme_minimal() +
-  scale_linetype_manual(values = c("solid","dashed"))+
-  geom_vline(xintercept=0, color="black", linetype="dashed", size=1) +
-  scale_color_manual(values = cluster_colors)#+facet_wrap(~cluster,scales="free_y")
-
-ordered_chla$cluster <- 
-    factor(ordered_chla$cluster, levels = rev(levels(factor(ordered_chla$cluster))))
-
-
-# Ridge plot of chlorophyll-a trends by cluster
+# Ridge plot of Chla trends by cluster
 p3 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = cluster, fill = cluster)) +
-  geom_density_ridges(scale = 2, alpha = 0.7) +
-  theme(legend.position = "none") +
-  ylab("Cluster") +
-  xlab("Chl-a Trend Percentage per Year") +
-  scale_fill_manual(values = cluster_colors) +
-  geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))+
-    theme_bw()
+    geom_density_ridges(scale = 2, alpha = 0.7) +
+    labs(x = "Chla Trend (% per Year)", y = "Cluster") +
+    scale_fill_manual(values = cluster_colors) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    theme_bw() +
+    theme(
+        text = element_text(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.position = "none"
+    )
 
-p3
-
-# Combine plots for chlorophyll-a trends
+# Combine Chla plots
 combined_plot1 <- (p1 | p3) +
-  plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+    plot_layout(guides = "collect") & 
+    theme(legend.position = 'bottom')
 
-
-combined_plot1
-
-# Filter and merge data for dissolved oxygen trends
+# Dissolved Oxygen (DO) trends
+# Filter and order DO data
 do_trend <- merged_df %>%
-  filter(parameter == "do_mgl_median")
+    filter(parameter == "do_mgl_median") %>%
+    arrange(Slope) %>%
+    mutate(
+        station = factor(station, levels = unique(station)),
+        cluster = factor(cluster, levels = rev(unique(cluster)))
+    )
 
-# Order data by cluster and then by slope in descending order
-ordered_do <- do_trend %>%
-  arrange(Slope)
+# Plot DO slopes with confidence intervals by station
+p4 <- ggplot(do_trend, aes(x = Slope, y = station, color = cluster)) +
+    geom_point(aes(shape = sig_trend), size = 2) +
+    geom_segment(aes(x = conf.low, xend = conf.high, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
+    labs(title = "DO Slopes with Confidence Intervals by Station", x = "DO Trend (mg/L per Year)", y = "Station") +
+    theme_minimal() +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    scale_color_manual(values = cluster_colors) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1)
 
-# Reorder the 'station' factor based on the sorted data
-ordered_do$station <- factor(ordered_do$station, levels = unique(ordered_do$station))
+# Ridge plot of DO trends by cluster
+p5 <- ggplot(do_trend, aes(x = Slope, y = cluster, fill = cluster)) +
+    geom_density_ridges(scale = 2, alpha = 0.7) +
+    labs(x = "DO Trend (mg/L per Year)", y = "Cluster") +
+    scale_fill_manual(values = cluster_colors) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    theme_bw() +
+    theme(
+        text = element_text(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.position = "none"
+    )
 
-ordered_do$cluster <- 
-    factor(ordered_do$cluster, levels = rev(levels(factor(ordered_do$cluster))))
+# Combine DO plots
+patchwork_DO <- (p4 | p5) +
+    plot_layout(guides = "collect") & 
+    theme(legend.position = 'bottom')
 
+# Combine Chla and DO ridge plots
+patchwork_DOChla_Ridge <- (p3 | p5) +
+    plot_layout(guides = "collect") & 
+    theme(legend.position = 'none')
 
-# Plot DO slopes with confidence intervals by station, with facets
-p4<-ggplot(ordered_do, aes(x = Slope, y = station, color = cluster)) +
-  geom_point(aes(shape=sig_trend),size=2) +  # Plot points  
-  geom_segment(aes(x = conf.low, xend = conf.high, y = station, yend = station,linetype=sig_trend), linewidth=1) +  # Confidence intervals
-  labs(title = "Slopes with Confidence Intervals by Station", x = "DO trend mg/L per year", y = "Station") +
-  theme_minimal() +
-  scale_linetype_manual(values = c("dashed","solid"))+
-  geom_vline(xintercept=0, color="black", linetype="dashed", size=1) +
-  scale_color_manual(values = cluster_colors)#+facet_wrap(~cluster,scales="free_y")
-
-p4
-
-# Plot slopes with confidence intervals by station for dissolved oxygen (DO)
-p5 <- ggplot(ordered_do, aes(x = Slope, y = cluster, fill = cluster)) + 
-  geom_density_ridges(scale = 2, alpha = 0.7) +
-  theme(legend.position = "none") +
-  ylab("Cluster") +
-  xlab("DO trend mg/L per year") +
-  scale_fill_manual(values = cluster_colors) +
-  geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
-  theme(strip.background = element_rect(fill = "lightgrey", color = "black"))+
-    theme_bw()
-
-p5
-
-patchwork_DO <- (p4 |p5) +
-  plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
+# Display combined plots
+combined_plot1
 patchwork_DO
-
-
-patchwork_DOChla_Ridge <- (p3 |p5) +
-  plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
 patchwork_DOChla_Ridge
 
 
 ####################################
-
 # Load necessary libraries
 library(dplyr)
 library(viridis)
@@ -255,437 +278,144 @@ combined_data <- data %>%
 chla_df <- combined_data[, c(1:4, 11, 55:61,71:75)]
 
 
-chla_long <- chla_df %>%
-    pivot_longer(
-        cols = ends_with("pctTotal"), # Adjust based on your land use columns' naming pattern
-        names_to = "landuse",
-        values_to = "value"
+# Scatter Plot Function
+scatter_plot <- function(data, x_col, y_col, x_label, y_label, color_col = "cluster") {
+    ggplot(data, aes_string(x = x_col, y = y_col, color = color_col)) +
+        geom_point(size = 3) +
+        scale_color_manual(values = cluster_colors) +
+        geom_hline(yintercept = 0) +
+        geom_vline(xintercept = 0) +
+        xlab(x_label) +
+        ylab(y_label) +
+        theme_minimal()
+}
+
+# Boxplot Function
+boxplot_with_jitter <- function(data, x_col, y_col, x_label, y_label, color_col = "cluster") {
+    ggplot(data, aes_string(x = x_col, y = y_col)) +
+        geom_boxplot() +
+        geom_jitter(aes_string(color = color_col), size = 3, width = 0.1) +
+        scale_color_manual(values = cluster_colors) +
+        scale_fill_manual(values = cluster_colors) +
+        xlab(x_label) +
+        ylab(y_label) +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+# Annotated Scatter Plot Function
+annotated_scatter_plot <- function(data, x_col, y_col, x_label, y_label, color_col = "cluster", annotations) {
+    ggplot(data, aes_string(x = x_col, y = y_col, color = color_col)) +
+        geom_point(size = 3) +
+        scale_color_manual(values = cluster_colors) +
+        geom_hline(yintercept = 0) +
+        geom_vline(xintercept = 0) +
+        xlab(x_label) +
+        ylab(y_label) +
+        theme_minimal() +
+        annotate("text", x = Inf, y = Inf, label = annotations[1], hjust = 1.1, vjust = 1.1) +
+        annotate("text", x = -Inf, y = Inf, label = annotations[2], hjust = -0.1, vjust = 1.1) +
+        annotate("text", x = -Inf, y = -Inf, label = annotations[3], hjust = -0.1, vjust = -0.1) +
+        annotate("text", x = Inf, y = -Inf, label = annotations[4], hjust = 1.1, vjust = -0.1)
+}
+
+
+scatter_trend_median_plot <- function(data, x_col, y_col, x_label, y_label, color_col = "cluster", smooth = FALSE) {
+    p <- ggplot(data, aes_string(x = x_col, y = y_col, color = color_col)) +
+        geom_point(size = 3) +
+        scale_color_manual(values = cluster_colors) +
+        geom_hline(yintercept = 0) +
+        geom_vline(xintercept = 0) +
+        xlab(x_label) +
+        ylab(y_label) +
+        theme_minimal()
+    if (smooth) {
+        p <- p + geom_smooth(method = "gam")
+    }
+    return(p)
+}
+
+scatter_vars <- list(
+    list(x = "chla_median", y = "chla_n", x_label = "Median Chla (ug/L)", y_label = "Chla Trend (%/yr)"),
+    list(x = "spcond_median", y = "chla_n", x_label = "Median SpCond (mS/cm)", y_label = "Chla Trend (%/yr)"),
+    list(x = "turb_median", y = "chla_n", x_label = "Median Turbidity (NTU)", y_label = "Chla Trend (%/yr)"),
+    list(x = "domgl_median", y = "chla_n", x_label = "Median DO (mg/L)", y_label = "Chla Trend (%/yr)"),
+    list(x = "temp_median", y = "chla_n", x_label = "Median Temp (°C)", y_label = "Chla Trend (%/yr)"),
+    list(x = "po4f_median", y = "chla_n", x_label = "Median PO4 (ug/L)", y_label = "Chla Trend (%/yr)"),
+    list(x = "no23f_median", y = "chla_n", x_label = "Median NO23 (ug/L)", y_label = "Chla Trend (%/yr)"),
+    list(x = "nh4f_median", y = "chla_n", x_label = "Median NH4 (ug/L)", y_label = "Chla Trend (%/yr)"),
+    list(x = "precp_median", y = "chla_n", x_label = "Median Precipitation", y_label = "Chla Trend (%/yr)"),
+    list(x = "chla_median", y = "domgl_trend", x_label = "Median Chla (ug/L)", y_label = "DO Trend (mg/L/yr)"),
+    list(x = "temp_median", y = "domgl_trend", x_label = "Median Temp (°C)", y_label = "DO Trend (mg/L/yr)")
+)
+
+for (vars in scatter_vars) {
+    print(scatter_trend_median_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, smooth = vars$smooth %||% FALSE))
+}
+
+boxplot_vars <- c(
+    "TidalFlowType", "AquaticSystem", "Ecoregion",
+    "SalinityRegime", "TidalRegime", "PrimaryWaterSource", "NERR_BioRegion"
+)
+
+# For both Chla and DO trends
+for (x_var in boxplot_vars) {
+    print(boxplot_with_jitter(combined_data, x_var, "chla_n", x_var, "Chla Trend (%/yr)"))
+    print(boxplot_with_jitter(combined_data, x_var, "domgl_trend", x_var, "DO Trend (mg/L/yr)"))
+}
+
+annotated_comparisons <- list(
+    list(
+        x = "po4f_mdl", y = "chla_n",
+        x_label = "PO4 Trend (%/yr)", y_label = "Chla Trend (%/yr)",
+        annotations = c("+ PO4 & Chla", "- PO4, + Chla", "- PO4 & Chla", "+ PO4, - Chla")
+    ),
+    list(
+        x = "nh4f_mdl", y = "chla_n",
+        x_label = "NH4 Trend (%/yr)", y_label = "Chla Trend (%/yr)",
+        annotations = c("+ NH4 & Chla", "- NH4, + Chla", "- NH4 & Chla", "+ NH4, - Chla")
+    ),
+    list(
+        x = "turb_trend", y = "chla_n",
+        x_label = "Turbidity Trend (NTU/yr)", y_label = "Chla Trend (%/yr)",
+        annotations = c("+ Turb & Chla", "- Turb, + Chla", "- Turb & Chla", "+ Turb, - Chla")
+    ),
+    list(
+        x = "chla_trend", y = "domgl_trend",
+        x_label = "Chla Trend (%/yr)", y_label = "DO Trend (mg/L/yr)",
+        annotations = c("+ Chla & DO", "- Chla, + DO", "- Chla & DO", "+ Chla, - DO")
+    ),
+    list(
+        x = "temp_trend", y = "domgl_trend",
+        x_label = "Temp Trend (°C/yr)", y_label = "DO Trend (mg/L/yr)",
+        annotations = c("+ Temp & DO", "- Temp, + DO", "- Temp & DO", "+ Temp, - DO")
     )
+)
 
-ggplot(chla_long)+
-    geom_point(aes(x=chla_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("Chl-a Trend %/Yr")
-
-chla_df_v2 <- combined_data[, c(1:4, 11, 62:67,71:75)]
+for (vars in annotated_comparisons) {
+    print(annotated_scatter_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, annotations = vars$annotations))
+}
 
 
-chla_long_v2 <- chla_df_v2 %>%
-    pivot_longer(
-        cols = ends_with("pctLand"), # Adjust based on your land use columns' naming pattern
-        names_to = "landuse",
-        values_to = "value"
+nutrient_comparisons <- list(
+    list(
+        x = "po4f_mdl_trend", y = "nh4f_mdl_trend",
+        x_label = "PO4 Trend (%/yr)", y_label = "NH4 Trend (%/yr)",
+        annotations = c("+ PO4 & NH4", "- PO4, + NH4", "- PO4 & NH4", "+ PO4, - NH4")
+    ),
+    list(
+        x = "po4f_mdl_trend", y = "no23f_mdl_trend",
+        x_label = "PO4 Trend (%/yr)", y_label = "NO23 Trend (%/yr)",
+        annotations = c("+ PO4 & NO23", "- PO4, + NO23", "- PO4 & NO23", "+ PO4, - NO23")
+    ),
+    list(
+        x = "no23f_mdl_trend", y = "nh4f_mdl_trend",
+        x_label = "NO23 Trend (%/yr)", y_label = "NH4 Trend (%/yr)",
+        annotations = c("+ NO23 & NH4", "- NO23, + NH4", "- NO23 & NH4", "+ NO23, - NH4")
     )
-
-ggplot(chla_long_v2)+
-    geom_point(aes(x=chla_n, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+xlab("Chla Trend %/yr")+
-    ylab("% Cover")+theme_bw()+xlab("Chl-a Trend %/Yr")
-
-
-ggplot(combined_data,aes(x=TidalFlowType, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=AquaticSystem, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=Ecoregion, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=SalinityRegime, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=TidalRegime, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=PrimaryWaterSource, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-ggplot(combined_data,aes(x=NERR_BioRegion, y=chla_n))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Tends vs top predictors
-
-
-ggplot(combined_data, aes(x = po4f_mdl, y = chla_n)) +
-    geom_point(aes(color = cluster), size = 3) +
-    scale_color_manual(values = cluster_colors) +
-    xlab("PO4 Trend %/yr") + ylab("Chla Trend %/yr") +
-    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-    scale_fill_manual(values = cluster_colors) +
-    theme_minimal() +
-    annotate("text", x = Inf, y = Inf, label = "+ PO4 & Chla", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- PO4, + Chla", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- PO4 & Chla", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ PO4, - Chla", hjust = 1.1, vjust = -0.1)
-
-
-ggplot(combined_data,aes(x=nh4f_mdl, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    scale_color_manual(values = cluster_colors)+
-    # geom_smooth(method="lm")+
-    xlab("NH4 Trend %/yr")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+
-    annotate("text", x = Inf, y = Inf, label = "+ NH4 & Chla", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- NH4, + Chla", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- NH4 & Chla", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ NH4, - Chla", hjust = 1.1, vjust = -0.1)
-
-
-ggplot(combined_data,aes(x=turb_trend, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    scale_color_manual(values = cluster_colors)+
-    #geom_smooth(method="gam")+
-    xlab("Turbidiy Trend NTU/yr")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+
-    annotate("text", x = Inf, y = Inf, label = "+ Turb & Chla", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- Turb, + Chla", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- Turb & Chla", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ Turb, - Chla", hjust = 1.1, vjust = -0.1)
-
-##Plotting trend medians
-
-ggplot(combined_data,aes(x=chla_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Chla ug/L")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=spcond_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median SpCond mS/cm")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=turb_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Turbidity NTU")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=domgl_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median DO mg/L")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=temp_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Temp C")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=po4f_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median PO4 ug/L")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=no23f_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median NO23 ug/L")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=nh4f_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median NH4 ug/L")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=precp_median, y=chla_n))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median precp unit")+ylab("Chla Trend %/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-#######################################
-#DO Trends
-
-do_df <- combined_data[, c(1:4,6, 11, 55:61,71:75)]
-
-
-do_long <- do_df %>%
-    pivot_longer(
-        cols = ends_with("pctTotal"), # Adjust based on your land use columns' naming pattern
-        names_to = "landuse",
-        values_to = "value"
-    )
-
-ggplot(do_long)+
-    geom_point(aes(x=domgl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("DO Trend mg/L/yr")
-
-do_df_v2 <- combined_data[, c(1:4,6, 11, 62:67,71:75)]
-
-
-do_long_v2 <- do_df_v2 %>%
-    pivot_longer(
-        cols = ends_with("pctLand"), # Adjust based on your land use columns' naming pattern
-        names_to = "landuse",
-        values_to = "value"
-    )
-
-ggplot(do_long_v2)+
-    geom_point(aes(x=domgl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+xlab("DO Trend mg/L/yr")+
-    ylab("% Cover")+theme_bw()
-
-
-ggplot(combined_data,aes(x=TidalFlowType, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=AquaticSystem, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=Ecoregion, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=SalinityRegime, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=TidalRegime, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=PrimaryWaterSource, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(combined_data,aes(x=NERR_BioRegion, y=domgl_trend))+
-    geom_boxplot()+
-    geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("DO Trend mg/L/yr")+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Tends vs top predictors
-
-
-ggplot(combined_data,aes(x=chla_trend, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    scale_color_manual(values = cluster_colors)+
-    #geom_smooth(method="lm")+
-    xlab("Chla Trend %/yr")+ylab("DO Trend mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+
-    annotate("text", x = Inf, y = Inf, label = "+ Chla & DO", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- Chla, + DO", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- Chla & DO", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ Chla, - DO", hjust = 1.1, vjust = -0.1)
-
-ggplot(combined_data,aes(x=temp_trend, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    scale_color_manual(values = cluster_colors)+
-    # geom_smooth(method="lm")+
-    xlab("Temp Trend C/yr")+ylab("DO Trend mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()+
-    annotate("text", x = Inf, y = Inf, label = "+ Temp & DO", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- Temp, + DO", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- Temp & DO", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ Temp, - DO", hjust = 1.1, vjust = -0.1)
-
-
-
-##Plotting trend medians
-
-ggplot(combined_data,aes(x=chla_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    #  geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Chla ug/L")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=spcond_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median SpCond mS/cm")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=turb_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Turbidity NTU")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=domgl_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median DO mg/L")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=temp_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median Temp C")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=po4f_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    #geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median PO4 ug/L")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=no23f_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median NO23 ug/L")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=nh4f_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median NH4 ug/L")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-ggplot(combined_data,aes(x=precp_median, y=domgl_trend))+
-    geom_point(aes(color=cluster),size=3)+
-    geom_smooth(method="gam")+
-    scale_color_manual(values = cluster_colors)+
-    xlab("Median precp unit")+ylab("DO Trned mg/L/yr")+
-    geom_hline(yintercept = 0)+geom_vline(xintercept = 0)+
-    scale_fill_manual(values = cluster_colors)+theme_minimal()
-
-###Nutrients
-
-ggplot(combined_data, aes(x = po4f_mdl_trend, y = nh4f_mdl_trend)) +
-    geom_point(aes(color = cluster), size = 3) +
-    scale_color_manual(values = cluster_colors) +
-    xlab("PO4 Trend %/yr") + ylab("NH4 Trend %/yr") +
-    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-    scale_fill_manual(values = cluster_colors) +
-    theme_minimal() +
-    annotate("text", x = Inf, y = Inf, label = "+ PO4 & NH4", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- PO4, + NH4", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- PO4 & NH4", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ PO4, - NH4", hjust = 1.1, vjust = -0.1)
-
-ggplot(combined_data, aes(x = po4f_mdl_trend, y = no23f_mdl_trend)) +
-    geom_point(aes(color = temp_trend), size = 4) +
-    #scale_color_manual(values = cluster_colors) +
-    xlab("PO4 Trend %/yr") + ylab("no23 Trend %/yr") +
-    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-    scale_fill_manual(values = cluster_colors) +
-    theme_minimal()+
-    scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") +
-    annotate("text", x = Inf, y = Inf, label = "+ PO4 & NO23", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- PO4, + NO23", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- PO4 & NO23", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ PO4, - NO23", hjust = 1.1, vjust = -0.1)
-
-
-ggplot(combined_data, aes(x = temp_median, y = temp_trend)) +
-    geom_point(aes(color = cluster), size = 4) +
-    scale_color_manual(values = cluster_colors) +
-    xlab("Median Temp") + ylab("Temp Trend C/yr") +
-    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-    scale_fill_manual(values = cluster_colors) +
-    theme_minimal()
-   # scale_color_gradient(high = "red", low = "blue", name = "Temp trend, C/yr") 
-
-
-ggplot(combined_data, aes(x = no23f_mdl_trend, y = nh4f_mdl_trend)) +
-    geom_point(aes(color = cluster), size = 3) +
-    scale_color_manual(values = cluster_colors) +
-    xlab("no23 Trend %/yr") + ylab("NH4 Trend %/yr") +
-    geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-    scale_fill_manual(values = cluster_colors) +
-    theme_minimal() +
-    annotate("text", x = Inf, y = Inf, label = "+ NO23 & NH4", hjust = 1.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = Inf, label = "- NO23, + NH4", hjust = -0.1, vjust = 1.1) +
-    annotate("text", x = -Inf, y = -Inf, label = "- NO23 & NH4", hjust = -0.1, vjust = -0.1) +
-    annotate("text", x = Inf, y = -Inf, label = "+ NO23, - NH4", hjust = 1.1, vjust = -0.1)
-
-
-N.P_subset<-combined_data[(combined_data$no23f_mdl_trend<0 & combined_data$po4f_mdl_trend>0),]
-
-N.P_stations<-N.P_subset[c("reserve","station")]
-
-write.csv(N.P_stations, "NP_stations.csv")
+)
+
+for (vars in nutrient_comparisons) {
+    print(annotated_scatter_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, annotations = vars$annotations))
+}
 
