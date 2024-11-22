@@ -8,6 +8,7 @@ library(tidyr)
 library(viridis)
 library(tigris)
 library(sf)
+library(patchwork)
 #Set yousfheaders#Set your working directory
 
 # Read data
@@ -228,65 +229,69 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
 }
 
 
-plot_variable_map(
+p1<-plot_variable_map(
     data = do_trend,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
     lat_adjustments = c("kac" = 26, "job" = 25),
     variable_name = "Slope",
-    color_gradient = list(low = "orange", mid = "white", high = "blue", midpoint = 0),
+    color_gradient = list(low = "orange", mid = "#7f8fff", high = "blue", midpoint = 0),
     title = "Trends in Dissolved Oxygen",
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "DO trend (mg/L/yr)"
 )
 
+p1
 
-plot_variable_map(
+p2<-plot_variable_map(
     data = temp_trend,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
     lat_adjustments = c("kac" = 26, "job" = 25),
     variable_name = "Slope",
-    color_gradient = list(low = "blue", mid = "white", high = "red", midpoint = 0),
+    color_gradient = list(low = "blue", mid = "#7f8fff", high = "red", midpoint = 0),
     title = "Trends in Water Temperature",
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "Temperature trend (°C/yr)"
 )
 
+p2
 
-plot_variable_map(
+p3<-plot_variable_map(
     data = merged_po4,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
     lat_adjustments = c("kac" = 26, "job" = 25),
     variable_name = "trend_pctPerYear",
-    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     title = "Trends in Phosphorus (PO4)",
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "PO4 trend (%/yr)"
 )
 
+p3
 
-plot_variable_map(
+p4<-plot_variable_map(
     data = merged_nh4,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
     lat_adjustments = c("kac" = 26, "job" = 25),
     variable_name = "trend_pctPerYear",
-    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     title = "Trends in Ammonium (NH4)",
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "NH4 trend (%/yr)"
 )
 
+p4
 
-plot_variable_map(
+p5<-plot_variable_map(
     data = merged_no23,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
     lat_adjustments = c("kac" = 26, "job" = 25),
     variable_name = "trend_pctPerYear",
-    color_gradient = list(low = "darkblue", mid = "white", high = "red", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     title = "Trends in Nitrate (NO23)",
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "NO23 trend (%/yr)"
@@ -295,7 +300,7 @@ plot_variable_map(
 
 
 
-plot_variable_map(
+p6<-plot_variable_map(
     data = merged_chla,
     coords = coords,
     lon_adjustments = c("kac" = -118, "job" = -88),
@@ -306,3 +311,9 @@ plot_variable_map(
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "Chla trend (%/yr)"
 )
+
+Nutrients<-p3+p4+p5
+Nutrients
+
+Response<-p1+p2+p6
+Response
