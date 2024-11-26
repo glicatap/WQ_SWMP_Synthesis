@@ -167,6 +167,7 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
     map_data$lat[map_data$Reserve == "job"] <- lat_adjustments["job"]
     
     # Add jitter to latitude and longitude
+    set.seed(42)
     map_data_jittered <- map_data %>%
         mutate(
             lon_jittered = lon + runif(n(), min = -1, max = 1),
@@ -311,6 +312,8 @@ p6<-plot_variable_map(
     subtitle = "Filled circles indicate p < 0.05",
     color_label = "Chla trend (%/yr)"
 )
+
+p6
 
 Nutrients<-p3+p4+p5
 Nutrients
