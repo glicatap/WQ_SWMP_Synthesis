@@ -226,13 +226,49 @@ p5 <- ggplot(do_trend, aes(x = Slope, y = cluster, fill = cluster)) +
         legend.position = "none"
     )
 
+
+
+# Dissolved Oxygen (DO) trends
+# Filter and order DO data
+temp_trend <- merged_df %>%
+    filter(parameter == "temp_median") %>%
+    arrange(Slope) %>%
+    mutate(
+        station = factor(station, levels = unique(station)),
+        cluster = factor(cluster, levels = c("D", "C", "B", "A"))  # Set explicit order
+    )
+
+# Plot DO slopes with confidence intervals by station
+p7 <- ggplot(temp_trend, aes(x = Slope, y = station, color = cluster)) +
+    geom_point(aes(shape = sig_trend), size = 2) +
+    geom_segment(aes(x = conf.low, xend = conf.high, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
+    labs(title = "DO Slopes with Confidence Intervals by Station", x = "Temp Trend (C per Year)", y = "Station") +
+    theme_minimal() +
+    scale_linetype_manual(values = c("dashed", "solid")) +
+    scale_color_manual(values = cluster_colors) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1)
+
+# Ridge plot of DO trends by cluster
+p8 <- ggplot(temp_trend, aes(x = Slope, y = cluster, fill = cluster)) +
+    geom_density_ridges(scale = 2, alpha = 0.7) +
+    labs(x = "Temp Trend (C per Year)", y = "Cluster") +
+    scale_fill_manual(values = cluster_colors) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    theme_bw() +
+    theme(
+        text = element_text(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.position = "none"
+    )
+
 # Combine DO plots
-patchwork_DO <- (p4 | p5) +
+patchwork_DO <- (p4 | p5 ) +
     plot_layout(guides = "collect") & 
     theme(legend.position = 'bottom')
 
 # Combine Chla and DO ridge plots
-patchwork_DOChla_Ridge <- (p3 | p5) +
+patchwork_DOChla_Ridge <- (p3 | p5 | p8) +
     plot_layout(guides = "collect") & 
     theme(legend.position = 'none')
 
@@ -419,3 +455,17 @@ for (vars in nutrient_comparisons) {
     print(annotated_scatter_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, annotations = vars$annotations))
 }
 
+
+
+
+
+
+
+ggplot(data, aes(x = chla_median, y = domgl_trend, color = temp_trend)) +
+    geom_point(size = 3) +
+    geom_hline(yintercept = 0) +
+    geom_vline(xintercept = 0) +
+    xlab("Median Chla (ug/L)")+
+    ylab("DO Trend (mg/L/yr)")+
+    scale_color_gradient(low = "blue", high = "red") +
+    theme_minimal()

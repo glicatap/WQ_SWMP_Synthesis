@@ -87,7 +87,7 @@ nh4_long <- nh4_df %>%
 
 ggplot(nh4_long)+
     geom_point(aes(x=nh4f_mdl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("nh4 Trend %/Yr")
+    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("NH4 Trend %/Yr")
 
 
 no23_df <- combined_data[, c(1:4, 12, 55:61,71:75)]
@@ -102,7 +102,7 @@ no23_long <- no23_df %>%
 
 ggplot(no23_long)+
     geom_point(aes(x=no23f_mdl_trend, y=value,color=cluster),size=3)+facet_wrap(~landuse)+
-    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("no23 Trend %/Yr")
+    scale_color_manual(values = cluster_colors)+theme_bw()+xlab("NO23 Trend %/Yr")
 
 
 ##########################
@@ -155,7 +155,7 @@ ggplot(combined_data,aes(x=PrimaryWaterSource, y=chla_n))+
 ggplot(combined_data,aes(x=NERR_BioRegion, y=chla_n))+
     geom_boxplot()+
     geom_jitter(aes(color=cluster),size=3,width=0.1)+
-    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+
+    scale_color_manual(values = cluster_colors)+ylab("Chla Trend %/yr")+xlab ("NERR Bioregion")+
     scale_fill_manual(values = cluster_colors)+theme_minimal()+theme_bw()+
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
