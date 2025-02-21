@@ -319,8 +319,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
     final_plot <- map_plot +
         annotation_custom(
             grob = hist_grob,
-            xmin = -110, xmax = -95,   # Adjust to position in the map
-            ymin = 35, ymax = 45       # Adjust to position in the map
+            xmin = -115, xmax = -88,   # Adjust to position in the map
+            ymin = 32, ymax = 48       # Adjust to position in the map
         )
     
     # Return the final combined plot
@@ -432,3 +432,6 @@ Response<-(p1+p2+p6) +
 
 ggsave("Response_plot.png", Response, width = 20, height = 4, dpi = 600, bg = "white")
 
+Nut_Rep<-(p3 + p4 + p5) / (p1+p2+p6)
+
+ggsave("Nut_Rep_plot.png", Nut_Rep, width = 15, height = 7, dpi = 600, bg = "white")
