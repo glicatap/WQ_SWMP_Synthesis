@@ -196,7 +196,7 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
     
     # Create the main map
     map_plot <- ggplot() +
-        geom_sf(data = us_sf, fill = "lightgray", color = "white") +
+        geom_sf(data = us_sf, fill = "gray93", color = "white") +
         geom_sf(
             data = df_sf_jittered,
             aes(color = !!sym(variable_name), shape = as.factor(sig_trend)),
@@ -230,8 +230,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
             axis.title = element_blank()
         ) +
         coord_sf(
-            xlim = c(-130, -60),
-            ylim = c(15, 51),
+            xlim = c(-130, -65),
+            ylim = c(18, 51),
             expand = FALSE
         )
     
@@ -284,20 +284,32 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
         # X-axis formatting
         scale_x_continuous(
             limits = c(min_value, max_value),
-            breaks = sort(unique(c(0, seq(min_value, max_value, length.out = 2)))),  
-            labels = sort(unique(c(0, round(seq(min_value, max_value, length.out = 2), 2))))
-        ) +
+            breaks = if (abs(min_value) < 0.011) {
+                c(0, max_value)  # Only keep 0 and max_value if min_value is too close to 0
+            } else {
+                sort(unique(c(0, min_value, max_value)))  # Otherwise, keep all three
+            },
+            labels = if (abs(min_value) < 0.01) {
+                c("0", round(max_value, 2))  # Only label 0 and max_value
+            } else {
+                sort(unique(c("0", round(min_value, 2), round(max_value, 2))))  # Label all if min_value is far enough
+            }
+        )+
         
         # Labels and theme
         labs(x = color_label, y = "") +
         theme_minimal() +
         theme(
-            panel.grid = element_blank(),
+            panel.grid = element_blank(),  # Remove all panel grids
+            axis.line.y = element_line(color = "black", size = 0.5),  # Add y-axis line
+            axis.line.x = element_line(color = "black", size = 0.5),  # Add y-axis line
             axis.text = element_text(size = 8, color = "black"),
+            axis.text.x = element_text(margin = margin(t = 3, b = 5)),
             axis.title = element_text(size = 10, color = "black"),
             plot.margin = margin(1, 1, 1, 1),
-            legend.position = "none"
+            legend.position = "none"  # Hide the legend
         )
+    
     
     
     # Convert the histogram into a grob (graphical object) for insetting
@@ -307,8 +319,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
     final_plot <- map_plot +
         annotation_custom(
             grob = hist_grob,
-            xmin = -80, xmax = -61.5,   # Adjust to position in the map
-            ymin = 16, ymax = 25       # Adjust to position in the map
+            xmin = -110, xmax = -95,   # Adjust to position in the map
+            ymin = 35, ymax = 45       # Adjust to position in the map
         )
     
     # Return the final combined plot
@@ -341,7 +353,7 @@ p2<-plot_variable_map(
     color_gradient = list(low = "blue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Water Temperature",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "Temperature trend (°C/yr)"
+    color_label = "Temp. trend (°C/yr)"
 )
 
 p2
@@ -355,7 +367,7 @@ p3<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Phosphorus (PO4)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "PO4 trend (%/yr)"
+    color_label = expression(PO[4] ~ " trend (%/yr)")
 )
 
 p3
@@ -369,7 +381,7 @@ p4<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Ammonium (NH4)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "NH4 trend (%/yr)"
+    color_label = expression(NH[4] ~ " trend (%/yr)")
 )
 
 p4
@@ -383,7 +395,7 @@ p5<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Nitrate (NO23)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "NO23 trend (%/yr)"
+    color_label = expression(NO[23] ~ " trend (%/yr)")
 )
 
 
@@ -408,3 +420,15 @@ Nutrients
 
 Response<-p1+p2+p6
 Response
+
+
+Nutrients <- (p3 + p4 + p5) +
+    plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
+
+ggsave("Nutrients_plot.png", Nutrients, width = 20, height = 4, dpi = 600, bg = "white")
+
+Response<-(p1+p2+p6) +
+    plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
+
+ggsave("Response_plot.png", Response, width = 20, height = 4, dpi = 600, bg = "white")
+
