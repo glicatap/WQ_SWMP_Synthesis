@@ -155,16 +155,25 @@ us_sf <- states(cb = TRUE, resolution = "20m") %>%
     st_transform(crs = 4326) # Transform to WGS 84
 
 
-plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, variable_name, color_gradient, title, subtitle, color_label) {
+plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, variable_name, color_gradient, color_label) {
+    library(ggplot2)
+    library(dplyr)
+    library(sf)
+    library(cowplot)  # To arrange plots
+    library(grid)  # For inset legend positioning
+    
     # Merge trends with coordinates
     map_data <- data %>%
         left_join(coords, by = "station")
     
-    # Apply adjustments to specific reserves (e.g., KAC and JOB)
-    map_data$lon[map_data$Reserve == "kac"] <- lon_adjustments["kac"]
-    map_data$lat[map_data$Reserve == "kac"] <- lat_adjustments["kac"]
-    map_data$lon[map_data$Reserve == "job"] <- lon_adjustments["job"]
-    map_data$lat[map_data$Reserve == "job"] <- lat_adjustments["job"]
+    # Apply manual coordinate adjustments
+    map_data <- map_data %>%
+        mutate(
+            lon = ifelse(Reserve == "kac", lon_adjustments["kac"], lon),
+            lat = ifelse(Reserve == "kac", lat_adjustments["kac"], lat),
+            lon = ifelse(Reserve == "job", lon_adjustments["job"], lon),
+            lat = ifelse(Reserve == "job", lat_adjustments["job"], lat)
+        )
     
     # Add jitter to latitude and longitude
     set.seed(42)
@@ -181,8 +190,12 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
         crs = 4326
     )
     
-    # Create the map
-    ggplot() +
+    # Find min and max values for color scale
+    min_value <- min(map_data[[variable_name]], na.rm = TRUE)
+    max_value <- max(map_data[[variable_name]], na.rm = TRUE)
+    
+    # Create the main map
+    map_plot <- ggplot() +
         geom_sf(data = us_sf, fill = "lightgray", color = "white") +
         geom_sf(
             data = df_sf_jittered,
@@ -190,8 +203,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
             size = 3
         ) +
         labs(
-            title = title,
-            subtitle = subtitle,
+            #title = title,
+            #subtitle = subtitle,
             color = color_label
         ) +
         scale_color_gradient2(
@@ -199,7 +212,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
             mid = color_gradient$mid,
             high = color_gradient$high,
             midpoint = color_gradient$midpoint,
-            name = color_label
+            name = color_label,
+            limits = c(min_value, max_value) # Set consistent color limits
         ) +
         scale_shape_manual(
             values = c("yes" = 16, "no" = 21),
@@ -209,38 +223,112 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
         theme(
             panel.background = element_rect(fill = "white"),
             panel.grid = element_blank(),
-            plot.title = element_text(size = 16, face = "bold", color = "black", hjust = 0.5),
-            plot.subtitle = element_text(size = 12, face = "italic", color = "black", hjust = 0.5),
-            legend.position = "bottom",
-            legend.title = element_text(size = 12, face = "bold", color = "black"),
-            legend.text = element_text(size = 10, color = "black"),
+            #plot.title = element_text(size = 16, face = "bold", color = "black", hjust = 0.5),
+            #plot.subtitle = element_text(size = 12, face = "italic", color = "black", hjust = 0.5),
+            legend.position = "none",  # Remove default legend
             axis.text = element_text(size = 10, color = "black"),
             axis.title = element_blank()
         ) +
         coord_sf(
             xlim = c(-130, -60),
-            ylim = c(15, 55),
+            ylim = c(15, 51),
             expand = FALSE
-        ) +
-        guides(
-            color = guide_colorbar(
-                barwidth = 15, barheight = 0.5, ticks.colour = "black", frame.colour = "black"
-            )
         )
+    
+    histogram_legend <- ggplot(map_data, aes(x = !!sym(variable_name))) +
+        
+        # Background: "No" (white fill with gradient outline)
+        geom_histogram(
+            data = subset(map_data, as.factor(sig_trend) == "no"),
+            aes(color = after_stat(x)),  # Gradient outline
+            fill = "lightgray",
+            bins = 10,
+            size = 0.8
+        ) +
+        
+        # Foreground: "Yes" (gradient fill with transparency)
+        geom_histogram(
+            data = subset(map_data, as.factor(sig_trend) == "yes"),
+            aes(fill = after_stat(x)),  # Gradient fill
+            bins = 10,
+            color = "black",
+            size = 0.3,
+            alpha = 0.6  # Adjust transparency (0 = fully transparent, 1 = solid)
+        ) +
+        
+        # Gradient scales
+        scale_fill_gradient2(
+            low = color_gradient$low,
+            mid = color_gradient$mid,
+            high = color_gradient$high,
+            midpoint = color_gradient$midpoint,
+            name = color_label,
+            limits = c(min_value, max_value) # Set same limits as the map
+        ) +
+        scale_color_gradient2(  # Gradient outline for "No"
+            low = color_gradient$low,
+            mid = color_gradient$mid,
+            high = color_gradient$high,
+            midpoint = color_gradient$midpoint,
+            guide = "none"  # Hide separate color legend
+        ) +
+        
+        # Vertical dashed line at zero
+        geom_vline(
+            xintercept = 0, 
+            linetype = "dashed", 
+            color = "black", 
+            size = 0.8
+        ) +
+        
+        # X-axis formatting
+        scale_x_continuous(
+            limits = c(min_value, max_value),
+            breaks = sort(unique(c(0, seq(min_value, max_value, length.out = 2)))),  
+            labels = sort(unique(c(0, round(seq(min_value, max_value, length.out = 2), 2))))
+        ) +
+        
+        # Labels and theme
+        labs(x = color_label, y = "") +
+        theme_minimal() +
+        theme(
+            panel.grid = element_blank(),
+            axis.text = element_text(size = 8, color = "black"),
+            axis.title = element_text(size = 10, color = "black"),
+            plot.margin = margin(1, 1, 1, 1),
+            legend.position = "none"
+        )
+    
+    
+    # Convert the histogram into a grob (graphical object) for insetting
+    hist_grob <- ggplotGrob(histogram_legend)
+    
+    # Combine the map and the inset histogram
+    final_plot <- map_plot +
+        annotation_custom(
+            grob = hist_grob,
+            xmin = -80, xmax = -61.5,   # Adjust to position in the map
+            ymin = 16, ymax = 25       # Adjust to position in the map
+        )
+    
+    # Return the final combined plot
+    return(final_plot)
 }
 
-
-p1<-plot_variable_map(
+# Run the function with your data
+p1 <- plot_variable_map(
     data = do_trend,
     coords = coords,
     lon_adjustments = c("kac" = -114, "job" = -90),
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "Slope",
     color_gradient = list(low = "orange", mid = "#7f8fff", high = "blue", midpoint = 0),
-    title = "Trends in Dissolved Oxygen",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Dissolved Oxygen",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "DO trend (mg/L/yr)"
 )
+
+
 
 p1
 
@@ -251,8 +339,8 @@ p2<-plot_variable_map(
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "Slope",
     color_gradient = list(low = "blue", mid = "#7f8fff", high = "red", midpoint = 0),
-    title = "Trends in Water Temperature",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Water Temperature",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "Temperature trend (°C/yr)"
 )
 
@@ -265,8 +353,8 @@ p3<-plot_variable_map(
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "trend_pctPerYear",
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
-    title = "Trends in Phosphorus (PO4)",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Phosphorus (PO4)",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "PO4 trend (%/yr)"
 )
 
@@ -279,8 +367,8 @@ p4<-plot_variable_map(
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "trend_pctPerYear",
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
-    title = "Trends in Ammonium (NH4)",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Ammonium (NH4)",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "NH4 trend (%/yr)"
 )
 
@@ -293,8 +381,8 @@ p5<-plot_variable_map(
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "trend_pctPerYear",
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
-    title = "Trends in Nitrate (NO23)",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Nitrate (NO23)",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "NO23 trend (%/yr)"
 )
 
@@ -308,8 +396,8 @@ p6<-plot_variable_map(
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "trend_pctPerYear",
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "green", midpoint = 0),
-    title = "Trends in Chlorophyll-a",
-    subtitle = "Filled circles indicate p < 0.05",
+    #title = "Trends in Chlorophyll-a",
+    #subtitle = "Filled circles indicate p < 0.05",
     color_label = "Chla trend (%/yr)"
 )
 
