@@ -425,13 +425,13 @@ Response
 Nutrients <- (p3 + p4 + p5) +
     plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
 
-ggsave("Nutrients_plot.png", Nutrients, width = 20, height = 4, dpi = 600, bg = "white")
+#ggsave("Nutrients_plot.png", Nutrients, width = 20, height = 4, dpi = 600, bg = "white")
 
 Response<-(p1+p2+p6) +
     plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
 
-ggsave("Response_plot.png", Response, width = 20, height = 4, dpi = 600, bg = "white")
+#ggsave("Response_plot.png", Response, width = 20, height = 4, dpi = 600, bg = "white")
 
 Nut_Rep<-(p3 + p4 + p5) / (p1+p2+p6)
 
-ggsave("Nut_Rep_plot.png", Nut_Rep, width = 15, height = 7, dpi = 600, bg = "white")
+#ggsave("Nut_Rep_plot.png", Nut_Rep, width = 15, height = 7, dpi = 600, bg = "white")

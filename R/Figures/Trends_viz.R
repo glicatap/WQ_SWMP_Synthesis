@@ -455,7 +455,11 @@ for (vars in nutrient_comparisons) {
     print(annotated_scatter_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, annotations = vars$annotations))
 }
 
+plot(data$po4f_median,data$po4f_mdl_trend)
 
+plot(data$nh4f_median,data$nh4f_mdl_trend)
+
+plot(data$no23f_median,data$no23f_mdl_trend)
 
 
 

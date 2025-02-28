@@ -73,7 +73,7 @@ us_sf <- states(cb = TRUE, resolution = "20m") %>%
 # Plot the map with scatter pies and Reserve labels
 p_v2 <- ggplot() +
     # Base map
-    geom_sf(data = us_sf, fill = "lightgray", color = "white") +
+    geom_sf(data = us_sf, fill = "gray93", color = "white") +
     
     # Scatter pies for clusters
     geom_scatterpie(
@@ -97,7 +97,6 @@ p_v2 <- ggplot() +
     
     # Add titles and labels
     labs(
-        title = "Clusters by Reserve",
         fill = "Cluster"
     ) +
     
@@ -116,8 +115,8 @@ p_v2 <- ggplot() +
     
     # Set coordinate limits and aspect ratio
     coord_sf(
-        xlim = c(-130, -60),
-        ylim = c(15, 55),
+        xlim = c(-127, -65),
+        ylim = c(18, 51),
         expand = FALSE
     ) +
     
@@ -127,7 +126,7 @@ p_v2 <- ggplot() +
             title.position = "top",
             title.hjust = 0.5
         )
-    )
+    )+theme(legend.position = c(0.08, 0.2)) # c(0,0) bottom left, c(1,1) top-right.
 
 # Render the plot
 p_v2
@@ -184,7 +183,8 @@ pca_1 <- ggplot(cluster_data, aes(x = PC1, y = PC2, color = cluster)) +
     theme_minimal(base_size = 14) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
-    theme(legend.position = "none")
+    theme(legend.position = "none",
+          panel.grid = element_blank())
 
 # Function for PC1 vs PC3
 compute_hull2 <- function(df) {
@@ -205,7 +205,8 @@ pca_2 <- ggplot(cluster_data, aes(x = PC1, y = PC3, color = cluster)) +
     theme_minimal(base_size = 14) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          panel.grid = element_blank())
 
 # Combine the two plots
 combined_plot <- (pca_1 | pca_2) +
@@ -230,7 +231,8 @@ pca_1_labeled <- ggplot(cluster_data, aes(x = PC1, y = PC2, color = cluster)) +
     theme_minimal(base_size = 14) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
-    theme(legend.position = "none")
+    theme(legend.position = "none",
+          panel.grid = element_blank())
 
 # PCA Plot 2 (PC1 vs PC3) with labels
 pca_2_labeled <- ggplot(cluster_data, aes(x = PC1, y = PC3, color = cluster)) +
@@ -245,7 +247,8 @@ pca_2_labeled <- ggplot(cluster_data, aes(x = PC1, y = PC3, color = cluster)) +
     theme_minimal(base_size = 14) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          panel.grid = element_blank())
 
 # Combine the two labeled plots
 combined_plot_labeled <- (pca_1_labeled | pca_2_labeled) +
@@ -293,7 +296,7 @@ long_data_nutchla$cluster <- factor(long_data_nutchla$cluster, levels = rev(leve
 
 # Define custom labeller with "Log()" for log-transformed parameters
 log_label_labeller <- as_labeller(c(
-    SpCond = "Specific Conductivity (mS/cm)",
+    SpCond = "Sp. Cond. (mS/cm)",
     Temp = "Temperature (°C)",
     DO = "DO (mg/L)",
     pH = "pH",
@@ -330,7 +333,8 @@ p1.2 <- ggplot(long_data_wq, aes(y = Value, x = factor(cluster, levels = rev(lev
     scale_fill_manual(values = cluster_colors, guide = guide_legend(reverse = TRUE)) +
     custom_theme+
     theme(
-        legend.position = "none")
+        legend.position = "none",
+        panel.grid = element_blank())
 
 # Nutrient and chlorophyll plots
 p2 <- ggplot(long_data_nutchla, aes(x = Value, y = cluster, fill = cluster)) + 
@@ -349,21 +353,109 @@ p2.2 <- ggplot(long_data_nutchla, aes(y = Value, x = factor(cluster, levels = re
         NO23 = "NO23 (mg/L)",
         PO4 = "PO4 (mg/L)",
         Turb = "Turbidity (NTU)"
-    )),ncol=2) +
+    )),ncol=3) +
     ylab("") + xlab("") +
     scale_fill_manual(values = cluster_colors, guide = guide_legend(reverse = TRUE)) +
     scale_y_log10() +  # Control the number of x-axis labels
     custom_theme+   
     theme(
-        legend.position = c(0.8, 0.15), # c(0,0) bottom left, c(1,1) top-right.
+        legend.position = "none", # c(0,0) bottom left, c(1,1) top-right.
         legend.background = element_rect(fill = "white", colour = "black"),
         legend.direction = "horizontal",
-        legend.title = element_blank()  # Removes the legend title
+        legend.title = element_blank(),
+        panel.grid = element_blank()
     )
 
 
-combined_plot_1 <- p1.2 / p2.2 
+
+combined_plot_1 <- p1.2 | p2.2 
 
 # Display combined plots
 print(combined_plot_1)
 
+
+library(ggplot2)
+library(grid)
+p_v2 <- ggplot() +
+    # Base map
+    geom_sf(data = us_sf, fill = "gray93", color = "white") +
+    
+    # Scatter pies for clusters
+    geom_scatterpie(
+        data = d_wide,
+        aes(x = lon_jittered, y = lat_jittered, group = Reserve, r = 1),  # Adjust radius for visibility
+        cols = c("A", "B", "C", "D"),
+        color = "black",
+        alpha = 0.8
+    ) +
+    
+    # Add Reserve labels
+    geom_text(
+        data = d_wide,
+        aes(x = lon_jittered, y = lat_jittered, label = Reserve),
+        size = 3,  # Label size
+        nudge_y = 1.5  # Nudge labels upward to avoid overlap
+    ) +
+    
+    # Define color scale for clusters
+    scale_fill_manual(values = cluster_colors) +
+    
+    # Add titles and labels
+    labs(
+        fill = "Cluster"
+    ) +
+    
+    # Minimal theme for clean appearance
+    theme_minimal() +
+    theme(
+        panel.background = element_rect(fill = "white"),
+        panel.grid = element_blank(),  # Remove grid lines
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        legend.position = "bottom",  # Move legend to bottom
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        axis.text = element_text(size = 10),
+        axis.title = element_blank()
+    ) +
+    
+    # Set coordinate limits and aspect ratio
+    coord_sf(
+        xlim = c(-127, -65),
+        ylim = c(10, 51),
+        expand = FALSE
+    ) +
+    
+    # Adjust legend settings
+    guides(
+        fill = guide_legend(
+            title.position = "top",
+            title.hjust = 0.5
+        )
+    )+theme(legend.position = c(0.08, 0.1)) # c(0,0) bottom left, c(1,1) top-right.
+
+# Render the plot
+p_v2
+
+
+# Convert both plots to grobs
+inset_grob_1 <- ggplotGrob(p1.2)  # Water Quality Plot
+inset_grob_2 <- ggplotGrob(p2.2)  # Nutrient & Chlorophyll Plot
+
+# Add both inset plots at separate locations on the map
+final_plot <- p_v2 +
+    annotation_custom(
+        grob = inset_grob_1,
+        xmin = -113, xmax = -95,   # Adjust horizontal placement (left)
+        ymin = 10, ymax = 22       # Adjust vertical placement (upper left)
+    ) +
+    annotation_custom(
+        grob = inset_grob_2,
+        xmin = -95, xmax = -70,    # Adjust horizontal placement (right)
+        ymin = 10, ymax = 22       # Adjust vertical placement (lower right)
+    )
+
+# Display the final plot
+print(final_plot)
+
+
+ggsave("Cluster_plot_2.png", final_plot, width = 30, height = 15, dpi = 600, bg = "white")
