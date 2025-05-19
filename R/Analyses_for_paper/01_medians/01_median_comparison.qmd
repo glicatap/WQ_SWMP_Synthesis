@@ -108,6 +108,23 @@ wq_meds <- left_join(wq_meds, wq_nPoints, by = "station") |>
 ```
 
 
+#NO3 vs NO23
+```{r}
+plot(nut$no3f,nut$no23f,
+     xlab = "NO3",
+     ylab = "NO23")
+abline(0, 1, col = "red", lty = 2) # Red dashed line for emphasis
+```
+
+
+
+#Spcond vs Sal
+
+```{r}
+plot(wq$spcond_median,wq$sal_median,
+     xlab = "Median SpCond (mS/cm)",
+     ylab = "Median Salinity (PSU)")
+```
 
 ## NUT Medians  
 

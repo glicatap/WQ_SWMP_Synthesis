@@ -8,9 +8,9 @@ library(viridis)
 library(scatterpie)
 
 # Define cluster colors using viridis
-cluster_colors <- c("A" = viridis(4)[1],
-                    "B" = viridis(4)[2],
-                    "C" = viridis(4)[3],
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
                     "D" = viridis(4)[4])
 
 # Read and preprocess data
@@ -70,7 +70,6 @@ us_sf <- states(cb = TRUE, resolution = "20m") %>%
     shift_geometry() %>%
     st_transform(crs = 4326)  # Ensure WGS84 CRS for compatibility
 
-# Plot the map with scatter pies and Reserve labels
 p_v2 <- ggplot() +
     # Base map
     geom_sf(data = us_sf, fill = "gray93", color = "white") +
@@ -78,7 +77,7 @@ p_v2 <- ggplot() +
     # Scatter pies for clusters
     geom_scatterpie(
         data = d_wide,
-        aes(x = lon_jittered, y = lat_jittered, group = Reserve, r = 1),  # Adjust radius for visibility
+        aes(x = lon_jittered, y = lat_jittered, group = Reserve, r = 1.25),  # Adjust radius for visibility
         cols = c("A", "B", "C", "D"),
         color = "black",
         alpha = 0.8
@@ -89,7 +88,7 @@ p_v2 <- ggplot() +
         data = d_wide,
         aes(x = lon_jittered, y = lat_jittered, label = Reserve),
         size = 3,  # Label size
-        nudge_y = 1.5  # Nudge labels upward to avoid overlap
+        nudge_y = 1.75  # Nudge labels upward to avoid overlap
     ) +
     
     # Define color scale for clusters
@@ -104,13 +103,14 @@ p_v2 <- ggplot() +
     theme_minimal() +
     theme(
         panel.background = element_rect(fill = "white"),
-        panel.grid = element_blank(),  # Remove grid lines
+        panel.grid = element_blank(),        # Remove all gridlines
+        axis.text = element_blank(),         # Remove lat/lon text
+        axis.ticks = element_blank(),        # Remove tick marks
+        axis.title = element_blank(),        # Remove axis titles
         plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-        legend.position = "bottom",  # Move legend to bottom
+        legend.position = "bottom",
         legend.title = element_text(size = 12, face = "bold"),
-        legend.text = element_text(size = 10),
-        axis.text = element_text(size = 10),
-        axis.title = element_blank()
+        legend.text = element_text(size = 10)
     ) +
     
     # Set coordinate limits and aspect ratio
@@ -126,10 +126,12 @@ p_v2 <- ggplot() +
             title.position = "top",
             title.hjust = 0.5
         )
-    )+theme(legend.position = c(0.08, 0.2)) # c(0,0) bottom left, c(1,1) top-right.
+    )+theme(legend.position = c(0.9, 0.2)) # c(0,0) bottom left, c(1,1) top-right.
 
 # Render the plot
 p_v2
+
+ggsave("Scatterpie.png", plot = p_v2, width = 8, height = 5, dpi = 600)
 
 
 
@@ -145,9 +147,9 @@ library(tidyr)
 library(patchwork)
 
 # Set custom cluster colors
-cluster_colors <- c("A" = viridis(4)[1], 
-                    "B" = viridis(4)[2],
-                    "C" = viridis(4)[3],
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
                     "D" = viridis(4)[4])
 
 # Load data
@@ -173,18 +175,19 @@ hulls <- cluster_data %>% group_by(cluster) %>% do(compute_hull(.))
 
 # PCA Plot 1 (PC1 vs PC2)
 pca_1 <- ggplot(cluster_data, aes(x = PC1, y = PC2, color = cluster)) +
-    geom_point(size = 3, alpha = 0.8) +
+    geom_point(size = 2, alpha = 0.8) +
     geom_polygon(data = hulls, aes(x = PC1, y = PC2, fill = cluster), alpha = 0.2, color = NA) +
     geom_segment(data = loadings, aes(x = 0, y = 0, xend = PC1 * 5, yend = PC2 * 5), 
                  arrow = arrow(length = unit(0.3, "cm")), color = "black", size = 1) +
     geom_text(data = loadings, aes(x = PC1 * 5, y = PC2 * 5, label = variable), 
-              hjust = 1.2, vjust = 1.2, color = "black", size = 4.5, fontface = "bold") +
+              hjust = 1.2, vjust = 1.2, color = "black", size = 3, fontface = "bold") +
     labs(x = "PC1 (32.4%)", y = "PC2 (25.9%)", color = "Cluster", fill = "Cluster") +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 11) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
     theme(legend.position = "none",
-          panel.grid = element_blank())
+          panel.grid = element_blank(),
+          panel.border = element_blank())
 
 # Function for PC1 vs PC3
 compute_hull2 <- function(df) {
@@ -195,28 +198,58 @@ hulls2 <- cluster_data %>% group_by(cluster) %>% do(compute_hull2(.))
 
 # PCA Plot 2 (PC1 vs PC3)
 pca_2 <- ggplot(cluster_data, aes(x = PC1, y = PC3, color = cluster)) +
-    geom_point(size = 3, alpha = 0.8) +
+    geom_point(size = 2, alpha = 0.8) +
     geom_polygon(data = hulls2, aes(x = PC1, y = PC3, fill = cluster), alpha = 0.2, color = NA) +
     geom_segment(data = loadings, aes(x = 0, y = 0, xend = PC1 * 5, yend = -PC3 * 5), 
                  arrow = arrow(length = unit(0.3, "cm")), color = "black", size = 1) +
     geom_text(data = loadings, aes(x = PC1 * 5, y = -PC3 * 5, label = variable), 
-              hjust = 1.2, vjust = 1.2, color = "black", size = 4.5, fontface = "bold") +
+              hjust = 1.2, vjust = 1.2, color = "black", size = 3, fontface = "bold") +
     labs(x = "PC1 (32.4%)", y = "PC3 (15.9%)", color = "Cluster", fill = "Cluster") +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 11) +
     scale_color_manual(values = cluster_colors) +
     scale_fill_manual(values = cluster_colors) +
     theme(legend.position = "bottom",
-          panel.grid = element_blank())
+          panel.grid = element_blank(),
+          panel.border = element_blank())
 
-# Combine the two plots
+
+pca_1 <- pca_1 +
+    theme(
+        panel.border = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()
+    )
+
+pca_2 <- pca_2 +
+    theme(
+        panel.border = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()
+    )
+
+
+
 combined_plot <- (pca_1 | pca_2) +
     plot_layout(guides = "collect") & 
-    theme(legend.position = 'bottom', legend.title = element_blank())
+    theme(
+        legend.position = 'none',
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = 'transparent', color = NA),
+        plot.background = element_rect(fill = 'transparent', color = NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        legend.background = element_rect(fill = 'transparent'),
+        legend.box.background = element_rect(fill = 'transparent')
+    )
+
 
 # Save as a high-resolution file
-ggsave("PCA_Combined_Publication.png", plot = combined_plot, width = 14, height = 8, dpi = 300)
+ggsave("PCA_Combined_Publication.png", plot = combined_plot, bg = "transparent", width = 6.5, height = 3, dpi = 300)
 
-combined_plot
+
 
 # PCA Plot 1 (PC1 vs PC2) with labels
 pca_1_labeled <- ggplot(cluster_data, aes(x = PC1, y = PC2, color = cluster)) +
@@ -256,7 +289,7 @@ combined_plot_labeled <- (pca_1_labeled | pca_2_labeled) +
     theme(legend.position = 'bottom', legend.title = element_blank())
 
 # Save as a high-resolution file
-ggsave("PCA_Combined_WithLabels_Publication.png", plot = combined_plot_labeled, width = 14, height = 8, dpi = 300)
+ggsave("PCA_Combined_WithLabels_Publication.png", plot = combined_plot_labeled,  bg = "transparent", width = 14, height = 8, dpi = 300)
 
 combined_plot_labeled
 
@@ -268,6 +301,7 @@ library(dplyr)
 library(tidyr)
 library(ggridges)
 library(patchwork)
+library(scales)
 
 # Load and preprocess data
 cluster_data <- read.csv("swmp_clstr_med_pc_stations_spc.csv") %>%
@@ -296,25 +330,29 @@ long_data_nutchla$cluster <- factor(long_data_nutchla$cluster, levels = rev(leve
 
 # Define custom labeller with "Log()" for log-transformed parameters
 log_label_labeller <- as_labeller(c(
-    SpCond = "Sp. Cond. (mS/cm)",
-    Temp = "Temperature (°C)",
-    DO = "DO (mg/L)",
-    pH = "pH",
-    Chla = "Log(Chl-a ug/L)",
-    NH4 = "Log(NH4 mg/L)",
-    NO23 = "Log(NO23 mg/L)",
-    PO4 = "Log(PO4 mg/L)",
-    Turb = "Log(Turb NTU)"
-))
+    SpCond = "bold('SpCond'~(mS/cm))",
+    Temp = "bold('Temperature'~(degree*C))",
+    DO = "bold('DO'~(mg/L))",
+    pH = "bold('pH')",
+    Chla = "bold('Chl-a'~(mu*g/L))",
+    NH4 = "bold('NH'[4]~(mg/L))",
+    NO23 = "bold('NO'[23]~(mg/L))",
+    PO4 = "bold('PO'[4]~(mg/L))",
+    Turb = "bold('Turbidity'~(NTU))"
+), default = label_parsed)
+
 
 custom_theme <- theme_minimal() +
     theme(
-        strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.1),  # White background with black border
-        strip.text = element_text(size = 10, face = "bold", color = "black"),  # Bold text for facet labels
+        strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.5),  # White background with black border
+       # strip.text = element_text(size = 10, face = "bold", color = "black"),  # Bold text for facet labels
         axis.title = element_text(size = 10, color = "black"),
         axis.text = element_text(size = 9, color = "black"),
         legend.title = element_text(size = 10, color = "black"),
-        legend.text = element_text(size = 9, color = "black")
+        legend.text = element_text(size = 9, color = "black"),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5)
     )
 
 
@@ -324,17 +362,9 @@ p1 <- ggplot(long_data_wq, aes(x = Value, y = cluster, fill = cluster)) +
     facet_wrap(~ Parameter, scales = "free", labeller = log_label_labeller) +
     xlab("") + ylab("") +
     scale_fill_manual(values = cluster_colors) +
-    custom_theme
+    scale_y_discrete(expand = expansion(add = c(0.2, 1.9))) +  # Add space above
+    custom_theme 
 
-p1.2 <- ggplot(long_data_wq, aes(y = Value, x = factor(cluster, levels = rev(levels(factor(cluster)))), fill = cluster)) + 
-    geom_violin() +
-    facet_wrap(~ Parameter, scales = "free", labeller = log_label_labeller) +
-    xlab("") + ylab("") +
-    scale_fill_manual(values = cluster_colors, guide = guide_legend(reverse = TRUE)) +
-    custom_theme+
-    theme(
-        legend.position = "none",
-        panel.grid = element_blank())
 
 # Nutrient and chlorophyll plots
 p2 <- ggplot(long_data_nutchla, aes(x = Value, y = cluster, fill = cluster)) + 
@@ -342,120 +372,98 @@ p2 <- ggplot(long_data_nutchla, aes(x = Value, y = cluster, fill = cluster)) +
     facet_wrap(~ Parameter, scales = "free", labeller = log_label_labeller) +
     xlab("") + ylab("") +
     scale_fill_manual(values = cluster_colors) +
-    scale_x_log10(labels = scales::scientific) +
+    scale_y_discrete(expand = expansion(add = c(0.2, 1.9))) +  # Add space above
+    custom_theme +scale_x_log10(labels = trans_format("log10", label_math()))
+
+
+
+####
+#violin plots
+
+p1.2 <- ggplot(long_data_wq, aes(y = Value, x = factor(cluster, levels = rev(levels(factor(cluster)))), fill = cluster)) + 
+    geom_violin() +
+    facet_wrap(~ Parameter, scales = "free", labeller = log_label_labeller) +
+    xlab("") + ylab("") +
+    scale_fill_manual(values = cluster_colors, guide = guide_legend(reverse = TRUE)) +
     custom_theme
 
 p2.2 <- ggplot(long_data_nutchla, aes(y = Value, x = factor(cluster, levels = rev(levels(factor(cluster)))), fill = cluster)) + 
     geom_violin() +
-    facet_wrap(~ Parameter, scales = "free", labeller = labeller(Parameter = c(
-        Chla = "Chl-a (ug/L)",
-        NH4 = "NH4 (mg/L)",
-        NO23 = "NO23 (mg/L)",
-        PO4 = "PO4 (mg/L)",
-        Turb = "Turbidity (NTU)"
-    )),ncol=3) +
+    facet_wrap(~ Parameter, scales = "free", labeller = log_label_labeller, ncol = 3) +
     ylab("") + xlab("") +
     scale_fill_manual(values = cluster_colors, guide = guide_legend(reverse = TRUE)) +
-    scale_y_log10() +  # Control the number of x-axis labels
-    custom_theme+   
-    theme(
-        legend.position = "none", # c(0,0) bottom left, c(1,1) top-right.
-        legend.background = element_rect(fill = "white", colour = "black"),
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        panel.grid = element_blank()
-    )
+    scale_y_log10() +
+    custom_theme 
 
 
 
-combined_plot_1 <- p1.2 | p2.2 
+pca_ridges <- p1 | p2 
+#pca_violin <- p1.2 | p2.2 
+
 
 # Display combined plots
-print(combined_plot_1)
+print(pca_ridges)
+#print(pca_violin)
+
+ggsave("pca_ridges.png", plot = pca_ridges, width = 8, height = 4, dpi = 300)
+#ggsave("pca_violin.png", plot = pca_violin, width = 10, height = 4, dpi = 300)
 
 
-library(ggplot2)
-library(grid)
-p_v2 <- ggplot() +
-    # Base map
-    geom_sf(data = us_sf, fill = "gray93", color = "white") +
-    
-    # Scatter pies for clusters
-    geom_scatterpie(
-        data = d_wide,
-        aes(x = lon_jittered, y = lat_jittered, group = Reserve, r = 1),  # Adjust radius for visibility
-        cols = c("A", "B", "C", "D"),
-        color = "black",
-        alpha = 0.8
-    ) +
-    
-    # Add Reserve labels
-    geom_text(
-        data = d_wide,
-        aes(x = lon_jittered, y = lat_jittered, label = Reserve),
-        size = 3,  # Label size
-        nudge_y = 1.5  # Nudge labels upward to avoid overlap
-    ) +
-    
-    # Define color scale for clusters
-    scale_fill_manual(values = cluster_colors) +
-    
-    # Add titles and labels
-    labs(
-        fill = "Cluster"
-    ) +
-    
-    # Minimal theme for clean appearance
-    theme_minimal() +
-    theme(
-        panel.background = element_rect(fill = "white"),
-        panel.grid = element_blank(),  # Remove grid lines
-        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-        legend.position = "bottom",  # Move legend to bottom
-        legend.title = element_text(size = 12, face = "bold"),
-        legend.text = element_text(size = 10),
-        axis.text = element_text(size = 10),
-        axis.title = element_blank()
-    ) +
-    
-    # Set coordinate limits and aspect ratio
-    coord_sf(
-        xlim = c(-127, -65),
-        ylim = c(10, 51),
-        expand = FALSE
-    ) +
-    
-    # Adjust legend settings
-    guides(
-        fill = guide_legend(
-            title.position = "top",
-            title.hjust = 0.5
-        )
-    )+theme(legend.position = c(0.08, 0.1)) # c(0,0) bottom left, c(1,1) top-right.
 
-# Render the plot
-p_v2
+# Combine the two plots
+combined_plot <- (pca_1 / pca_2) +
+    plot_layout(guides = "collect") & 
+    theme(legend.position = 'none', legend.title = element_blank())
+
+library(patchwork)
+
+pca_wridges <- wrap_elements(combined_plot) + pca_ridges + plot_layout(widths = c(1.5, 3))
+
+pca_wridges
+
+pca_wridges<-combined_plot|pca_ridges
+
+pca_wridges
+
+ggsave("pca_wridges.png", plot = pca_wridges, width = 10, height = 10, dpi = 300)
 
 
-# Convert both plots to grobs
-inset_grob_1 <- ggplotGrob(p1.2)  # Water Quality Plot
-inset_grob_2 <- ggplotGrob(p2.2)  # Nutrient & Chlorophyll Plot
+##################
 
-# Add both inset plots at separate locations on the map
-final_plot <- p_v2 +
-    annotation_custom(
-        grob = inset_grob_1,
-        xmin = -113, xmax = -95,   # Adjust horizontal placement (left)
-        ymin = 10, ymax = 22       # Adjust vertical placement (upper left)
-    ) +
-    annotation_custom(
-        grob = inset_grob_2,
-        xmin = -95, xmax = -70,    # Adjust horizontal placement (right)
-        ymin = 10, ymax = 22       # Adjust vertical placement (lower right)
+library(dplyr)
+library(readr)
+
+# Summary stats for water quality parameters
+summary_wq <- long_data_wq %>%
+    group_by(Parameter, cluster) %>%
+    summarise(
+        count = n(),
+        mean = mean(Value, na.rm = TRUE),
+        sd = sd(Value, na.rm = TRUE),
+        min = min(Value, na.rm = TRUE),
+        q25 = quantile(Value, 0.25, na.rm = TRUE),
+        median = median(Value, na.rm = TRUE),
+        q75 = quantile(Value, 0.75, na.rm = TRUE),
+        max = max(Value, na.rm = TRUE),
+        .groups = "drop"
     )
 
-# Display the final plot
-print(final_plot)
+# Summary stats for nutrient + Chl a parameters
+summary_nutchla <- long_data_nutchla %>%
+    group_by(Parameter, cluster) %>%
+    summarise(
+        count = n(),
+        mean = mean(Value, na.rm = TRUE),
+        sd = sd(Value, na.rm = TRUE),
+        min = min(Value, na.rm = TRUE),
+        q25 = quantile(Value, 0.25, na.rm = TRUE),
+        median = median(Value, na.rm = TRUE),
+        q75 = quantile(Value, 0.75, na.rm = TRUE),
+        max = max(Value, na.rm = TRUE),
+        .groups = "drop"
+    )
 
+# Export to CSV
+write_csv(summary_wq, "summary_stats_wq_by_cluster.csv")
+write_csv(summary_nutchla, "summary_stats_nutchla_by_cluster.csv")
 
-ggsave("Cluster_plot_2.png", final_plot, width = 30, height = 15, dpi = 600, bg = "white")

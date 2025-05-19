@@ -9,9 +9,9 @@ library(zoo)
 library(lubridate)
 library(tis)
 
-cluster_colors <- c("A" = viridis(4)[1],   # Replace with actual colors or modify as needed
-                    "B" = viridis(4)[2],
-                    "C" = viridis(4)[3],
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
                     "D" = viridis(4)[4])
 
 clusters<-read.csv("data_for_map_spc4clusters.csv")
@@ -253,9 +253,9 @@ long_data <- pivot_longer(
 
 library(viridis)
 
-cluster_colors <- c("A" = viridis(4)[1],   # Replace with actual colors or modify as needed
-                    "B" = viridis(4)[2],
-                    "C" = viridis(4)[3],
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
                     "D" = viridis(4)[4])
 
 plot_c<-ggplot(long_data, aes(x = Value, y = cluster, fill = Parameter)) + 
@@ -284,3 +284,4 @@ patchwork
 
 
 ########################
+

@@ -64,10 +64,13 @@ formula_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl
 
 formula_nlme <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
 
+
+formula_nlme2 <- paste0("domgl_trend ~ ", paste(names(dat_domgl[c(6,9,13,7)]), collapse = " + "))
 # generate formula without random effect
 # due to singular fit when including random effect
 formula_fixed_domgl <- paste0("domgl_trend ~ ", paste(names(dat_domgl[3:ncol(dat_domgl)]), collapse = " + "))
 ```
+
 
 # Models     
 
@@ -105,6 +108,14 @@ performance::check_singularity(mod_domgl)
 r2(mod_domgl)
 check_collinearity(mod_domgl)
 summary(mod_domgl)
+
+
+
+mod_domgl2 <- lm(as.formula(formula_nlme2),
+                data = dat_domgl)
+performance::check_singularity(mod_domgl2)
+r.squaredGLMM(mod_domgl2)
+summary(mod_domgl2)
 ```
 
 R^2 0.350; Adjusted R^2 0.228  

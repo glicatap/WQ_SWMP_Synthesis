@@ -1,0 +1,130 @@
+station,Station Name,Reserve Code,Reserve Name,State,Latitude,Longitude,yr_start_wq,yr_end_wq,yr_start_nut,yr_end_nut,ts_length_wq,ts_length_nut
+acebb,Big Bay,ACE,Ashepoo Combahee Edisto Basin,SC,32.4941,80.3241,2002,2015,2002,2014,13,12
+aceei,Edisto Island,ACE,Ashepoo Combahee Edisto Basin,SC,32.504,80.3247,2015,2022,2015,2022,7,7
+acefc,Fishing Creek,ACE,Ashepoo Combahee Edisto Basin,SC,32.63593,80.36556,2002,2022,2002,2022,20,20
+acemc,Mosquito Creek,ACE,Ashepoo Combahee Edisto Basin,SC,32.5558,80.438,2002,2022,2002,2022,20,20
+acesp,St. Pierre,ACE,Ashepoo Combahee Edisto Basin,SC,32.528,80.36144,2002,2022,2002,2022,20,20
+apacp,Cat Point,APA,Apalachicola Bay,FL,29.7021,84.8802,2002,2022,2002,2022,20,20
+apadb,Dry Bar,APA,Apalachicola Bay,FL,29.6747,85.0583,2002,2022,2002,2022,20,20
+apaeb,East Bay Bottom,APA,Apalachicola Bay,FL,29.7858,84.8752,2002,2022,2002,2022,20,20
+apaes,East Bay Surface,APA,Apalachicola Bay,FL,29.7858,84.8752,2002,2022,2002,2022,20,20
+apapc,Pilots Cove,APA,Apalachicola Bay,FL,29.601,85.0277,2017,2022,2002,2022,5,20
+cbmip,Iron Pot Landing,CBM,Chesapeake Bay,MD,38.796,76.7208,2003,2022,2003,2022,19,19
+cbmmb,Monie Bay,CBM,Chesapeake Bay,MD,38.20855,75.804583,2020,2022,2020,2022,2,2
+cbmmc,Mataponi Creek,CBM,Chesapeake Bay,MD,38.7433,76.7074,2003,2022,2003,2022,19,19
+cbmoc,Otter Point Creek,CBM,Chesapeake Bay,MD,39.4507,76.2746,2003,2022,2003,2022,19,19
+cbmrr,Railroad,CBM,Chesapeake Bay,MD,38.7813,76.7137,2003,2022,2003,2022,19,19
+cbvcb,Claybank,CBV,Chesapeake Bay,VA,37.346665,76.611263,2002,2022,2002,2022,20,20
+cbvgi,Goodwin Islands,CBV,Chesapeake Bay,VA,37.215796,76.392675,2002,2022,2002,2022,20,20
+cbvsh,Sweethall,CBV,Chesapeake Bay,VA,37.57138,76.88424,2002,2016,2002,2016,14,14
+cbvsp,Sweethall Pier,CBV,Chesapeake Bay,VA,37.571398,76.88399,2016,2022,2016,2022,6,6
+cbvtc,Taskinas Creek,CBV,Chesapeake Bay,VA,37.414986,76.71442,2002,2022,2002,2022,20,20
+delbl,Blackbird Landing,DEL,Delaware,DE,39.38876,75.636,2002,2022,2002,2022,20,20
+delds,Division Street,DEL,Delaware,DE,39.1637,75.5191,2002,2022,2002,2022,20,20
+delll,Lebanon Landing,DEL,Delaware,DE,39.1144,75.4992,2002,2022,2002,2022,20,20
+delsl,Scotton Landing,DEL,Delaware,DE,39.08498,75.46058,2002,2022,2002,2022,20,20
+elkap,Azevedo Pond,ELK,Elkhorn Slough,CA,36.8457,121.7538,2002,2022,2002,2022,20,20
+elknm,North Marsh,ELK,Elkhorn Slough,CA,36.8346,121.7384,2002,2022,2002,2022,20,20
+elksm,South Marsh,ELK,Elkhorn Slough,CA,36.8179,121.7394,2002,2022,2002,2022,20,20
+elkvm,Vierra Mouth,ELK,Elkhorn Slough,CA,36.8111,121.7792,2002,2022,2002,2022,20,20
+gndbc,Bayou Cumbest,GND,Grand Bay,MS,30.3836,88.4364,2004,2022,2005,2022,18,17
+gndbh,Bayou Heron,GND,Grand Bay,MS,30.4178,88.4054,2004,2022,2005,2022,18,17
+gndbl,Bangs Lake,GND,Grand Bay,MS,30.3571,88.4629,2004,2022,2005,2022,18,17
+gndpc,Point Aux Chenes Bay,GND,Grand Bay,MS,30.3486,88.4185,2005,2022,2005,2022,17,17
+grbgb,Great Bay,GRB,Great Bay,NH,43.0722,70.8694,2002,2022,2002,2022,20,20
+grblr,Lamprey River,GRB,Great Bay,NH,43.08,70.9344,2002,2022,2002,2022,20,20
+grbor,Oyster River,GRB,Great Bay,NH,43.134,70.911,2002,2022,2004,2022,20,18
+grbsq,Squamscott River,GRB,Great Bay,NH,43.052403,70.911811,2002,2022,2002,2022,20,20
+gtmfm,Fort Matanzas,GTM,Guana Tolomato Matanzas,FL,29.737041,81.245953,2002,2022,2002,2022,20,20
+gtmpc,Pellicer Creek,GTM,Guana Tolomato Matanzas,FL,29.667071,81.257403,2002,2022,2002,2022,20,20
+gtmpi,Pine Island,GTM,Guana Tolomato Matanzas,FL,30.050857,81.367465,2002,2022,2002,2022,20,20
+gtmss,San Sebastian,GTM,Guana Tolomato Matanzas,FL,29.868851,81.307428,2002,2022,2002,2022,20,20
+heekk,Kahookele,HEE,Heeia,HI,21.43582,157.80524,2020,2022,2020,2022,2,2
+heer9,Reef 9,HEE,Heeia,HI,21.44628,157.80183,2020,2022,2020,2022,2,2
+heew2,Wai 2,HEE,Heeia,HI,21.43831,157.81093,2019,2022,2019,2022,3,3
+hudbm,Bear Mountain,HUD,Hudson River,NY,41.3143389,73.985225,2020,2022,2020,2022,2,2
+hudsc,Stony Creek,HUD,Hudson River,NY,42.0463,73.9108,2002,2021,2002,2021,19,19
+hudsk,Saw Kill,HUD,Hudson River,NY,42.0171722,73.9149611,2002,2019,2002,2019,17,17
+hudtn,Tivoli North Bay,HUD,Hudson River,NY,42.0365457,73.925324,2002,2022,2002,2022,20,20
+hudts,Tivoli South Bay,HUD,Hudson River,NY,42.0270378,73.9259569,2002,2022,2002,2022,20,20
+jacb6,Buoy 126,JAC,Jacques Cousteau,NJ,39.5079,74.3385,2002,2022,2002,2022,20,20
+jacb9,Buoy 139,JAC,Jacques Cousteau,NJ,39.4979417,74.3811306,2002,2022,2002,2022,20,20
+jacba,Lower Bank,JAC,Jacques Cousteau,NJ,39.5937,74.5515,2002,2022,2002,2022,20,20
+jacne,Chestnut Neck,JAC,Jacques Cousteau,NJ,39.5479,74.4608,2002,2022,2002,2022,20,20
+job09,Station 9,JOB,Jobos Bay,PR,17.9430556,66.2385833,2002,2022,2002,2019,20,17
+job10,Station 10,JOB,Jobos Bay,PR,17.938611,66.257736,2002,2022,2002,2019,20,17
+job19,Station 19,JOB,Jobos Bay,PR,17.942914,66.228825,2002,2022,2002,2019,20,17
+job20,Station 20,JOB,Jobos Bay,PR,17.930317,66.211472,2002,2022,2002,2019,20,17
+kachd,Homer Dolphin Deep,KAC,Kachemak Bay,AK,59.60201,151.40878,2003,2022,2002,2022,19,20
+kachs,Homer Dolphin Surface,KAC,Kachemak Bay,AK,59.60201,151.40878,2004,2011,2002,2022,7,20
+kacsd,Seldovia Deep,KAC,Kachemak Bay,AK,59.44099,151.72096,2004,2022,2002,2022,18,20
+kacss,Seldovia Surface,KAC,Kachemak Bay,AK,59.44099,151.72096,2004,2022,2002,2022,18,20
+lksba,Barker's Island,LKS,Lake Superior,WI,46.721772,92.06352,2012,2022,2012,2022,10,10
+lksbl,Blatnik Bridge,LKS,Lake Superior,WI,46.748649,92.10027,2012,2022,2012,2022,10,10
+lksol,Oliver Bridge,LKS,Lake Superior,WI,46.65685,92.20166,2012,2022,2012,2022,10,10
+lkspo,Pokegama Bay,LKS,Lake Superior,WI,46.67236,92.135614,2013,2022,2013,2022,9,9
+marab,Aransas Bay,MAR,Mission Aransas,TX,27.9798,97.0287,2007,2022,2007,2022,15,15
+marce,Copano Bay East,MAR,Mission Aransas,TX,28.1323,97.0344,2007,2022,2007,2022,15,15
+marcw,Copano Bay West,MAR,Mission Aransas,TX,28.0841,97.2009,2007,2022,2007,2022,15,15
+marmb,Mesquite Bay,MAR,Mission Aransas,TX,28.1384,96.8285,2008,2022,2008,2022,14,14
+marsc,Ship Channel,MAR,Mission Aransas,TX,27.8383,97.0503,2007,2017,2007,2022,10,15
+narnc,Nag Creek,NAR,Narragansett Bay,RI,41.62485,71.324283,2002,2022,2002,2022,20,20
+narpc,Potters Cove,NAR,Narragansett Bay,RI,41.64055,71.340881,2002,2022,2002,2022,20,20
+nartb,T-Wharf Bottom,NAR,Narragansett Bay,RI,41.578361,71.321125,2002,2022,2002,2022,20,20
+narts,T-Wharf Surface,NAR,Narragansett Bay,RI,41.578361,71.321125,2002,2022,2002,2022,20,20
+niwcb,Clambank,NIW,North Inlet-Winyah Bay,SC,33.3338636,79.1930411,2002,2022,2002,2022,20,20
+niwdc,Debidue Creek,NIW,North Inlet-Winyah Bay,SC,33.3601486,79.1674572,2002,2022,2002,2022,20,20
+niwol,Oyster Landing,NIW,North Inlet-Winyah Bay,SC,33.3493511,79.1888819,2002,2022,2002,2022,20,20
+niwta,Thousand Acre,NIW,North Inlet-Winyah Bay,SC,33.2991461,79.2560564,2002,2022,2002,2022,20,20
+nocec,East Cribbing,NOC,North Carolina,NC,33.9399,77.9411,2002,2021,2002,2022,19,20
+noclc,Loosin Creek,NOC,North Carolina,NC,34.1722,77.8328,2002,2022,2002,2022,20,20
+nocrc,Research Creek,NOC,North Carolina,NC,34.156,77.8499,2002,2022,2004,2022,20,18
+noczb,Zeke's Basin,NOC,North Carolina,NC,33.9547,77.935,2002,2022,2002,2022,20,20
+owcbr,Berlin Road,OWC,Old Woman Creek,OH,41.348889,82.512222,2002,2022,2002,2022,20,20
+owcdr,Darrow Road,OWC,Old Woman Creek,OH,41.365,82.504722,2007,2022,2007,2022,15,15
+owcol,Lower Estuary,OWC,Old Woman Creek,OH,41.381667,82.513889,2002,2022,2002,2022,20,20
+owcsu,State Route 2,OWC,Old Woman Creek,OH,41.3672,82.5072,2002,2007,2002,2007,5,5
+owcwm,State Route 6,OWC,Old Woman Creek,OH,41.3825,82.514444,2002,2022,2002,2022,20,20
+pdbbp,Ploeg Channel,PDB,Padilla Bay,WA,48.556322,122.530894,2002,2022,2002,2022,20,20
+pdbby,Bayview Channel,PDB,Padilla Bay,WA,48.496139,122.502114,2002,2022,2002,2022,20,20
+pdbgd,Gong Deep,PDB,Padilla Bay,WA,48.5575,122.5725,2016,2022,2007,2022,6,15
+pdbgs,Gong Surface,PDB,Padilla Bay,WA,48.5575,122.5725,2003,2022,2003,2022,19,19
+pdbje,Joe Leary Estuary,PDB,Padilla Bay,WA,48.518914,122.474928,2009,2022,2009,2022,13,13
+pdbjl,Joe Leary Slough,PDB,Padilla Bay,WA,48.518264,122.474189,2002,2009,2002,2009,7,7
+rkbfb,Fakahatchee Bay,RKB,Rookery Bay,FL,25.8922,81.477,2002,2022,2002,2022,20,20
+rkbfu,Faka Union Bay,RKB,Rookery Bay,FL,25.9005,81.5159,2002,2022,2002,2022,20,20
+rkblh,Lower Henderson Creek,RKB,Rookery Bay,FL,26.02749,81.73361,2002,2022,2002,2022,20,20
+rkbmb,Middle Blackwater River,RKB,Rookery Bay,FL,25.9343,81.5946,2002,2022,2002,2022,20,20
+rkbpb,Pumpkin Bay,RKB,Rookery Bay,FL,25.9141,81.5404,2016,2022,2012,2022,6,10
+sapca,Cabretta Creek,SAP,Sapelo Island,GA,31.4437,81.2399,2004,2022,2004,2022,18,18
+sapdc,Dean Creek,SAP,Sapelo Island,GA,31.3896,81.2789,2004,2022,2004,2022,18,18
+sapfd,Flume Dock,SAP,Sapelo Island,GA,31.4828,81.2675,2002,2004,2002,2004,2,2
+saphd,Hunt Dock,SAP,Sapelo Island,GA,31.4786,81.2731,2002,2022,2002,2022,20,20
+sapld,Lower Duplin,SAP,Sapelo Island,GA,31.417942,81.296047,2002,2022,2002,2022,20,20
+sapml,Marsh Landing,SAP,Sapelo Island,GA,31.4177,81.2961,2002,2004,2002,2004,2,2
+sfbcc,China Camp,SFB,San Francisco Bay,CA,38.0012,122.4604,2005,2022,2006,2022,17,16
+sfbfm,First Mallard,SFB,San Francisco Bay,CA,38.1949,122.0328,2008,2022,2008,2022,14,14
+sfbgc,Gallinas Creek,SFB,San Francisco Bay,CA,38.0159,122.5085,2006,2022,2006,2022,16,16
+sfbsm,Second Mallard,SFB,San Francisco Bay,CA,38.1841,122.0136,2008,2022,2008,2022,14,14
+sosch,Charleston Bridge,SOS,South Slough,OR,43.3377,124.320533,2002,2022,2002,2022,20,20
+sosva,Valino Island,SOS,South Slough,OR,43.317217,124.321633,2002,2022,2002,2022,20,20
+soswi,Winchester Arm,SOS,South Slough,OR,43.282417,124.320317,2002,2022,2002,2022,20,20
+tjrbr,Boca Rio,TJR,Tijuana River,CA,32.5593611,117.1289722,2004,2022,2004,2022,18,18
+tjrmm,Model Marsh,TJR,Tijuana River,CA,32.5478,117.123,2002,2008,2002,2008,6,6
+tjros,Oneonta Slough,TJR,Tijuana River,CA,32.5683333,117.1312778,2002,2022,2002,2022,20,20
+tjrpe,Pond Eleven,TJR,Tijuana River,CA,32.60098,117.11624,2008,2010,2008,2011,2,3
+tjrpr,Pond Eleven Restored,TJR,Tijuana River,CA,32.5960833,117.1181944,2012,2022,2012,2022,10,10
+tjrsb,South Bay,TJR,Tijuana River,CA,32.601,117.1158333,2008,2022,2008,2022,14,14
+tjrtl,Tidal Linkage,TJR,Tijuana River,CA,32.5744,117.1272,2002,2007,2002,2007,5,5
+welht,Head of Tide,WEL,Wells,ME,43.298347,70.587094,2002,2022,2002,2022,20,20
+welin,Inlet,WEL,Wells,ME,43.320089,70.563442,2002,2022,2002,2022,20,20
+wellm,Little River Mouth,WEL,Wells,ME,43.340153,70.540603,2002,2022,2002,2022,20,20
+welsm,Skinner Mill,WEL,Wells,ME,43.344711,70.549217,2004,2022,2004,2022,18,18
+wkbfr,Fish River,WKB,Weeks Bay,AL,30.4162,87.8228,2002,2022,2002,2022,20,20
+wkbmb,Middle Bay,WKB,Weeks Bay,AL,30.3961,87.8335,2003,2022,2002,2022,19,20
+wkbmr,Magnolia River,WKB,Weeks Bay,AL,30.39,87.8177,2003,2022,2002,2022,19,20
+wkbwb,Weeks Bay,WKB,Weeks Bay,AL,30.3808,87.832,2002,2022,2002,2022,20,20
+wqbcr,Childs River,WQB,Waquoit Bay,MA,41.5798,70.5309,2002,2021,2002,2022,19,20
+wqbmh,Menauhant,WQB,Waquoit Bay,MA,41.5526,70.5485,2002,2022,2002,2022,20,20
+wqbmp,Metoxit Point,WQB,Waquoit Bay,MA,41.5689,70.5216,2002,2022,2002,2022,20,20
+wqbsl,Sage Lot,WQB,Waquoit Bay,MA,41.5542,70.5084,2002,2022,2002,2022,20,20
