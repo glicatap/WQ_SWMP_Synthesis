@@ -155,7 +155,7 @@ us_sf <- states(cb = TRUE, resolution = "20m") %>%
     st_transform(crs = 4326) # Transform to WGS 84
 
 
-plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, variable_name, color_gradient, color_label) {
+plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, variable_name, color_gradient, color_label, subtitle_text) {
     library(ggplot2)
     library(dplyr)
     library(sf)
@@ -218,19 +218,27 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
         scale_shape_manual(
             values = c("yes" = 16, "no" = 21),
             guide = "none"
-        ) +
+        ) + 
+        annotate(
+            "text",
+            x = -89, y = 47,  # Adjust as needed to sit above the histogram box
+            label = subtitle_text,
+            hjust = 0,
+            vjust = 0,
+            size = 4,
+            color = "black"
+        )+
         theme_minimal() +
         theme(
             panel.background = element_rect(fill = "white"),
             panel.grid = element_blank(),
-            #plot.title = element_text(size = 16, face = "bold", color = "black", hjust = 0.5),
-            #plot.subtitle = element_text(size = 12, face = "italic", color = "black", hjust = 0.5),
-            legend.position = "none",  # Remove default legend
-            axis.text = element_text(size = 10, color = "black"),
-            axis.title = element_blank()
-        ) +
+            axis.text = element_blank(),       # <--- Removes axis numbers
+            axis.ticks = element_blank(),      # <--- Optional: removes tick marks too
+            axis.title = element_blank(),
+            legend.position = "none"
+        )+
         coord_sf(
-            xlim = c(-130, -65),
+            xlim = c(-126, -65),
             ylim = c(18, 51),
             expand = FALSE
         )
@@ -319,8 +327,8 @@ plot_variable_map <- function(data, coords, lon_adjustments, lat_adjustments, va
     final_plot <- map_plot +
         annotation_custom(
             grob = hist_grob,
-            xmin = -115, xmax = -88,   # Adjust to position in the map
-            ymin = 32, ymax = 48       # Adjust to position in the map
+            xmin = -118, xmax = -85,   # Adjust to position in the map
+            ymin = 29, ymax = 48       # Adjust to position in the map
         )
     
     # Return the final combined plot
@@ -334,10 +342,11 @@ p1 <- plot_variable_map(
     lon_adjustments = c("kac" = -114, "job" = -90),
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "Slope",
-    color_gradient = list(low = "orange", mid = "#7f8fff", high = "blue", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Dissolved Oxygen",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "DO trend (mg/L/yr)"
+    color_label = "",
+    subtitle_text = "DO Trend (mg/L/yr)"
 )
 
 
@@ -350,10 +359,11 @@ p2<-plot_variable_map(
     lon_adjustments = c("kac" = -114, "job" = -90),
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "Slope",
-    color_gradient = list(low = "blue", mid = "#7f8fff", high = "red", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Water Temperature",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "Temp. trend (°C/yr)"
+    color_label = "",
+    subtitle_text = "Temp Trend (°C/yr)"
 )
 
 p2
@@ -367,7 +377,8 @@ p3<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Phosphorus (PO4)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = expression(PO[4] ~ " trend (%/yr)")
+    color_label = "",
+    subtitle_text = expression(PO[4] ~ " Trend (%/yr)")
 )
 
 p3
@@ -381,7 +392,8 @@ p4<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Ammonium (NH4)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = expression(NH[4] ~ " trend (%/yr)")
+    color_label = "",
+    subtitle_text = expression(NH[4] ~ " Trend (%/yr)")
 )
 
 p4
@@ -395,7 +407,8 @@ p5<-plot_variable_map(
     color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Nitrate (NO23)",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = expression(NO[23] ~ " trend (%/yr)")
+    color_label = "",
+    subtitle_text = expression(NO[23] ~ " Trend (%/yr)")
 )
 
 
@@ -407,31 +420,36 @@ p6<-plot_variable_map(
     lon_adjustments = c("kac" = -114, "job" = -90),
     lat_adjustments = c("kac" = 24, "job" = 25),
     variable_name = "trend_pctPerYear",
-    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "green", midpoint = 0),
+    color_gradient = list(low = "darkblue", mid = "#7f8fff", high = "red", midpoint = 0),
     #title = "Trends in Chlorophyll-a",
     #subtitle = "Filled circles indicate p < 0.05",
-    color_label = "Chla trend (%/yr)"
+    color_label = "",
+    subtitle_text = "Chl-a Trend (%/yr)"
 )
 
 p6
 
 Nutrients<-p3+p4+p5
 Nutrients
+Nutrients<-p3/p4/p5
+Nutrients
 
 Response<-p1+p2+p6
 Response
+Response<-p1/p2/p6
+Response
 
 
-Nutrients <- (p3 + p4 + p5) +
-    plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
+Nutrients <- (p3 / p4 / p5) +
+    plot_layout(ncol = 1, widths = c(1, 1, 1))  # Ensures proper spacing
 
-#ggsave("Nutrients_plot.png", Nutrients, width = 20, height = 4, dpi = 600, bg = "white")
+ggsave("Nutrients_plot2.png", Nutrients, width = 4, height = 8, dpi = 600, bg = "white")
 
-Response<-(p1+p2+p6) +
-    plot_layout(ncol = 3, widths = c(1, 1, 1))  # Ensures proper spacing
+Response<-(p1/p2/p6) +
+    plot_layout(ncol = 1, widths = c(1, 1, 1))  # Ensures proper spacing
 
-#ggsave("Response_plot.png", Response, width = 20, height = 4, dpi = 600, bg = "white")
+ggsave("Response_plot_2.png", Response, width = 4, height = 8, dpi = 600, bg = "white")
 
-Nut_Rep<-(p3 + p4 + p5) / (p1+p2+p6)
+Nut_Rep<-(p3 / p4 / p5) | (p1/p2/p6)
 
-#ggsave("Nut_Rep_plot.png", Nut_Rep, width = 15, height = 7, dpi = 600, bg = "white")
+ggsave("Nut_Rep_plot_2.png", Nut_Rep, width = 8, height = 8, dpi = 600, bg = "white")

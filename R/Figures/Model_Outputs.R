@@ -75,13 +75,13 @@ swdf <- full_join(swdf, swdf2, by = "predictor") |>
 
 custom_labels <- c(
     "temp_trend" = expression("Temp. Trend"),
-    "spcond_median" = expression("Med. Sp. Cond."),
+    "spcond_median" = expression("Med. SpCond"),
     "chla_trend" = expression("Chl-a Trend"),
     "chla_median.log" = expression("Med. Log(Chl-a)"),
     "nh4f_mdl_trend" = expression("NH"[4] ~ "Trend"),
     "tld_PC1" = expression("TLD PC"[1]),
     "turb_trend" = expression("Turb. Trend"),
-    "spcond_trend" = expression("Sp. Cond. Trend"),
+    "spcond_trend" = expression("SpCond Trend"),
     "no23_median.log" = expression("Med. Log(NO"[23]~")"),
     "turb_median.log" = expression("Med. Log(Turbidity)"),
     "nh4_median.log" = expression("Med. Log(NH"[4]~")"),
@@ -151,7 +151,7 @@ p1 <- ggplot(coeffs_stnd) +
         #legend.position = "none"
     ) +
     labs(
-        x = "Chl-a Model Coefficient",
+        x = "Chl-a Trend Model Coefficient",
         y = ""
     )
 
@@ -285,7 +285,7 @@ p2 <- ggplot(coeffs_stnd) +
         #legend.position = "bottom"
     ) +
     labs(
-        x = "DO Model Coefficient",
+        x = "DO Trend Model Coefficient",
         y = ""
     )
 p2
@@ -312,6 +312,6 @@ combined_trends <- (p1 + p2) +
 combined_trends
 
 
-ggsave("Trend_plot.png", combined_trends, width = 9, height = 6, dpi = 600, bg = "white")
+ggsave("TrendCoef_plot.png", combined_trends, width = 9, height = 6, dpi = 600, bg = "white")
 
 

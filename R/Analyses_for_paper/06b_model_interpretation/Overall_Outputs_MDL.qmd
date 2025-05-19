@@ -157,7 +157,40 @@ What we see from the graph above and the table below is that we've got 3 really 
 
 
 ```{r}
+library(dplyr)
+
+custom_labels <- c(
+  "temp_trend" = "Temp. Trend",
+  "spcond_median" = "Med. SpCond",
+  "chla_trend" = "Chl-a Trend",
+  "chla_median.log" = "Med. Log(Chl-a)",
+  "nh4f_mdl_trend" = "NH4 Trend",
+  "tld_PC1" = "TLD PC1",
+  "turb_trend" = "Turb. Trend",
+  "spcond_trend" = "SpCond Trend",
+  "no23_median.log" = "Med. Log(NO23)",
+  "turb_median.log" = "Med. Log(Turbidity)",
+  "nh4_median.log" = "Med. Log(NH4)",
+  "no23f_mdl_trend" = "NO23 Trend",
+  "po4_median.log" = "Med. Log(PO4)",
+  "po4f_mdl_trend" = "PO4 Trend",
+  "precp_median" = "Med. Precip.",
+  "precp_trend" = "Precip. Trend"
+)
+
+
+# Then use the correct column name (example if it's "term")
+coeffs_chl <- coeffs_chl %>%
+  mutate(term = recode(term, !!!setNames(as.character(custom_labels), names(custom_labels))))
+
+# Now run your table function
 table_coeffs(coeffs_chl, title_param = "Chl a trend", delta = 4)
+
+tbl_out <- table_coeffs(coeffs_chl, title_param = "Chl a trend", delta = 4)
+# Save the table as CSV
+write.csv(tbl_out, "my_table_coeffs_chl.csv", row.names = FALSE)
+
+
 ```
 
 
@@ -184,6 +217,40 @@ From the graph above and the table below we see 4 important predictors for DO mg
 
 ```{r}
 table_coeffs(coeffs_domgl, title_param = "DO mg/L trend", delta = 4)
+
+
+library(dplyr)
+
+custom_labels <- c(
+  "temp_trend" = "Temp. Trend",
+  "spcond_median" = "Med. SpCond",
+  "chla_trend" = "Chl-a Trend",
+  "chla_median.log" = "Med. Log(Chl-a)",
+  "nh4f_mdl_trend" = "NH4 Trend",
+  "tld_PC1" = "TLD PC1",
+  "turb_trend" = "Turb. Trend",
+  "spcond_trend" = "SpCond Trend",
+  "no23_median.log" = "Med. Log(NO23)",
+  "turb_median.log" = "Med. Log(Turbidity)",
+  "nh4_median.log" = "Med. Log(NH4)",
+  "no23f_mdl_trend" = "NO23 Trend",
+  "po4_median.log" = "Med. Log(PO4)",
+  "po4f_mdl_trend" = "PO4 Trend",
+  "precp_median" = "Med. Precip.",
+  "precp_trend" = "Precip. Trend"
+)
+
+
+# Then use the correct column name (example if it's "term")
+coeffs_domgl <- coeffs_domgl %>%
+  mutate(term = recode(term, !!!setNames(as.character(custom_labels), names(custom_labels))))
+
+# Now run your table function
+table_coeffs(coeffs_domgl, title_param = "DO trend", delta = 4)
+
+tbl_out <- table_coeffs(coeffs_domgl, title_param = "DO trend", delta = 4)
+# Save the table as CSV
+write.csv(tbl_out, "my_table_coeffs_do.csv", row.names = FALSE)
 ```
 
 
@@ -219,7 +286,7 @@ po4trend_on_chl <- make_predictions(data = dat_chl,
                                     response.is.log.trend = TRUE,
                                     predictor.is.log.trend = TRUE)
 
-graph_predictions(po4trend_on_chl,
+po4_partial<-graph_predictions(po4trend_on_chl,
                   response.is.log.trend = TRUE,
                   predictor.is.log.trend = TRUE) +
   labs(title = "Partial effect of PO4 trend on Chl a trend",
@@ -246,7 +313,7 @@ turbtrend_on_chl <- make_predictions(data = dat_chl,
                                     response.is.log.trend = TRUE,
                                     predictor.is.log.trend = FALSE)
 
-graph_predictions(turbtrend_on_chl,
+turb_partial<-graph_predictions(turbtrend_on_chl,
                   response.is.log.trend = TRUE,
                   predictor.is.log.trend = FALSE) +
   labs(title = "Partial effect of Turbidity trend on Chl a trend",
@@ -266,7 +333,7 @@ nh4trend_on_chl <- make_predictions(data = dat_chl,
                                    response.is.log.trend = TRUE,
                                    predictor.is.log.trend = TRUE)
 
-graph_predictions(nh4trend_on_chl,
+nh4_partial<-graph_predictions(nh4trend_on_chl,
                   response.is.log.trend = TRUE,
                   predictor.is.log.trend = TRUE) +
   labs(title = "Partial effect of NH4 trend on Chl a trend",
@@ -276,29 +343,6 @@ graph_predictions(nh4trend_on_chl,
 
 This slope is negative; but even across our values for NH4 trend, when you hold all other predictors equal we're still generally expecting increasing chl. However, the size of the chl increases is negatively associated with NH4 change - the biggest increases in chl are expected to happen alongside the biggest decreases in NH4. 
 
-
-### SpCond trend  
-
-```{r}
-spctrend_on_chl <- make_predictions(data = dat_chl,
-                                    response = "chla_trend",
-                                   predictor = "spcond_trend",
-                                   avgd_mod = mod_avgd4,
-                                   means = dat_means,
-                                   sds = dat_sds,
-                                   sd.range = c(-2.3, 3.6),
-                                   response.is.log.trend = TRUE,
-                                   predictor.is.log.trend = FALSE)
-
-graph_predictions(spctrend_on_chl,
-                  response.is.log.trend = TRUE,
-                  predictor.is.log.trend = FALSE) +
-  labs(title = "Partial effect of SpCond trend on Chl a trend",
-       x = "Specific Conductance trend (mS/cm per year)",
-       y = "Expected Chl a trend (% per year)")
-```
-
-We're expecting increasing chl no matter what our SpCond trend is, though as the SpCond trends higher, we also expect the chl increase to be bigger.  
 
 ### Chl a median  
 
@@ -325,7 +369,7 @@ graph_predictions(chlmedian_on_chl,
 chlmedian_on_chl <- chlmedian_on_chl |> 
   mutate(predictor.natural = exp(predictor.natural))
 
-graph_predictions(chlmedian_on_chl,
+chla_partial<-graph_predictions(chlmedian_on_chl,
                   response.is.log.trend = TRUE,
                   predictor.is.log.trend = FALSE) +
   labs(title = "Partial effect of Chl a median on Chl a trend",
@@ -335,6 +379,23 @@ graph_predictions(chlmedian_on_chl,
 
 
 We generally expect to see bigger increases in chl along with higher chl medians, but not in a linear way - the steepest increase is expected at lower median chl values.
+
+```{r}
+
+# Then combine them into a 2x2 panel using patchwork
+library(patchwork)
+
+four_panel_plot <- (po4_partial | nh4_partial) /
+                   (turb_partial   | chla_partial)
+
+# Display the plot
+four_panel_plot
+
+
+ggsave("C:/Users/kreinl1/OneDrive - UW-Madison/GitHub/WQ_SWMP_Synthesis/R/Figures/Chla_Trend_partial.png", plot = four_panel_plot, width = 8, height = 8, dpi = 300)
+
+```
+
 
 
 ### Latitude / Temp / PAR / DO medians  
@@ -403,7 +464,7 @@ pred_on_resp <- make_predictions(data = dat_domgl,
                                  response.is.log.trend = FALSE,
                                  predictor.is.log.trend = FALSE)
 
-graph_predictions(pred_on_resp,
+spcond_partial<-graph_predictions(pred_on_resp,
                   response.is.log.trend = FALSE,
                   predictor.is.log.trend = FALSE) +
   labs(title = "Partial effect of SpCond median on DO mg/L trend",
@@ -428,7 +489,7 @@ pred_on_resp <- make_predictions(data = dat_domgl,
                                    response.is.log.trend = FALSE,
                                    predictor.is.log.trend = TRUE)
 
-graph_predictions(pred_on_resp,
+chlatrend_partial<-graph_predictions(pred_on_resp,
                   response.is.log.trend = FALSE,
                   predictor.is.log.trend = TRUE) +
   labs(title = "Partial effect of Chl a trend on DO mg/L trend",
@@ -453,7 +514,7 @@ pred_on_resp <- make_predictions(data = dat_domgl,
                                  response.is.log.trend = FALSE,
                                  predictor.is.log.trend = FALSE)
 
-graph_predictions(pred_on_resp,
+temp_partial<-graph_predictions(pred_on_resp,
                   response.is.log.trend = FALSE,
                   predictor.is.log.trend = FALSE) +
   labs(title = "Partial effect of Temp trend on DO mg/L trend",
@@ -487,7 +548,7 @@ graph_predictions(pred_on_resp,
 pred_on_resp <- pred_on_resp |> 
   mutate(predictor.natural = exp(predictor.natural))
 
-graph_predictions(pred_on_resp,
+chla_partial<-graph_predictions(pred_on_resp,
                   response.is.log.trend = FALSE,
                   predictor.is.log.trend = FALSE) +
   labs(title = "Partial effect of Chl a median on DO mg/L trend",
@@ -497,53 +558,19 @@ graph_predictions(pred_on_resp,
 
 This one is interesting to ponder. We're almost always expecting DO mg/L to be decreasing when median chl a is below 10 ug/L. Above that, we're much less certain.  On average start to expect a (very small, very uncertain) increase in DO mg/L when median chl a is above about 20 ug/L.  
 
-
-### Ammonia trend  
-
 ```{r}
-pred_on_resp <- make_predictions(data = dat_domgl,
-                                 response = "domgl_trend",
-                                   predictor = "nh4f_trend",
-                                   avgd_mod = mod_avgd4,
-                                   means = dat_means,
-                                   sds = dat_sds,
-                                   response.is.log.trend = FALSE,
-                                   predictor.is.log.trend = TRUE)
+# Then combine them into a 2x2 panel using patchwork
+library(patchwork)
 
-graph_predictions(pred_on_resp,
-                  response.is.log.trend = FALSE,
-                  predictor.is.log.trend = TRUE) +
-  labs(title = "Partial effect of NH4 trend on DO mg/L trend",
-       x = "NH4 trend (%/yr)",
-       y = "Expected DO trend (mg/L / yr)")
+four_panel_plot <- (temp_partial | chlatrend_partial) /
+                   (spcond_partial   | chla_partial)
+
+# Display the plot
+four_panel_plot
+
+
+ggsave("C:/Users/kreinl1/OneDrive - UW-Madison/GitHub/WQ_SWMP_Synthesis/R/Figures/DO_Trend_partial.png", plot = four_panel_plot, width = 10, height = 8, dpi = 300)
 ```
-
-Always expecting decrease in DO mg/L, but it decreases more when NH4 is increasing.  
-
-
-### SpCond trend  
-
-```{r}
-pred_on_resp <- make_predictions(data = dat_domgl,
-                                 response = "domgl_trend",
-                                 predictor = "spcond_trend",
-                                 avgd_mod = mod_avgd4,
-                                 means = dat_means,
-                                 sds = dat_sds,
-                                 sd.range = c(-2.3, 3.6),
-                                 response.is.log.trend = FALSE,
-                                 predictor.is.log.trend = FALSE)
-
-graph_predictions(pred_on_resp,
-                  response.is.log.trend = FALSE,
-                  predictor.is.log.trend = FALSE) +
-  labs(title = "Partial effect of SpCond trend on DO mg/L trend",
-       x = "Specific Conductance trend (mS/cm / yr)",
-       y = "Expected DO trend (mg/L / yr)")
-```
-
-Again, expecting decreases in DO. Interestingly, as the trend in SpCond increases more, we expect DO to decrease more as well. (This is interesting because above, fresher areas were expected to have bigger decreases in DO than salty ones. But areas that are getting saltier are the ones we expect to have bigger decreases in DO. This could mean the areas that are getting saltier are the ones that are fresher in the first place? I thought we'd checked for collinearity here and didn't find anything major, so maybe there's another interpretation?)
-
 
 
 ```{r}

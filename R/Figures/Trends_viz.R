@@ -16,6 +16,13 @@ all_trends <- read.csv(here::here("Outputs","02_calculated_long-term-trends",
                                   "bam_outputs_MDL",
                                   "long-term-trends.csv"))
 
+counts <- all_trends %>%
+    filter(Slope < 0, p.value < 0.05) %>%  # filter for your two conditions
+    group_by(parameter) %>%                # group by parameter
+    summarize(n = n())                     # count how many rows meet the conditions
+
+counts
+
 # Preprocess and merge data
 subset_trends <- all_trends %>%
   select(station, parameter, Slope, std.error, conf.low, conf.high, p.value, sig_trend) %>%
@@ -61,12 +68,78 @@ merged_df <- merged_df |>
 merged_nut_df <- merged_nut_df |> 
     filter(!(station %in% remove_stns))
 
+######################################
+#Trend Check for hypoxia
+
+data<- read.csv(here::here("Outputs", "04_compiled_predictors",
+                           "compiled_predictors_withExternalInfo_MDL.csv"))
+
+keep_stns <- c(
+"apaeb",
+"sapdc",
+"tjrbr",
+"tjros",
+"elkap",
+"hudtn",
+"owcdr",
+"sfbgc")
+
+
+data_keep <- data|> 
+    filter((station %in% keep_stns))
+
+rm(data,data_keep)
+
+#######################################
+
+#DO Sat vs Temp trend
+
+temp<- all_trends %>%
+    filter(parameter == "temp_median")
+
+
+dosat<- all_trends %>%
+    filter(parameter == "do_pct_median")
+
+df <- data.frame(TempSlope = temp$Slope,
+                 DOSatSlope = dosat$Slope)
+
+# Plot
+p1<-ggplot(df, aes(x = TempSlope, y = DOSatSlope)) +
+    geom_point() +
+    geom_smooth(method="lm") +
+    labs(x = "Temp trend (°C/yr)",
+         y = "DO Sat. trend (%/yr)") +
+    theme_minimal() +
+    theme(panel.grid.major = element_blank())
+
+###
 
 
 
+do<- all_trends %>%
+    filter(parameter == "do_mgl_median")
+
+df2 <- data.frame(DOSlope = do$Slope,
+                 DOSatSlope = dosat$Slope)
+
+# Plot
+p2<-ggplot(df2, aes(x = DOSlope, y = DOSatSlope)) +
+    geom_point() +
+    geom_smooth(method="lm") +
+    labs(x = "DO trend (mg/L/yr)",
+         y = "DO Sat. trend (%/yr)") +
+    theme_minimal() +
+    theme(panel.grid.major = element_blank())
+
+DO_plots<-p1 |p2
+
+DO_plots
+
+##################################
 # General slope visualization
 colors <- viridis::viridis(5)
-custom_colors <- colors[c(1, 3, 4, 5)]
+custom_colors <- colors[c(3, 1, 4, 4)]
 
 # Create a named vector for renaming facets
 facet_labels <- c(
@@ -125,7 +198,7 @@ plot2 <- ggplot() +
     )
 
 # Combine the plots
-combined_plot <- plot1 + plot2 +
+slope_histogram <- plot1 + plot2 +
     plot_layout(guides = "collect", widths = c(2, 1)) & 
     theme(
         legend.position = "bottom",
@@ -133,14 +206,17 @@ combined_plot <- plot1 + plot2 +
     )
 
 # Display the combined plot
-combined_plot
+slope_histogram 
 
 ###########################################
 ##Slope distributions by cluster
 
 # Define cluster colors
-cluster_colors <- viridis::viridis(4)
-names(cluster_colors) <- c("A", "B", "C", "D")
+library(viridis)
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
+                    "D" = viridis(4)[4])
 
 # Chlorophyll-a (Chla) trends
 # Filter and merge data for Chla trends
@@ -168,7 +244,7 @@ ordered_chla <- merged_chla %>%
 p1 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = reorder(station, trend_pctPerYear), color = cluster)) +
     geom_point(aes(shape = sig_trend), size = 2) +
     geom_segment(aes(x = ciLow_pctPerYear, xend = ciHigh_pctPerYear, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
-    labs(title = "Chla Slopes with Confidence Intervals by Station", x = "Trend (% per Year)", y = "Station") +
+    labs(title = "Chla Slopes with Confidence Intervals by Station", x = "Trend (%/yr)", y = "Station") +
     theme_minimal() +
     scale_linetype_manual(values = c("dashed", "solid")) +
     scale_color_manual(values = cluster_colors)
@@ -176,15 +252,19 @@ p1 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = reorder(station, trend_
 # Ridge plot of Chla trends by cluster
 p3 <- ggplot(ordered_chla, aes(x = trend_pctPerYear, y = cluster, fill = cluster)) +
     geom_density_ridges(scale = 2, alpha = 0.7) +
-    labs(x = "Chla Trend (% per Year)", y = "Cluster") +
+    labs(x = "Chl-a Trend (%/yr)", y = "") +
     scale_fill_manual(values = cluster_colors) +
     geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    scale_y_discrete(expand = expansion(add = c(0.2, 1.7))) +
     theme_bw() +
     theme(
         text = element_text(color = "black"),
         axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.position = "none"
+        legend.position = "none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        
     )
 
 # Combine Chla plots
@@ -193,20 +273,21 @@ combined_plot1 <- (p1 | p3) +
     theme(legend.position = 'bottom')
 
 # Dissolved Oxygen (DO) trends
-# Filter and order DO data
+
+# Order data by cluster and slope
 do_trend <- merged_df %>%
     filter(parameter == "do_mgl_median") %>%
     arrange(Slope) %>%
     mutate(
         station = factor(station, levels = unique(station)),
-        cluster = factor(cluster, levels = rev(unique(cluster)))
+        cluster = factor(cluster, levels = c("D", "C", "B", "A"))  # Set explicit order
     )
 
 # Plot DO slopes with confidence intervals by station
 p4 <- ggplot(do_trend, aes(x = Slope, y = station, color = cluster)) +
     geom_point(aes(shape = sig_trend), size = 2) +
     geom_segment(aes(x = conf.low, xend = conf.high, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
-    labs(title = "DO Slopes with Confidence Intervals by Station", x = "DO Trend (mg/L per Year)", y = "Station") +
+    labs(title = "DO Slopes with Confidence Intervals by Station", x = "DO Trend (mg/L/yr)", y = "Station") +
     theme_minimal() +
     scale_linetype_manual(values = c("dashed", "solid")) +
     scale_color_manual(values = cluster_colors) +
@@ -215,15 +296,19 @@ p4 <- ggplot(do_trend, aes(x = Slope, y = station, color = cluster)) +
 # Ridge plot of DO trends by cluster
 p5 <- ggplot(do_trend, aes(x = Slope, y = cluster, fill = cluster)) +
     geom_density_ridges(scale = 2, alpha = 0.7) +
-    labs(x = "DO Trend (mg/L per Year)", y = "Cluster") +
+    labs(x = "DO Trend (mg/L/yr)", y = "") +
     scale_fill_manual(values = cluster_colors) +
     geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    scale_y_discrete(expand = expansion(add = c(0.2, 1.7))) +
     theme_bw() +
     theme(
         text = element_text(color = "black"),
         axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.position = "none"
+        legend.position = "none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        
     )
 
 
@@ -242,7 +327,7 @@ temp_trend <- merged_df %>%
 p7 <- ggplot(temp_trend, aes(x = Slope, y = station, color = cluster)) +
     geom_point(aes(shape = sig_trend), size = 2) +
     geom_segment(aes(x = conf.low, xend = conf.high, y = station, yend = station, linetype = sig_trend), linewidth = 1) +
-    labs(title = "DO Slopes with Confidence Intervals by Station", x = "Temp Trend (C per Year)", y = "Station") +
+    labs(title = "DO Slopes with Confidence Intervals by Station", x = "Temp Trend (°C/yr)", y = "Station") +
     theme_minimal() +
     scale_linetype_manual(values = c("dashed", "solid")) +
     scale_color_manual(values = cluster_colors) +
@@ -251,15 +336,19 @@ p7 <- ggplot(temp_trend, aes(x = Slope, y = station, color = cluster)) +
 # Ridge plot of DO trends by cluster
 p8 <- ggplot(temp_trend, aes(x = Slope, y = cluster, fill = cluster)) +
     geom_density_ridges(scale = 2, alpha = 0.7) +
-    labs(x = "Temp Trend (C per Year)", y = "Cluster") +
+    labs(x = "Temp Trend (°C/yr)", y = "") +
     scale_fill_manual(values = cluster_colors) +
     geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = 1) +
+    scale_y_discrete(expand = expansion(add = c(0.2, 1.7))) +  
     theme_bw() +
     theme(
         text = element_text(color = "black"),
         axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.position = "none"
+        legend.position = "none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        
     )
 
 # Combine DO plots
@@ -278,6 +367,9 @@ patchwork_DO
 patchwork_DOChla_Ridge
 
 
+ggsave("patchwork_DOChla_Ridge.png", plot = patchwork_DOChla_Ridge, width = 8, height = 3, dpi = 300)
+
+
 ####################################
 # Load necessary libraries
 library(dplyr)
@@ -289,7 +381,11 @@ library(patchwork)
 library(ggridges)
 
 # Slopes by cluster
-cluster_colors <- c("A" = viridis(4)[1], "B" = viridis(4)[2], "C" = viridis(4)[3], "D" = viridis(4)[4])
+library(viridis)
+cluster_colors <- c("A" = viridis(4)[3],
+                    "B" = viridis(4)[1],
+                    "C" = viridis(4)[2],
+                    "D" = viridis(4)[4])
 
 
 data<- read.csv(here::here("Outputs", "04_compiled_predictors",
@@ -454,6 +550,48 @@ nutrient_comparisons <- list(
 for (vars in nutrient_comparisons) {
     print(annotated_scatter_plot(combined_data, vars$x, vars$y, vars$x_label, vars$y_label, annotations = vars$annotations))
 }
+
+
+
+
+library(dplyr)
+library(ggplot2)
+
+# Function to get quadrant labels
+get_quadrant_label <- function(x, y, labels) {
+    if (x >= 0 & y >= 0) return(labels[1])
+    if (x <  0 & y >= 0) return(labels[2])
+    if (x <  0 & y <  0) return(labels[3])
+    if (x >= 0 & y <  0) return(labels[4])
+}
+
+# Build panel data
+panel_data <- bind_rows(lapply(nutrient_comparisons, function(vars) {
+    df <- combined_data %>%
+        select(x = !!sym(vars$x), y = !!sym(vars$y)) %>%
+        mutate(
+            panel = paste0(vars$y_label, " vs ", vars$x_label),
+            x_var = vars$x_label,
+            y_var = vars$y_label,
+            quadrant = mapply(get_quadrant_label, x, y, MoreArgs = list(labels = vars$annotations))
+        )
+    return(df)
+}))
+
+# Create plot with facet and labeled axes
+ggplot(panel_data, aes(x = x, y = y)) +
+    geom_point(alpha = 0.6) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    facet_wrap(~ panel, scales = "free") +
+    xlab("") + ylab("") +
+    theme_minimal() +
+    theme(strip.text = element_text(size = 12)) +
+    labs(
+        caption = "Each panel shows nutrient trend relationships with quadrant labels implied by sign of trends."
+    )
+
+
 
 plot(data$po4f_median,data$po4f_mdl_trend)
 

@@ -52,14 +52,14 @@ tld <- dat_all |>
          domgl_median)
 
 pca_tld <- prcomp(tld, scale. = TRUE)
-# biplot(pca_tld)
+ biplot(pca_tld)
 # pca_tld
 # summary(pca_tld)
-# autoplot(pca_tld,
-#          shape = FALSE,
-#          label = TRUE,
-#          loadings = TRUE,
-#          loadings.label = TRUE)
+ autoplot(pca_tld,
+          shape = FALSE,
+          label = TRUE,
+          loadings = TRUE,
+          loadings.label = TRUE)
 
 
 
