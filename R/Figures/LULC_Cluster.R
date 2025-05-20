@@ -8,16 +8,17 @@ library(trend)
 library(zoo)
 library(lubridate)
 library(tis)
+library(viridis)
 
 cluster_colors <- c("A" = viridis(4)[3],
                     "B" = viridis(4)[1],
                     "C" = viridis(4)[2],
                     "D" = viridis(4)[4])
 
-clusters<-read.csv("data_for_map_spc4clusters.csv")
+clusters<-read.csv("swmp_clstr_med_pc_stations_spc.csv")
 
 clusters <- clusters %>%
-  select(station = code, Reserve = Map.Code,cluster=cluster)
+  select(station = code, Reserve = Map.code,cluster=cluster)
 
 cluster_upper <-clusters %>%
   mutate(across(where(is.character), toupper))
@@ -127,15 +128,7 @@ plot6
 ############
 #HUC8
 
-clusters<-read.csv("data_for_map_4clusters.csv")
 
-clusters <- clusters %>%
-  select(station = code, Reserve = Map.Code,cluster=cluster)
-
-cluster_upper <-clusters %>%
-  mutate(across(where(is.character), toupper))
-
-gridcodes<-read.csv("gridcodes.csv")
 
 stations<-read.csv("HUC8_Coords_wq_data.csv")
 
@@ -240,7 +233,7 @@ patchwork+plot_annotation(caption = '2021 NLCD for CONUS')
 
 ####################################################
 
-cluster_data<-read.csv("swmp_clstr_med_pc.csv")
+cluster_data<-read.csv("swmp_clstr_med_pc_stations_spc.csv")
 
 cluster_data<-cluster_data[,1:12]
 
