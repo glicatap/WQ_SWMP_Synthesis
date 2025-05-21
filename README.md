@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # SWMP Water Quality Synthesis
 
 The final dataset used in this project was downloaded from the CDMO through the [Advanced Query System, Zip download option](https://cdmo.baruch.sc.edu/aqs/zips.cfm "link to AQS zip download page") on 8/29/2023. 'All Reserves and Stations' was selected. The date range selected was 2002 - 2022. The downloaded zip file was 1.6 GB.
@@ -17,7 +12,7 @@ Sub-folders of this repository were created to provide some organization of the 
 -   `R` - code; divided into three subfolders.      
     -   **`Analyses_for_paper`** - main folder for calculations and modeling. Linked closely to the `Outputs` folder. [Analyses_for_paper README](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Analyses_for_paper#readme)  
     -   **`Data_processing`** - scripts that were used to process downloaded data by combining files from a station, removing data points that did not pass various QA/QC criteria, and aggregating to daily and monthly levels. [Data Processing readme](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/R/Data_processing#readme)  
-   -   **`Figures`** - scripts that were used to produce figures such as maps and graphs.  
+    -   **`Figures`** - scripts that were used to produce figures such as maps and graphs.  
 
 
 

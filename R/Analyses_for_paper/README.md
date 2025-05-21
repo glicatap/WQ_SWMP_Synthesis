@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # R/Analyses_for_paper Folder
 
 The structure of this folder mirrors that of the `Outputs` folder. Because this folder contains the code generating all calculations and analyses, further detail on statistical methods is below the explanation of this folder's contents.
