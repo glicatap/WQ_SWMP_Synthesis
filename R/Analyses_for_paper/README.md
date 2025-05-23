@@ -1,21 +1,16 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # R/Analyses_for_paper Folder
 
 The structure of this folder mirrors that of the `Outputs` folder. Because this folder contains the code generating all calculations and analyses, further detail on statistical methods is below the explanation of this folder's contents.
 
 ## 01_medians
 
-Based on the monthly processed data files, overall medians were calculated for WQ, NUT, and MET parameters. For NUT parameters, regression on order statistics (ROS) was used (a function within `01_median_calculation.qmd` incorporates `NADA::cenros()` to accomplish this) to account for censored data. At HUD stations, NO3 was used as a proxy for NO23.
+Based on the monthly processed data files, overall medians were calculated for WQ, NUT, and MET parameters. For NUT parameters, values flagged as below the detection limit were changed to 1/2 the detection limit. At HUD stations, NO3 was used as a proxy for NO23.
 
 Outputs were written to the `Outputs/01_calculated_medians` folder.
 
 ## 02_long-term-trends
 
-`02_long-term_trend_analyses.Rmd` is the file that loops through every key parameter and applies Generalized Additive Modeling to account for seasonality, autocorrelation, and censoring and then calculate a linear long-term trend. See [this explanation of trend calculation in the Outputs README.](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#explanation-of-trend-calculations)
+`02_long-term_trend_analyses_MDL.Rmd` is the file that loops through every key parameter and applies Generalized Additive Modeling to account for seasonality, autocorrelation, and censoring and then calculate a linear long-term trend. See [this explanation of trend calculation in the Outputs README.](https://github.com/Lake-Superior-Reserve/WQ_SWMP_Synthesis/tree/main/Outputs#explanation-of-trend-calculations)
 
 `02b_long-term-trend_summaries.qmd` makes histograms, a table, and a graph to summarize the distribution of trends for each key parameter.
 
@@ -39,14 +34,14 @@ Outputs were written to the `Outputs/04_compiled_predictors` folder.
 
 ## 05_predictive_modeling
 
-This folder contains one `.qmd` file for each response variable. In these files, the global model for each response (using predictors agreed upon by the data analysis team) is generated and evaluated by checking fit, residuals, and influential points. For details on the process, see the Modeling README. **LINK**
+This folder contains one `.qmd` file for each response variable. In these files, the global model for each response (using predictors agreed upon by the data analysis team) is generated and evaluated by checking fit, residuals, and influential points. For details on the process, see the **Statistical Methods - Detailed** section below.  
 
-`050_setup.R` is a helper file that reads in the data and compiled predictors from earlier steps, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median PAR, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. 
+`050_setup_MDL.R` is a helper file that reads in the data and compiled predictors from earlier steps, performs PCA for the latitudinally-related variables (latitude, median DO mg/L, median temperature), and attaches the scores from PC1 of that PCA to the predictor data frame. 
 
 
 ## 06_model_selection
 
-For details on model selection process decisions, see the detailed **Statistical Methods** section below.  
+For details on model selection process decisions, see the detailed **Statistical Methods - Detailed** section below.  
 
 Files in this folder implement all-subsets selection from the global models evaluated in folder `05_predictive_modeling`, and then implement model averaging for top-model sets. Each response variable gets its own scripts, of which there are two: `06a` for dredging (using `MuMIn::dredge()`), and `06b` for model averaging. The scripts have an abbreviation for the response variable in the names - e.g. the chlorophyll a trend model has all-subsets selection performed in `06a_chl_dredging.R`, then model averaging in `06b_chl_model-avgd_outputs.R`. DO mg/L trend is represented by 'domgl', and proportion of time DO \< 2 mg/L trend is represented by 'doLT2' (LT = "less than").
 
@@ -58,7 +53,7 @@ Outputs were written to the `Outputs/06_model_selection` folder, in the subfolde
 
 This folder contains two `.qmd` files and their output: `Overall_Outputs.qmd` and `Overall_Outputs_supplementary.qmd`.
 
-`Overall_Outputs.qmd` contains outputs from model-averaging when delta AICc \< 4, as agreed by the work group. It starts with graphs and tables summarizing standardized coefficients from averaged models for each response. Then, the top several predictors for each response (and the response itself) are back-transformed to either original units or %/year change (when a log-transformation has happened), and graphs of the key predictors and their expected response values are provided. This is to help interpret the effect of each predictor, in more understandable units than standardized coefficients provide.
+`Overall_Outputs_MDL.qmd` contains outputs from model-averaging when delta AICc \< 4, as agreed by the work group. It starts with graphs and tables summarizing standardized coefficients from averaged models for each response. Then, the top several predictors for each response (and the response itself) are back-transformed to either original units or %/year change (when a log-transformation has happened), and graphs of the key predictors and their expected response values are provided. This is to help interpret the effect of each predictor, in more understandable units than standardized coefficients provide.
 
 `Overall_Outputs_supplementary.qmd` contains graphs and tables summarizing standardized coefficients using deltas of 2 and 6 as thresholds, for comparison to what will be reported in the main paper ("how does choice of delta AICc threshold affect the results?"). Individual predictor plots were not made in this file.
 
@@ -77,31 +72,29 @@ See the data processing README files for explanations on data point inclusion/ex
 
 ## Monthly aggregation
 
-Again, see the data processing README files. Additionally, see the `Outputs/02_calculated_long-term-trends/data_dictionary_trend_parameters.csv` file for parameters analyzed and transformations made. For WQ and MET, we are generally working with monthly median values. For NUTs, we are working with averaged replicates for each month.
+Again, see the data processing README files. Additionally, see the `Outputs/02_calculated_long-term-trends/data_dictionary_trend_parameters.csv` file for parameters analyzed and transformations made. For WQ and MET, we are generally working with monthly median values. For NUTs, we are working with averaged replicates for each month.  
+
+NUT values that were flagged as being below detection were changed to 1/2 of the method detection limit (MDL).  
 
 ## Long-term Median calculations
 
-For WQ and MET, long-term median values were simply the median of all monthly medians. For NUT parameters, which involve censoring (values below the detection limit) and possibly changing detection limit values, the probability-based robust regression on order statistics (ROS) method was used. See Helsel, D.R. 2011: Statistics for Censored Environmental Data using Minitab and R. Wiley & Sons, Inc. See also [Dennis Helsel's videos and slides for Statitics for Data with Nondetects (Censored Data)](https://practicalstats.com/videos/nadavids.html).
-
-Functions from the `NADA` R package allow calculation of summary statistics on censored data in several ways. We used `cenros()`, ROS, because as Helsel notes in the above sources, this is the most flexible method and works with 0, 1, or multiple detection limits. Kaplan-Meier estimation is fairly common in other fields, but it does not work well when there's a single detection limit. The other option, Maximum Likelihood Estimation (MLE), doesn't work well when none of the values are censored - while developing code, all methods were tested, and MLE did not return the same value as the regular sample median method did (and which is what we'd want) when there were no censored points.
-
-For nutrient medians to be calculated, we required that more than one calendar year be present in the data, and at least 12 individual values.
+For all parameters, long-term median values were simply the median of all monthly medians. For nutrient medians to be calculated, we required that more than one calendar year be present in the data, and at least 12 individual values.
 
 ## Long-term Trend calculations
 
 We have generally used GAMs (generalized additive models) to calculate trends. A seasonal term is included, with 12 knots if possible and the number of months represented in the data frame otherwise (e.g. stations where sondes are removed part of the year due to ice). Autocorrelation of residuals is automatically checked for and if present, the model is re-run to account for the autocorrelation. The reported trend in the outputs is the LINEAR trend through time (per year) of the parameter. To account for censoring, autocorrelation, and seasonality, we used `mgcv::bam`.
 
-For NUT parameters: values were log transformed [as of 5/29/2024, this is natural-log; replacing log10, as natural-log yields more interpretable coefficinets; see Gelman et al. 2021], and marked as censored (e.g. below the minimum detection limit, or MDL) or uncensored. This created a response matrix that was used in `mgcv::bam` with `family = cnorm()` to account for censoring.
+For NUT parameters: values were first natural-log transformed, then modelled with `family = gaussian()`.
 
 For WQ monthly medians, we also used `mgcv::bam` for consistency in outputs. There is no censoring in these parameters, so we used `family = gaussian()`.
 
 For WQ proportion of DO below 2 and 5: These calculations were made before monthly aggregation - each valid 15-minute data point was marked TRUE/FALSE for below 2 and 5, respectively (in separate columns). During monthly aggregation, the total TRUE for each month was divided by the total number of valid DO points for the month, leading to a proportion per month. Trends were again calculated in `mgcv::bam()` with a seasonal term and an autocorrelation term if necessary. Because this response is a proportion, we used `family = betar()`. The `eps` option, which adjusts exact 0s and 1s, was set to 1/10th of the minimum number of readings per month (1/27900).
 
-For MET parameters, we again used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Monthly precipitation was square-root transformed before analysis (this produced the best residual diagnostics on 5 stations explored).
+For MET parameters, we again used the `bam` code written for water quality, as the properties are similar. Performed tests on 3 parameters: monthly median air temperature (C), monthly total precipitation (mm), and the monthly median of daily total PAR. Monthly precipitation was square-root transformed before analysis (this produced the best residual diagnostics on 5 stations explored). PAR data were later excluded from analysis due to apparent differences in values when sensors were changed within stations.  
 
 #### Seasonal trends
 
-This part is simpler and rougher: we have not accounted for autocorrelation or any "wiggliness" in the data. We simply split data into four seasons: Winter (Jan, Feb, Mar); Spring (Apr, May, Jun); Summer (Jul, Aug, Sep); Fall (Oct, Nov, Dec) and calculated a linear trend. For WQ medians, we used the simple `lm()` function. Nutrients still used `mgcv::bam()` to account for censoring (`family = cnorm()`), and DO proportions also used `mgcv::bam()` with `family = betar()`.
+Seasonal trends were calculated for temperature and DO mg/L from WQ parameters, and chlorophyll a from NUT parameters. This part is simpler and rougher: we have not accounted for autocorrelation or any "wiggliness" in the data. We simply split data into four seasons: Winter (Jan, Feb, Mar); Spring (Apr, May, Jun); Summer (Jul, Aug, Sep); Fall (Oct, Nov, Dec) and calculated a linear trend. 
 
 #### Additional
 
@@ -111,7 +104,7 @@ p-values have NOT been adjusted from any of these analyses, so be wary about dec
 
 ### Constructing and evaluating global models
 
-All variables were centered and scaled to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model selection and averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
+All variables were mean-centered and scaled to 1 standard deviation before model-fitting, to help with model convergence in mixed models, to enable comparison between standardized coefficients in final models, and to ensure appropriate model selection and averaging (Harrison et al. 2018, Grueber et al. 2011, Symonds and Moussalli 2011). When appropriate for interpreting results, coefficients were back-calculated to either their original units or to percent-per-year (when log transformations had been performed).  
 
 Global models were constructed with the predictors and a random effect for Reserve and fit using the `lme()` function of the R `nlme` package (v. 3.1.160; Pinherio et al. 2022) using Restricted Maximum Likelihood (REML). To determine whether the random effect was necessary, a simple linear model without the random effect was constructed via `nlme::gls()`, also using REML, to enable comparison via AIC (Zuur et al. 2009, section 5.7). When the random effect was required (chla models), the global model was then re-fit with Maximum Likelihood (ML) for subsequent model selection; when random effects are present but fixed effects vary, REML does not generate comparable AIC values (Zuur et al. 2009). When the random effect was not required (DO models), global models were re-fit as simple linear models, using `stats::lm()` (R Core Team 2022).
 
@@ -135,7 +128,7 @@ Global models were constructed with the predictors and a random effect for Reser
 
 -   **Variable Importance**: `sw`, the sum of Akaike weights for models in which a predictor appears, generated from the `MuMIn::sw()` function, can be interpreted as the probability that the predictor is in the “best” model (Grueber et al. 2011, Symonds and Moussalli 2011). The function also shows how many models from the top set a predictor appeared in. Predictors that are in a lot of models and/or the most highly weighted models will have higher weights than those in few and/or low-weighted models.
 
--   **Nesting** vs. not (Richards 2008; referenced in Grueber et al. 2011 and Harrison et al. 2018) - Richards (2008) suggested that to avoid the problem of selecting overly complex models, models should be removed from the selected set if a simpler nested version of the model has also been selected and has a lower AIC. Clear guidance for this is lacking. We generated values and plots of importance values for all top models vs. with more complex models removed, but because differences in AIC were so small across the top model set, were uncomfortable completely discarding more complex models that might have nearly identical AICc values. Additionally, Lukacs et al. 2009 suggest that full-model averaging "can help to reduce the problems caused by the model selection bias towards over-complex (and indeed under-complex) models" (quote is from Symonds and Moussalli 2011, citing Lukacs et al. 2009). *We can present the non-nested model importance values and/or graphs in supplementary information* but otherwise did not pursue this issue.
+-   **Nesting** vs. not (Richards 2008; referenced in Grueber et al. 2011 and Harrison et al. 2018) - Richards (2008) suggested that to avoid the problem of selecting overly complex models, models should be removed from the selected set if a simpler nested version of the model has also been selected and has a lower AIC. Clear guidance for this is lacking. We generated values and plots of importance values for all top models vs. with more complex models removed, but because differences in AIC were so small across the top model set, were uncomfortable completely discarding more complex models that might have nearly identical AICc values. Additionally, Lukacs et al. 2009 suggest that full-model averaging "can help to reduce the problems caused by the model selection bias towards over-complex (and indeed under-complex) models" (quote is from Symonds and Moussalli 2011, citing Lukacs et al. 2009). **We did not pursue this issue.** 
 
 -   **Full-model averaging** - also known as the "zero method" (Grueber et al. 2011), this method treats each predictor as if it has a coefficient in all averaged models. If a predictor does not appear in a model, the value incorporated into the averaging for that predictor is 0 and thus is a method of shrinkage. This method is recommended when using all-subsets selection, when there is large uncertainty as to the "best" model, and "when the aim of the study is to determine which factors have the strongest effect on the response variable" (quote from Grueber et al. 2011, who cite Nakagawa & Freckleton 2010). This contrasts with the *subset method*, which only averages coefficients of the predictor for the models in which that predictor appears. Grueber et al. 2011 and Symonds and Moussalli 2011 are great citations for these decisions.
 
