@@ -304,7 +304,7 @@ library(patchwork)
 library(scales)
 
 # Load and preprocess data
-cluster_data <- read.csv("swmp_clstr_med_pc_stations_spc.csv") %>%
+cluster_data <- read.csv("swmp_clstr_med_pc_stations_spc_2.csv") %>%
     select(1:12) %>%
     mutate(across(last_col(4):ncol(.), ~ 10^.)) %>%
     mutate(across(last_col(2):ncol(.), ~ .*1000))
